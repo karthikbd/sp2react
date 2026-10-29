@@ -5,7 +5,7 @@ Python API:
     p = Pipeline(load_config("sp2react.yaml"))
     p.run(pages=["SitePages/Dashboard.aspx"])
 """
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 def __getattr__(name):

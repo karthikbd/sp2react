@@ -28,7 +28,7 @@ Run `sp2react run --until inventory` on your site first. The inventory shows exa
 | Calculated columns | the formula is shown, but not recomputed | compute in the database (computed column or view) or add a `derive` rule |
 | Managed metadata, item-level permissions, alerts and alert emails | no equivalent generated yet | handle in your platform |
 
-## Planned (not yet in 0.1.0)
+## Planned (not yet in 0.1.x)
 
 - Views with filters and grouping, and a rich grid (sort, search, multi-select, export).
 - Modal dialogs (`SP.UI.ModalDialog`) as React dialogs.
@@ -43,4 +43,4 @@ Run `sp2react run --until inventory` on your site first. The inventory shows exa
 - `map-db` maps lists to **tables**, not views.
 - One model is used for all agents.
 - In database mode, group **membership** is not read from SharePoint: map a groups table or fill `data/roles.json`.
-- 0.1.0 has been tested against a replica site, a mock SharePoint server and SQLite standing in for the migrated database. Treat the first runs on your farm and database as a pilot: start with one or two screens and check them side by side.
+- Version 0.1 has been tested against a replica site, a mock SharePoint server and SQLite standing in for the migrated database. Treat the first runs on your farm and database as a pilot: start with one or two screens and check them side by side.

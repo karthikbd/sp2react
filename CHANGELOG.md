@@ -2,7 +2,7 @@
 
 All notable changes to `sp2react` are documented here.
 
-## [Unreleased]
+## [0.1.1] - 2026-10-29
 
 ### Added
 - End-to-end documentation in `docs/`: how it works, installation (Windows, JFrog), configuration reference, Bridger and other model providers, SQL Server / MySQL / PostgreSQL and the mapping file, a full walkthrough, command reference, the generated app and deployment, security, troubleshooting, Python API, coverage and limitations
