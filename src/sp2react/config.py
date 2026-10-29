@@ -163,7 +163,10 @@ pipeline:
                              # sqlite: sp2react migrates the items itself | sharepoint: API uses the live lists
 
 database:
-  url_env: SP2REACT_DB_URL   # e.g. mysql+pymysql://user:password@db-host:3306/sea  (read from the environment)
+  url_env: SP2REACT_DB_URL   # read from the environment, e.g.
+                             #   mssql+pyodbc://@db-host/SEA?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes
+                             #   mysql+pymysql://user:password@db-host:3306/sea
+  # schema_name: dbo         # schema holding the migrated tables, if not the default
   mapping: ./db-mapping.json # drafted by `sp2react map-db`, reviewed by you
 
 security:

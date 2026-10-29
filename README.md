@@ -11,10 +11,13 @@ Plain code does everything mechanical. AI agents (Claude through your GitHub Cop
 
 **No business data over HTTP:** in the default `database` mode, list items, attachments and people are never read from SharePoint, and every request is checked against the hosts in your config.
 
+📖 **Full documentation: [docs/](https://github.com/karthikbd/sp2react/blob/main/docs/README.md)**: installation, configuration, Bridger, SQL Server / MySQL, an end-to-end walkthrough, command reference, the generated app, security, troubleshooting.
+
 ---
 
 ## Table of Contents
 
+- [Documentation](#documentation)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
@@ -31,11 +34,28 @@ Plain code does everything mechanical. AI agents (Claude through your GitHub Cop
 
 ---
 
+## Documentation
+
+| Guide | |
+|---|---|
+| [How it works](https://github.com/karthikbd/sp2react/blob/main/docs/01-how-it-works.md) | stages, agents, data sources |
+| [Installation](https://github.com/karthikbd/sp2react/blob/main/docs/02-installation.md) | Windows, corporate networks (JFrog), drivers, Node.js |
+| [Configuration reference](https://github.com/karthikbd/sp2react/blob/main/docs/03-configuration.md) | every `sp2react.yaml` key and environment variable |
+| [Model provider and Bridger](https://github.com/karthikbd/sp2react/blob/main/docs/04-model-provider.md) | Claude through Copilot Bridger, Anthropic, Azure OpenAI |
+| [Your database](https://github.com/karthikbd/sp2react/blob/main/docs/05-database.md) | SQL Server, MySQL, PostgreSQL; `map-db`; the mapping file; reconcile |
+| [End-to-end walkthrough](https://github.com/karthikbd/sp2react/blob/main/docs/06-walkthrough.md) | a site from start to deployed app |
+| [Command reference](https://github.com/karthikbd/sp2react/blob/main/docs/07-commands.md) | every command and option, every file written |
+| [The generated app](https://github.com/karthikbd/sp2react/blob/main/docs/08-generated-app.md) | layout, settings, roles, API, tests, deployment |
+| [Security](https://github.com/karthikbd/sp2react/blob/main/docs/09-security.md) | what is read, sent and written |
+| [Troubleshooting](https://github.com/karthikbd/sp2react/blob/main/docs/10-troubleshooting.md) | errors and fixes |
+| [Python API](https://github.com/karthikbd/sp2react/blob/main/docs/11-python-api.md) | drive sp2react from your own tool |
+| [Coverage and limitations](https://github.com/karthikbd/sp2react/blob/main/docs/12-limitations.md) | what converts and what does not |
+
 ## Installation
 
 ```bash
 pip install "sp2react[mysql]"     # MySQL / MariaDB tables
-pip install "sp2react[mssql]"     # SQL Server tables
+pip install "sp2react[mssql]"     # SQL Server tables (also needs Microsoft ODBC Driver 18)
 pip install "sp2react[ntlm]"      # add for on-premises Windows authentication
 ```
 
@@ -47,7 +67,7 @@ Python 3.10+. Node.js 20+ is needed to build the generated React app.
 sp2react init                                   # writes sp2react.yaml
 export SP_USERNAME='CORP\me' SP_PASSWORD='...'  # or SP_COOKIE / SP_TOKEN
 export BRIDGER_TOKEN='...'                      # only if Bridger needs one
-export SP2REACT_DB_URL='mysql+pymysql://user:password@db-host:3306/sea'
+export SP2REACT_DB_URL='mssql+pyodbc://user:password@db-host/SEA?driver=ODBC+Driver+18+for+SQL+Server'   # or mysql+pymysql://...
 
 sp2react doctor                                 # checks SharePoint, lists Bridger's Claude models
 sp2react run --page /sites/SEA/SitePages/Dashboard.aspx --until spec
@@ -115,7 +135,7 @@ To check the earlier migration, set `security.sharepoint_item_reads: true`. `rec
 ## The generated app
 
 ```bash
-cd converted-app/backend && pip install -r requirements.txt pymysql && cp .env.example .env && uvicorn app.main:app
+cd converted-app/backend && pip install -r requirements.txt pyodbc && cp .env.example .env && uvicorn app.main:app --env-file .env
 cd converted-app/frontend && npm install && npm run dev
 ```
 

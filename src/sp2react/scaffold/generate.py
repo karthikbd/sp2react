@@ -208,8 +208,9 @@ def generated_tests(specs: list[Spec], seed_counts: dict[str, int], data_source:
 
 ENV_EXAMPLE = """# Copy to .env (or set in your service configuration). Never commit real values.
 DATA_SOURCE=__SOURCE__
-# database: your existing tables
-DB_URL=mysql+pymysql://user:password@db-host:3306/sea
+# database: your existing tables (SQLAlchemy URL)
+DB_URL=mssql+pyodbc://user:password@db-host/SEA?driver=ODBC+Driver+18+for+SQL+Server
+# DB_URL=mysql+pymysql://user:password@db-host:3306/sea
 MAPPING_FILE=./mapping.json
 # auth: dev (X-User header, local only) | header (identity header from your gateway)
 AUTH_MODE=dev
