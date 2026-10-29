@@ -72,5 +72,8 @@ All credentials come from environment variables named in the config: SharePoint 
 - Published to PyPI from GitHub Actions with **Trusted Publishing** (OIDC, no stored tokens), from the public repository `karthikbd/sp2react`.
 - Every GitHub Action is pinned to a commit SHA.
 - OpenSSF Scorecard runs weekly and on every push to `main`.
+- CodeQL code scanning (Python and TypeScript) on every push to `main`, and weekly.
+- Dependabot watches GitHub Actions, the Python dependencies and the generated app's npm and pip templates.
+- The generated app's front-end template reports 0 known vulnerabilities (`npm audit`).
 - Runtime dependencies: `pydantic`, `PyYAML`, `requests`; optional `SQLAlchemy`, `pyodbc` or `PyMySQL`, `requests-ntlm`.
 - Licence: MIT.

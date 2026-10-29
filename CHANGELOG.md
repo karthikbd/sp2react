@@ -2,6 +2,17 @@
 
 All notable changes to `sp2react` are documented here.
 
+## [0.1.2] - 2026-10-29
+
+### Security
+- Generated app front-end template moved to versions with no known vulnerabilities: Vite 6.4.4+ (was 5.4), react-router-dom 7.18.4+ (was 6.28), @vitejs/plugin-react 4.7. `npm audit` on the template reports 0 vulnerabilities; the generated app builds and passes the 29-step browser walkthrough
+- `requests>=2.32.4` (package and generated back end)
+
+### Added
+- Dependabot for GitHub Actions, pip and the generated app templates
+- CodeQL code scanning (Python, JavaScript/TypeScript)
+- `setup.py` shim for tools that still call it
+
 ## [0.1.1] - 2026-10-29
 
 ### Added

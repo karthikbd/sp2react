@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sp2react"
-version = "0.1.1"
+version = "0.1.2"
 authors = [{name = "Karthikeyan Balasundaram"}]
 description = "AI-agent pipeline that converts classic SharePoint ASPX/jQuery list forms and pages into a React + FastAPI app on your existing database"
 readme = "README.md"
@@ -30,7 +30,7 @@ classifiers = [
 dependencies = [
     "pydantic>=2.5",
     "pyyaml>=6.0",
-    "requests>=2.31",
+    "requests>=2.32.4",
 ]
 
 [project.optional-dependencies]

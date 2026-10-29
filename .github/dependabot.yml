@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Keep GitHub Actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+
+  # Keep Python dependencies up to date
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+
+  # Keep the generated app's front-end template free of known vulnerabilities
+  - package-ecosystem: "npm"
+    directory: "/src/sp2react/scaffold/templates/frontend"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+
+  # Keep the generated app's back-end template up to date
+  - package-ecosystem: "pip"
+    directory: "/src/sp2react/scaffold/templates/backend"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"

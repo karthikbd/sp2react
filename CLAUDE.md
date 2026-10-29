@@ -22,7 +22,7 @@ python -m build && twine check dist/*
 ```
 
 ## Open work (in priority order)
-1. Releases: bump `version` in pyproject.toml and `__version__` in src/sp2react/__init__.py, move CHANGELOG [Unreleased] to the new version, push main, then publish a GitHub release `vX.Y.Z` on main. `python-publish.yml` tests and publishes to PyPI via Trusted Publishing (environment `release`). Published: 0.1.0, 0.1.1.
+1. Releases: bump `version` in pyproject.toml and `__version__` in src/sp2react/__init__.py, move CHANGELOG [Unreleased] to the new version, push main, then publish a GitHub release `vX.Y.Z` on main. `python-publish.yml` tests and publishes to PyPI via Trusted Publishing (environment `release`). Published: 0.1.0, 0.1.1, 0.1.2.
 2. Site-wide assessment command: Site Contents incl. subsites, lists/libraries, content types, workflows, event receivers, InfoPath, with a per-page conversion readiness report.
 3. Button/command inventory (ribbon, custom buttons, onclick handlers) mapped to spec actions.
 4. Views with filters and grouping; rich grid (sort, search, select, export).
