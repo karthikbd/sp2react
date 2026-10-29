@@ -1,6 +1,6 @@
 fastapi>=0.110
 uvicorn[standard]>=0.27
-pydantic>=2.5
+pydantic>=2.14.1
 requests>=2.33.0
 # requests-ntlm>=1.2   # only for DATA_SOURCE=sharepoint with SP_AUTH=ntlm
 sqlalchemy>=2.0
