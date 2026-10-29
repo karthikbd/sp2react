@@ -1,8 +1,8 @@
 fastapi>=0.110
 uvicorn[standard]>=0.27
 pydantic>=2.5
-requests>=2.32.4
+requests>=2.33.0
 # requests-ntlm>=1.2   # only for DATA_SOURCE=sharepoint with SP_AUTH=ntlm
 sqlalchemy>=2.0
-# pymysql>=1.1        # DATA_SOURCE=database with MySQL / MariaDB   (mysql+pymysql://...)
+# pymysql>=1.1.1       # DATA_SOURCE=database with MySQL / MariaDB   (mysql+pymysql://...)
 # pyodbc>=5.0         # DATA_SOURCE=database with SQL Server        (mssql+pyodbc://...)

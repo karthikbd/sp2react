@@ -6,7 +6,7 @@ All notable changes to `sp2react` are documented here.
 
 ### Security
 - Generated app front-end template moved to versions with no known vulnerabilities: Vite 6.4.4+ (was 5.4), react-router-dom 7.18.4+ (was 6.28), @vitejs/plugin-react 4.7. `npm audit` on the template reports 0 vulnerabilities; the generated app builds and passes the 29-step browser walkthrough
-- `requests>=2.32.4` (package and generated back end)
+- Minimum versions raised past every known advisory: `requests>=2.33.0` (package and generated back end), `pymysql>=1.1.1` (`mysql` extra), `pytest>=9.0.3` (`dev` extra)
 
 ### Added
 - Dependabot for GitHub Actions, pip and the generated app templates
