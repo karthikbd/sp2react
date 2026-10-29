@@ -1,0 +1,158 @@
+<file path="frontend/src/screens/Dashboard/Page.tsx">
+// Procurement dashboard (legacy SitePages/Dashboard.aspx + SiteAssets/js/dashboard.js).
+// Same tiles, tables, texts, element ids and CSS classes; data now comes from the list API.
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { api, ApiError } from "../../api";
+import { DataTable } from "../../components/sp/DataTable";
+import { Layout } from "../../components/sp/Layout";
+import { ListView, parseViewXml } from "../../components/sp/ListView";
+import { Tiles } from "../../components/sp/Tiles";
+import { formatCurrency } from "../../runtime/format";
+import type { Spec } from "../../runtime/spec";
+import { inGroup, useUser } from "../../runtime/user";
+
+const FORM_ROUTE = "/lists/vendor-requests";
+const LIST = "VendorRequests";
+
+// dashboard.js DB.loadTiles: one count per status, plus open high-risk requests
+const TILES = [
+  { id: "db-tile-0", label: "Submitted", filter: "Status eq 'Submitted'" },
+  { id: "db-tile-1", label: "Under Review", filter: "Status eq 'Under Review'" },
+  { id: "db-tile-2", label: "Approved", filter: "Status eq 'Approved'" },
+  { id: "db-tile-3", label: "Rejected", filter: "Status eq 'Rejected'" },
+  { id: "db-highrisk", label: "Open high-risk", filter: "RiskRating eq 'High' and Status ne 'Approved' and Status ne 'Rejected'", alertWhenPositive: true },
+];
+
+export default function Page({ spec }: { spec: Spec }) {
+  const { user } = useUser();
+  const location = useLocation();
+  const reviewer = inGroup(user, "Compliance Reviewers");
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [mine, setMine] = useState<any[] | null>(null);
+  const [queue, setQueue] = useState<any[] | null>(null);
+  const [alerts, setAlerts] = useState<any[] | null>(null);
+
+  const loadTiles = useCallback(() => {
+    for (const t of TILES) {
+      api.query(LIST, { filter: t.filter, select: "ID", top: 5000 })
+        .then((r) => setCounts((c) => ({ ...c, [t.id]: r.value.length })))
+        .catch(() => undefined);
+    }
+  }, []);
+
+  const loadQueue = useCallback(() => {
+    api.query(LIST, {
+      filter: "Status eq 'Submitted' or Status eq 'Under Review'",
+      select: "ID,Title,RiskRating,ScreeningResult,ContractValue,Requester/Title",
+      orderby: "Created asc",
+      top: 50,
+    }).then((r) => setQueue(r.value)).catch(() => setQueue([]));
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    loadTiles();
+    api.query(LIST, {
+      filter: `AuthorId eq ${user.id}`,
+      select: "ID,Title,Status,ContractValue,Modified,Country/Title",
+      orderby: "Modified desc",
+      top: 10,
+    }).then((r) => setMine(r.value)).catch(() => setMine([]));
+    if (reviewer) loadQueue();
+    // SPServices GetListItems on Compliance Alerts: CAML OrderBy Created desc, RowLimit 5
+    api.query("ComplianceAlerts", { orderby: "Created desc", top: 5 })
+      .then((r) => setAlerts(r.value)).catch(() => setAlerts([]));
+  }, [user, reviewer, loadTiles, loadQueue]);
+
+  // dashboard.js DB.approve: confirm, read the etag, MERGE Status=Approved with IF-MATCH
+  const approve = async (id: number) => {
+    if (!window.confirm("Approve this vendor request?")) return;
+    try {
+      const item = await api.get(LIST, id);
+      await api.update(LIST, id, { Status: "Approved" }, item._etag);
+      loadQueue();
+      loadTiles();
+    } catch (e) {
+      window.alert(e instanceof ApiError && e.status === 412
+        ? "This request was changed by someone else. Refresh and try again."
+        : "The request could not be approved.");
+    }
+  };
+
+  const listView = spec.screen.components.find((c) => c.kind === "list_view");
+  const recent = listView ? parseViewXml(listView.props?.view_xml) : {};
+  const source = encodeURIComponent(location.pathname);
+
+  return (
+    <Layout title={spec.screen.title}>
+      <table width="100%" cellPadding={0} cellSpacing={0} style={{ padding: "5px 10px 10px 10px" }}>
+        <tbody>
+          <tr>
+            <td valign="top" width="70%">
+              <Tiles tiles={TILES.map((t) => ({
+                id: t.id,
+                label: t.label,
+                value: counts[t.id] ?? "-",
+                alert: Boolean(t.alertWhenPositive && (counts[t.id] ?? 0) > 0),
+              }))} />
+              <h2 className="ms-webpart-titleText">My requests</h2>
+              <DataTable
+                id="db-my"
+                rows={mine}
+                empty="You have no vendor requests."
+                columns={[
+                  { key: "Title", header: "Vendor", render: (r) => <Link to={`${FORM_ROUTE}/display/${r.ID}?Source=${source}`}>{r.Title}</Link> },
+                  { key: "Country", header: "Country", render: (r) => r.Country?.title ?? "" },
+                  { key: "Status", header: "Status" },
+                  { key: "ContractValue", header: "Contract value", className: "db-num", render: (r) => formatCurrency(r.ContractValue) },
+                ]}
+              />
+              {reviewer && (
+                <div id="db-queue-panel">
+                  <h2 className="ms-webpart-titleText">Awaiting review</h2>
+                  <DataTable
+                    id="db-queue"
+                    rows={queue ?? []}
+                    empty="Nothing is waiting for review."
+                    columns={[
+                      { key: "Title", header: "Vendor", render: (r) => <Link to={`${FORM_ROUTE}/edit/${r.ID}`}>{r.Title}</Link> },
+                      { key: "Requester", header: "Requester", render: (r) => r.Requester?.title ?? "" },
+                      { key: "RiskRating", header: "Risk", render: (r) => r.RiskRating || "" },
+                      { key: "ScreeningResult", header: "Screening", render: (r) => r.ScreeningResult || "Not screened" },
+                      {
+                        key: "_actions", header: "", render: (r) => r.ScreeningResult === "Clear"
+                          ? <button type="button" className="db-approve" data-id={r.ID} onClick={() => approve(r.ID)}>Approve</button>
+                          : null,
+                      },
+                    ]}
+                  />
+                </div>
+              )}
+            </td>
+            <td>&#160;</td>
+            <td valign="top" width="30%">
+              <h2 className="ms-webpart-titleText">Latest compliance alerts</h2>
+              <ul id="db-alerts">
+                {alerts === null ? <li>Loading...</li> : alerts.length === 0 ? <li>No compliance alerts.</li> :
+                  alerts.map((a) => <li key={a.ID}>{a.Title} <span className="db-muted">({a.Country})</span></li>)}
+              </ul>
+              {listView && spec.lists[LIST] && (
+                <ListView
+                  list={LIST}
+                  fields={spec.lists[LIST].fields}
+                  title={listView.title}
+                  route={FORM_ROUTE}
+                  showNew={false}
+                  view={{ fields: recent.fields ?? ["Title", "Status", "Modified"], orderby: recent.orderby, top: recent.top }}
+                />
+              )}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </Layout>
+  );
+}
+</file>
+<notes>The review queue keeps the legacy behaviour of loading only for members of Compliance Reviewers. Element ids and classes (db-tiles, db-my, db-queue, db-alerts, db-approve) match the legacy markup so dashboard.css applies unchanged.</notes>

@@ -1,0 +1,104 @@
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "type": "SP.Data.CostCentersListItem"
+        },
+        "Id": 1,
+        "ID": 1,
+        "Title": "FIN-100 Accounts Payable",
+        "DepartmentId": 1,
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CostCentersListItem"
+        },
+        "Id": 2,
+        "ID": 2,
+        "Title": "FIN-200 Treasury",
+        "DepartmentId": 1,
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CostCentersListItem"
+        },
+        "Id": 3,
+        "ID": 3,
+        "Title": "OPS-310 Facilities",
+        "DepartmentId": 2,
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CostCentersListItem"
+        },
+        "Id": 4,
+        "ID": 4,
+        "Title": "OPS-320 Logistics",
+        "DepartmentId": 2,
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CostCentersListItem"
+        },
+        "Id": 5,
+        "ID": 5,
+        "Title": "IT-410 Infrastructure",
+        "DepartmentId": 3,
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CostCentersListItem"
+        },
+        "Id": 6,
+        "ID": 6,
+        "Title": "IT-420 Applications",
+        "DepartmentId": 3,
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CostCentersListItem"
+        },
+        "Id": 7,
+        "ID": 7,
+        "Title": "LEG-510 Contracts",
+        "DepartmentId": 4,
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      }
+    ]
+  }
+}

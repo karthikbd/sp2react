@@ -1,0 +1,59 @@
+{
+  "rules": [],
+  "components": [
+    {"id": "status-tiles", "kind": "tiles", "region": "Left", "order": 1, "data": ["E1"],
+     "props": {"list": "VendorRequests", "count_with": {"select": "ID", "top": 5000},
+               "tiles": [
+                 {"id": "db-tile-0", "label": "Submitted", "filter": "Status eq 'Submitted'"},
+                 {"id": "db-tile-1", "label": "Under Review", "filter": "Status eq 'Under Review'"},
+                 {"id": "db-tile-2", "label": "Approved", "filter": "Status eq 'Approved'"},
+                 {"id": "db-tile-3", "label": "Rejected", "filter": "Status eq 'Rejected'"},
+                 {"id": "db-highrisk", "label": "Open high-risk", "filter": "RiskRating eq 'High' and Status ne 'Approved' and Status ne 'Rejected'", "alert_when_positive": true}
+               ],
+               "placeholder": "-"},
+     "covers": ["SiteAssets/js/dashboard.js#L17:rest_call", "SiteAssets/js/dashboard.js#L21:rest_call"],
+     "src": ["SiteAssets/js/dashboard.js:14"]},
+    {"id": "my-requests", "kind": "table", "title": "My requests", "region": "Left", "order": 2, "data": ["E1"],
+     "props": {"list": "VendorRequests", "element_id": "db-my", "filter": "AuthorId eq {me.id}",
+               "select": "ID,Title,Status,ContractValue,Modified,Country/Title", "orderby": "Modified desc", "top": 10,
+               "columns": [
+                 {"field": "Title", "header": "Vendor", "link": "display", "keep_source": true},
+                 {"field": "Country", "header": "Country"},
+                 {"field": "Status", "header": "Status"},
+                 {"field": "ContractValue", "header": "Contract value", "format": "currency", "className": "db-num"}
+               ],
+               "loading_text": "Loading...", "empty_text": "You have no vendor requests."},
+     "covers": ["SiteAssets/js/dashboard.js#L28:rest_call"], "src": ["SiteAssets/js/dashboard.js:26"]},
+    {"id": "review-queue", "kind": "table", "title": "Awaiting review", "region": "Left", "order": 3, "data": ["E1", "E2", "E3"],
+     "roles": ["Compliance Reviewers"],
+     "props": {"list": "VendorRequests", "element_id": "db-queue", "panel_id": "db-queue-panel",
+               "filter": "Status eq 'Submitted' or Status eq 'Under Review'",
+               "select": "ID,Title,RiskRating,ScreeningResult,ContractValue,Requester/Title", "orderby": "Created asc", "top": 50,
+               "columns": [
+                 {"field": "Title", "header": "Vendor", "link": "edit"},
+                 {"field": "Requester", "header": "Requester"},
+                 {"field": "RiskRating", "header": "Risk"},
+                 {"field": "ScreeningResult", "header": "Screening", "empty_value": "Not screened"},
+                 {"field": "_actions", "header": ""}
+               ],
+               "empty_text": "Nothing is waiting for review.",
+               "actions": [
+                 {"id": "approve", "label": "Approve", "class": "db-approve", "show_when": "ScreeningResult eq 'Clear'",
+                  "confirm": "Approve this vendor request?", "endpoint": "E3", "values": {"Status": "Approved"}, "if_match": true,
+                  "error_messages": {"412": "This request was changed by someone else. Refresh and try again.", "default": "The request could not be approved."},
+                  "after": "reload the review queue and the status tiles"}
+               ]},
+     "covers": ["SiteAssets/js/dashboard.js#L42:rest_call", "SiteAssets/js/dashboard.js#L58:confirm", "SiteAssets/js/dashboard.js#L59:rest_call",
+                "SiteAssets/js/dashboard.js#L61:rest_call", "SiteAssets/js/dashboard.js#L73:message", "SiteAssets/js/dashboard.js#L104:role_check",
+                "SiteAssets/js/dashboard.js#L99:spservices_call"],
+     "src": ["SiteAssets/js/dashboard.js:40", "SiteAssets/js/dashboard.js:56", "SiteAssets/js/dashboard.js:99"]},
+    {"id": "latest-alerts", "kind": "table", "title": "Latest compliance alerts", "region": "Right", "order": 1, "data": ["E4"],
+     "props": {"list": "ComplianceAlerts", "render": "list", "element_id": "db-alerts", "orderby": "Created desc", "top": 5,
+               "item_template": "{Title} ({Country})", "loading_text": "Loading...", "empty_text": "No compliance alerts."},
+     "covers": ["SiteAssets/js/dashboard.js#L80:spservices_call"], "src": ["SiteAssets/js/dashboard.js:78"],
+     "note": "SPServices GetListItems with CAML OrderBy Created desc, RowLimit 5 -> $orderby=Created desc&$top=5"}
+  ],
+  "endpoints": [],
+  "not_carried": [],
+  "open_questions": []
+}

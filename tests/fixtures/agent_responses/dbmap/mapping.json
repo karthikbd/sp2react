@@ -1,0 +1,96 @@
+{
+ "mapping": {
+  "version": 1,
+  "schema": null,
+  "lists": {
+   "VendorRequests": {
+    "table": "tbl_vendor_requests",
+    "key": "request_id",
+    "fields": {
+     "Title": "vendor_name",
+     "VendorType": "vendor_type",
+     "Department": "department_id",
+     "CostCenter": "cost_center_id",
+     "Country": "country_id",
+     "RiskRating": "risk_rating",
+     "HighRiskJustification": "high_risk_justification",
+     "TaxID": "tax_id",
+     "ContractValue": "contract_value",
+     "SecondApprover": "second_approver_id",
+     "Requester": "requester_id",
+     "RequestDate": "request_date",
+     "StartDate": "expected_start_date",
+     "SanctionsScreened": "sanctions_screened",
+     "ScreeningResult": "screening_result",
+     "Status": "status",
+     "ReviewerComments": "reviewer_comments"
+    },
+    "system": {
+     "Created": "created_at",
+     "Modified": "modified_at",
+     "Author": "created_by",
+     "Editor": "modified_by",
+     "version": "row_version"
+    },
+    "attachments": {
+     "table": "vendor_request_files",
+     "item": "request_id",
+     "name": "file_name",
+     "content": "content"
+    }
+   },
+   "Countries": {
+    "table": "countries",
+    "key": "id",
+    "fields": {
+     "Title": "country_name",
+     "RiskLevel": "risk_level"
+    },
+    "system": {}
+   },
+   "ComplianceAlerts": {
+    "table": "compliance_alerts",
+    "key": "id",
+    "fields": {
+     "Title": "title",
+     "VendorRequest": "vendor_request_id",
+     "Country": "country"
+    },
+    "system": {}
+   },
+   "CostCenters": {
+    "table": "cost_centers",
+    "key": "id",
+    "fields": {
+     "Title": "title",
+     "Department": "department_id"
+    },
+    "system": {}
+   },
+   "Departments": {
+    "table": "departments",
+    "key": "dept_id",
+    "fields": {
+     "Title": "title"
+    },
+    "system": {}
+   }
+  },
+  "users": {
+   "table": "app_users",
+   "id": "user_id",
+   "login": "login",
+   "title": "display_name",
+   "email": "email",
+   "groups": {
+    "table": "user_groups",
+    "user": "user_id",
+    "group": "group_name"
+   }
+  }
+ },
+ "notes": [
+  "Countries.Title was migrated to countries.country_name.",
+  "Group membership comes from user_groups; attachments for Vendor Requests are in vendor_request_files."
+ ]
+}

@@ -1,0 +1,4 @@
+.ms-formtable td.ms-formlabel { width: 190px; }
+.vr-help, .vr-instructions { background: #f4f4f4; border-left: 4px solid #0072c6; padding: 8px 12px; margin: 0 0 12px 0; font-size: 13px; }
+.vr-banner { background: #fde7e9; border: 1px solid #a80000; color: #a80000; padding: 8px 12px; margin: 0 0 12px 0; font-weight: 600; }
+.vr-dup { font-size: 12px; }

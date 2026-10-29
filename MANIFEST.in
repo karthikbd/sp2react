@@ -1,0 +1,9 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+include SECURITY.md
+recursive-include src/sp2react/agents/prompts *.md
+recursive-include src/sp2react/scaffold *
+recursive-include tests *
+prune examples
+global-exclude __pycache__ *.py[cod] *.db

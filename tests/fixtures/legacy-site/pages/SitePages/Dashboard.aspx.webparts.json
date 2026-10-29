@@ -1,0 +1,77 @@
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "type": "SP.WebParts.WebPartDefinition"
+        },
+        "Id": "4e2a9c71-0b3d-4f5e-8a6c-1d7e2f9b3c40",
+        "ZoneId": "Left",
+        "WebPart": {
+          "__metadata": {
+            "type": "SP.WebParts.WebPart"
+          },
+          "Title": "Dashboard",
+          "ZoneIndex": 0,
+          "Hidden": false,
+          "IsClosed": false,
+          "Properties": {
+            "Title": "Dashboard",
+            "ChromeType": 2,
+            "ExportMode": 1,
+            "Description": "Allows authors to insert HTML snippets or scripts.",
+            "Content": "<script type=\"text/javascript\" src=\"/sites/procurement/SiteAssets/js/jquery-1.12.4.min.js\"></script>\n<script type=\"text/javascript\" src=\"/sites/procurement/SiteAssets/js/jquery.SPServices-2014.02.min.js\"></script>\n<div class=\"db-tiles\">\n  <div class=\"db-tile\" id=\"db-tile-0\"><span class=\"db-count\">-</span>Submitted</div>\n  <div class=\"db-tile\" id=\"db-tile-1\"><span class=\"db-count\">-</span>Under Review</div>\n  <div class=\"db-tile\" id=\"db-tile-2\"><span class=\"db-count\">-</span>Approved</div>\n  <div class=\"db-tile\" id=\"db-tile-3\"><span class=\"db-count\">-</span>Rejected</div>\n  <div class=\"db-tile\" id=\"db-highrisk\"><span class=\"db-count\">-</span>Open high-risk</div>\n</div>\n<h2 class=\"ms-webpart-titleText\">My requests</h2>\n<table class=\"db-table\" id=\"db-my\"><thead><tr><th>Vendor</th><th>Country</th><th>Status</th><th class=\"db-num\">Contract value</th></tr></thead><tbody><tr><td colspan=\"4\">Loading...</td></tr></tbody></table>\n<div id=\"db-queue-panel\" style=\"display:none\">\n  <h2 class=\"ms-webpart-titleText\">Awaiting review</h2>\n  <table class=\"db-table\" id=\"db-queue\"><thead><tr><th>Vendor</th><th>Requester</th><th>Risk</th><th>Screening</th><th></th></tr></thead><tbody></tbody></table>\n</div>\n<script type=\"text/javascript\" src=\"/sites/procurement/SiteAssets/js/dashboard.js\"></script>"
+          }
+        }
+      },
+      {
+        "__metadata": {
+          "type": "SP.WebParts.WebPartDefinition"
+        },
+        "Id": "7c1e3a95-2f4b-4d6c-9e8a-3b5d7f1a2c64",
+        "ZoneId": "Right",
+        "WebPart": {
+          "__metadata": {
+            "type": "SP.WebParts.WebPart"
+          },
+          "Title": "Compliance Alerts",
+          "ZoneIndex": 0,
+          "Hidden": false,
+          "IsClosed": false,
+          "Properties": {
+            "Title": "Compliance Alerts",
+            "ChromeType": 2,
+            "ExportMode": 1,
+            "Description": "",
+            "Content": "<h2 class=\"ms-webpart-titleText\">Latest compliance alerts</h2><ul id=\"db-alerts\"><li>Loading...</li></ul>"
+          }
+        }
+      },
+      {
+        "__metadata": {
+          "type": "SP.WebParts.WebPartDefinition"
+        },
+        "Id": "9a3c5e17-4b6d-4f8a-8c2e-5d7f9b1c3e86",
+        "ZoneId": "Right",
+        "WebPart": {
+          "__metadata": {
+            "type": "SP.WebParts.WebPart"
+          },
+          "Title": "Vendor Requests - Recently changed",
+          "ZoneIndex": 1,
+          "Hidden": false,
+          "IsClosed": false,
+          "Properties": {
+            "Title": "Vendor Requests - Recently changed",
+            "ListName": "{6F1C2A10-4B7E-4D59-9A3E-0C1F7D2E8B41}",
+            "ListUrl": "Lists/VendorRequests",
+            "XmlDefinition": "<View Name=\"{0E8C2A51-7D3F-4B9A-A1C6-5F2E8D4B7A93}\" Type=\"HTML\" DisplayName=\"\" BaseViewID=\"1\"><Query><OrderBy><FieldRef Name=\"Modified\" Ascending=\"FALSE\"/></OrderBy></Query><ViewFields><FieldRef Name=\"LinkTitle\"/><FieldRef Name=\"Status\"/><FieldRef Name=\"Modified\"/></ViewFields><RowLimit Paged=\"FALSE\">5</RowLimit></View>",
+            "JSLink": "",
+            "ChromeType": 2,
+            "ExportMode": 1
+          }
+        }
+      }
+    ]
+  }
+}

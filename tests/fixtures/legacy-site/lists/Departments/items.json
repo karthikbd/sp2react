@@ -1,0 +1,58 @@
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "type": "SP.Data.DepartmentsListItem"
+        },
+        "Id": 1,
+        "ID": 1,
+        "Title": "Finance",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.DepartmentsListItem"
+        },
+        "Id": 2,
+        "ID": 2,
+        "Title": "Operations",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.DepartmentsListItem"
+        },
+        "Id": 3,
+        "ID": 3,
+        "Title": "Information Technology",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.DepartmentsListItem"
+        },
+        "Id": 4,
+        "ID": 4,
+        "Title": "Legal",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      }
+    ]
+  }
+}

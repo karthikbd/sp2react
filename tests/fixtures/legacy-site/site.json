@@ -1,0 +1,66 @@
+{
+  "_note": "Replica of a classic (SharePoint Server 2013/2016) procurement site. Same layout tools/import_bundle.py writes from a real export.",
+  "url": "https://sharepoint.contoso.local/sites/procurement",
+  "serverRelativeUrl": "/sites/procurement",
+  "title": "Procurement",
+  "version": "16.0.5413.1000",
+  "quickLaunch": [
+    { "title": "Home", "url": "/sites/procurement" },
+    { "title": "Vendor Requests", "url": "/sites/procurement/Lists/VendorRequests/AllItems.aspx" },
+    { "title": "Compliance Alerts", "url": "/sites/procurement/Lists/ComplianceAlerts/AllItems.aspx" },
+    { "title": "Site Contents", "url": "/sites/procurement/_layouts/15/viewlsts.aspx" }
+  ],
+  "groups": [
+    { "name": "Procurement Members", "members": ["corp\\alice", "corp\\carol"] },
+    { "name": "Compliance Reviewers", "members": ["corp\\bob"] },
+    { "name": "Procurement Owners", "members": ["corp\\dave"] }
+  ],
+  "users": [
+    { "login": "corp\\alice", "title": "Alice Romero", "email": "alice.romero@contoso.local" },
+    { "login": "corp\\bob", "title": "Bob Okafor", "email": "bob.okafor@contoso.local" },
+    { "login": "corp\\carol", "title": "Carol Nguyen", "email": "carol.nguyen@contoso.local" },
+    { "login": "corp\\dave", "title": "Dave Fischer", "email": "dave.fischer@contoso.local" }
+  ],
+  "lists": [
+    {
+      "title": "Vendor Requests",
+      "url": "Lists/VendorRequests",
+      "id": "{6f1c2a10-4b7e-4d59-9a3e-0c1f7d2e8b41}",
+      "entityTypeName": "VendorRequestsList",
+      "enableAttachments": true,
+      "enableVersioning": true,
+      "validationFormula": "=OR([SanctionsScreened]=FALSE,NOT(ISBLANK([ScreeningResult])))",
+      "validationMessage": "Select a Screening Result when Sanctions Screened is checked.",
+      "forms": { "New": "NewForm.aspx", "Edit": "EditForm.aspx", "Display": "DispForm.aspx" },
+      "views": { "AllItems": { "fields": ["Title", "VendorType", "Department", "Country", "RiskRating", "ContractValue", "Status", "Requester"], "orderBy": "ID", "ascending": false, "rowLimit": 30 } }
+    },
+    {
+      "title": "Departments",
+      "url": "Lists/Departments",
+      "id": "{a2d4e6f8-1111-4c3b-8d2e-5f6a7b8c9d01}",
+      "entityTypeName": "DepartmentsList",
+      "views": { "AllItems": { "fields": ["Title"], "orderBy": "Title", "ascending": true, "rowLimit": 30 } }
+    },
+    {
+      "title": "Cost Centers",
+      "url": "Lists/CostCenters",
+      "id": "{b3e5f7a9-2222-4d4c-9e3f-6a7b8c9d0e12}",
+      "entityTypeName": "CostCentersList",
+      "views": { "AllItems": { "fields": ["Title", "Department"], "orderBy": "Title", "ascending": true, "rowLimit": 30 } }
+    },
+    {
+      "title": "Countries",
+      "url": "Lists/Countries",
+      "id": "{c4f6a8b0-3333-4e5d-8f4a-7b8c9d0e1f23}",
+      "entityTypeName": "CountriesList",
+      "views": { "AllItems": { "fields": ["Title", "RiskLevel"], "orderBy": "Title", "ascending": true, "rowLimit": 100 } }
+    },
+    {
+      "title": "Compliance Alerts",
+      "url": "Lists/ComplianceAlerts",
+      "id": "{d5a7b9c1-4444-4f6e-9a5b-8c9d0e1f2a34}",
+      "entityTypeName": "ComplianceAlertsList",
+      "views": { "AllItems": { "fields": ["Title", "VendorRequest", "Country", "Author", "Created"], "orderBy": "ID", "ascending": false, "rowLimit": 30 } }
+    }
+  ]
+}

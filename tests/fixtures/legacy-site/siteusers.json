@@ -1,0 +1,30 @@
+{
+  "d": {
+    "results": [
+      {
+        "Id": 6,
+        "LoginName": "i:0#.w|corp\\alice",
+        "Title": "Alice Romero",
+        "Email": "alice.romero@contoso.local"
+      },
+      {
+        "Id": 7,
+        "LoginName": "i:0#.w|corp\\bob",
+        "Title": "Bob Okafor",
+        "Email": "bob.okafor@contoso.local"
+      },
+      {
+        "Id": 8,
+        "LoginName": "i:0#.w|corp\\carol",
+        "Title": "Carol Nguyen",
+        "Email": "carol.nguyen@contoso.local"
+      },
+      {
+        "Id": 9,
+        "LoginName": "i:0#.w|corp\\dave",
+        "Title": "Dave Fischer",
+        "Email": "dave.fischer@contoso.local"
+      }
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+name: Publish sp2react to PyPI
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+
+# Minimal default — jobs opt in to only what they need.
+permissions: read-all
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4        # builds the generated React app inside the tests
+        with:
+          node-version: "22"
+      - name: Install package with test extras
+        run: pip install -e ".[dev]"
+      - name: Run test suite
+        run: python -m pytest tests/ -v --tb=short
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write   # required for Trusted Publishing (OIDC)
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build distribution
+        run: |
+          pip install --upgrade build
+          python -m build
+      - name: Publish to PyPI via Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # No PYPI_API_TOKEN needed — uses OIDC Trusted Publishing.
+        # Configure at: https://pypi.org/manage/account/publishing/ (pending publisher: sp2react / karthikbd / sp2react / python-publish.yml / release)

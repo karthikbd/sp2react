@@ -1,0 +1,3826 @@
+[
+ {
+  "name": "eq text",
+  "type": "evaluate",
+  "cond": {
+   "field": "Status",
+   "eq": "Approved"
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "ne",
+  "type": "evaluate",
+  "cond": {
+   "field": "Status",
+   "ne": "Approved"
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": false
+ },
+ {
+  "name": "numeric string gt",
+  "type": "evaluate",
+  "cond": {
+   "field": "ContractValue",
+   "gt": 100000
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "lookup title eq",
+  "type": "evaluate",
+  "cond": {
+   "field": "Country",
+   "eq": "Nigeria"
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "lookup id eq",
+  "type": "evaluate",
+  "cond": {
+   "field": "Country",
+   "eq": 8
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "lookup path",
+  "type": "evaluate",
+  "cond": {
+   "field": "Country.title",
+   "eq": "Nigeria"
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "in",
+  "type": "evaluate",
+  "cond": {
+   "field": "Status",
+   "in": [
+    "Approved",
+    "Rejected"
+   ]
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "nin",
+  "type": "evaluate",
+  "cond": {
+   "field": "Status",
+   "nin": [
+    "Approved",
+    "Rejected"
+   ]
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": false
+ },
+ {
+  "name": "empty",
+  "type": "evaluate",
+  "cond": {
+   "field": "Empty",
+   "empty": true
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "notEmpty missing",
+  "type": "evaluate",
+  "cond": {
+   "field": "Nope",
+   "notEmpty": true
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": false
+ },
+ {
+  "name": "changed",
+  "type": "evaluate",
+  "cond": {
+   "field": "Status",
+   "changed": true
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "boolean eq",
+  "type": "evaluate",
+  "cond": {
+   "field": "Flag",
+   "eq": true
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "role no",
+  "type": "evaluate",
+  "cond": {
+   "role": "Compliance Reviewers"
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": false
+ },
+ {
+  "name": "not role",
+  "type": "evaluate",
+  "cond": {
+   "not": {
+    "role": "Compliance Reviewers"
+   }
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "mode list",
+  "type": "evaluate",
+  "cond": {
+   "mode": [
+    "new",
+    "edit"
+   ]
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "all/any",
+  "type": "evaluate",
+  "cond": {
+   "all": [
+    {
+     "field": "Status",
+     "eq": "Approved"
+    },
+    {
+     "any": [
+      {
+       "field": "Flag",
+       "eq": false
+      },
+      {
+       "mode": "edit"
+      }
+     ]
+    }
+   ]
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "name": "gt with empty",
+  "type": "evaluate",
+  "cond": {
+   "field": "Empty",
+   "gt": 1
+  },
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved",
+    "ContractValue": "240,000",
+    "Country": {
+     "id": 8,
+     "title": "Nigeria"
+    },
+    "Flag": true,
+    "Empty": ""
+   },
+   "original": {
+    "Status": "Submitted"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": false
+ },
+ {
+  "name": "valid new",
+  "type": "validate",
+  "fields": [
+   {
+    "name": "Title",
+    "label": "Vendor Name",
+    "type": "text",
+    "required": true,
+    "max_length": 20
+   },
+   {
+    "name": "Country",
+    "label": "Country",
+    "type": "lookup",
+    "required": true,
+    "lookup": {
+     "list": "Countries",
+     "field": "Title"
+    }
+   },
+   {
+    "name": "RiskRating",
+    "label": "Risk Rating",
+    "type": "text"
+   },
+   {
+    "name": "Justification",
+    "label": "Justification",
+    "type": "note"
+   },
+   {
+    "name": "ContractValue",
+    "label": "Contract Value",
+    "type": "currency",
+    "required": true,
+    "min": 0
+   },
+   {
+    "name": "SecondApprover",
+    "label": "Second Approver",
+    "type": "user"
+   },
+   {
+    "name": "RequestDate",
+    "label": "Request Date",
+    "type": "date"
+   },
+   {
+    "name": "StartDate",
+    "label": "Start Date",
+    "type": "date"
+   },
+   {
+    "name": "Status",
+    "label": "Status",
+    "type": "choice",
+    "choices": [
+     "Submitted",
+     "Approved",
+     "Rejected"
+    ]
+   },
+   {
+    "name": "TaxID",
+    "label": "Tax ID",
+    "type": "text"
+   }
+  ],
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "new",
+   "values": {
+    "Title": "Acme",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "Low",
+    "ContractValue": "18,500",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-10-05",
+    "TaxID": "123456789"
+   },
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": []
+ },
+ {
+  "name": "missing required",
+  "type": "validate",
+  "fields": [
+   {
+    "name": "Title",
+    "label": "Vendor Name",
+    "type": "text",
+    "required": true,
+    "max_length": 20
+   },
+   {
+    "name": "Country",
+    "label": "Country",
+    "type": "lookup",
+    "required": true,
+    "lookup": {
+     "list": "Countries",
+     "field": "Title"
+    }
+   },
+   {
+    "name": "RiskRating",
+    "label": "Risk Rating",
+    "type": "text"
+   },
+   {
+    "name": "Justification",
+    "label": "Justification",
+    "type": "note"
+   },
+   {
+    "name": "ContractValue",
+    "label": "Contract Value",
+    "type": "currency",
+    "required": true,
+    "min": 0
+   },
+   {
+    "name": "SecondApprover",
+    "label": "Second Approver",
+    "type": "user"
+   },
+   {
+    "name": "RequestDate",
+    "label": "Request Date",
+    "type": "date"
+   },
+   {
+    "name": "StartDate",
+    "label": "Start Date",
+    "type": "date"
+   },
+   {
+    "name": "Status",
+    "label": "Status",
+    "type": "choice",
+    "choices": [
+     "Submitted",
+     "Approved",
+     "Rejected"
+    ]
+   },
+   {
+    "name": "TaxID",
+    "label": "Tax ID",
+    "type": "text"
+   }
+  ],
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "new",
+   "values": {
+    "RiskRating": "Low"
+   },
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": [
+   [
+    "Title",
+    "You can't leave this blank.",
+    "schema"
+   ],
+   [
+    "Country",
+    "You can't leave this blank.",
+    "schema"
+   ],
+   [
+    "ContractValue",
+    "You can't leave this blank.",
+    "schema"
+   ]
+  ]
+ },
+ {
+  "name": "high risk needs justification",
+  "type": "validate",
+  "fields": [
+   {
+    "name": "Title",
+    "label": "Vendor Name",
+    "type": "text",
+    "required": true,
+    "max_length": 20
+   },
+   {
+    "name": "Country",
+    "label": "Country",
+    "type": "lookup",
+    "required": true,
+    "lookup": {
+     "list": "Countries",
+     "field": "Title"
+    }
+   },
+   {
+    "name": "RiskRating",
+    "label": "Risk Rating",
+    "type": "text"
+   },
+   {
+    "name": "Justification",
+    "label": "Justification",
+    "type": "note"
+   },
+   {
+    "name": "ContractValue",
+    "label": "Contract Value",
+    "type": "currency",
+    "required": true,
+    "min": 0
+   },
+   {
+    "name": "SecondApprover",
+    "label": "Second Approver",
+    "type": "user"
+   },
+   {
+    "name": "RequestDate",
+    "label": "Request Date",
+    "type": "date"
+   },
+   {
+    "name": "StartDate",
+    "label": "Start Date",
+    "type": "date"
+   },
+   {
+    "name": "Status",
+    "label": "Status",
+    "type": "choice",
+    "choices": [
+     "Submitted",
+     "Approved",
+     "Rejected"
+    ]
+   },
+   {
+    "name": "TaxID",
+    "label": "Tax ID",
+    "type": "text"
+   }
+  ],
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "new",
+   "values": {
+    "Title": "Acme",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "High",
+    "ContractValue": "18,500",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-10-05",
+    "TaxID": "123456789"
+   },
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": [
+   [
+    "Justification",
+    "Justification is required for high-risk vendors.",
+    "R2"
+   ]
+  ]
+ },
+ {
+  "name": "big contract needs approver",
+  "type": "validate",
+  "fields": [
+   {
+    "name": "Title",
+    "label": "Vendor Name",
+    "type": "text",
+    "required": true,
+    "max_length": 20
+   },
+   {
+    "name": "Country",
+    "label": "Country",
+    "type": "lookup",
+    "required": true,
+    "lookup": {
+     "list": "Countries",
+     "field": "Title"
+    }
+   },
+   {
+    "name": "RiskRating",
+    "label": "Risk Rating",
+    "type": "text"
+   },
+   {
+    "name": "Justification",
+    "label": "Justification",
+    "type": "note"
+   },
+   {
+    "name": "ContractValue",
+    "label": "Contract Value",
+    "type": "currency",
+    "required": true,
+    "min": 0
+   },
+   {
+    "name": "SecondApprover",
+    "label": "Second Approver",
+    "type": "user"
+   },
+   {
+    "name": "RequestDate",
+    "label": "Request Date",
+    "type": "date"
+   },
+   {
+    "name": "StartDate",
+    "label": "Start Date",
+    "type": "date"
+   },
+   {
+    "name": "Status",
+    "label": "Status",
+    "type": "choice",
+    "choices": [
+     "Submitted",
+     "Approved",
+     "Rejected"
+    ]
+   },
+   {
+    "name": "TaxID",
+    "label": "Tax ID",
+    "type": "text"
+   }
+  ],
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "new",
+   "values": {
+    "Title": "Acme",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "Low",
+    "ContractValue": "240000",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-10-05",
+    "TaxID": "123456789"
+   },
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": [
+   [
+    "SecondApprover",
+    "A Second Approver is required for contracts over $100,000.",
+    "R3"
+   ]
+  ]
+ },
+ {
+  "name": "dates",
+  "type": "validate",
+  "fields": [
+   {
+    "name": "Title",
+    "label": "Vendor Name",
+    "type": "text",
+    "required": true,
+    "max_length": 20
+   },
+   {
+    "name": "Country",
+    "label": "Country",
+    "type": "lookup",
+    "required": true,
+    "lookup": {
+     "list": "Countries",
+     "field": "Title"
+    }
+   },
+   {
+    "name": "RiskRating",
+    "label": "Risk Rating",
+    "type": "text"
+   },
+   {
+    "name": "Justification",
+    "label": "Justification",
+    "type": "note"
+   },
+   {
+    "name": "ContractValue",
+    "label": "Contract Value",
+    "type": "currency",
+    "required": true,
+    "min": 0
+   },
+   {
+    "name": "SecondApprover",
+    "label": "Second Approver",
+    "type": "user"
+   },
+   {
+    "name": "RequestDate",
+    "label": "Request Date",
+    "type": "date"
+   },
+   {
+    "name": "StartDate",
+    "label": "Start Date",
+    "type": "date"
+   },
+   {
+    "name": "Status",
+    "label": "Status",
+    "type": "choice",
+    "choices": [
+     "Submitted",
+     "Approved",
+     "Rejected"
+    ]
+   },
+   {
+    "name": "TaxID",
+    "label": "Tax ID",
+    "type": "text"
+   }
+  ],
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "new",
+   "values": {
+    "Title": "Acme",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "Low",
+    "ContractValue": "18,500",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-09-01",
+    "TaxID": "123456789"
+   },
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": [
+   [
+    "StartDate",
+    "Start Date cannot be before the Request Date.",
+    "R4"
+   ]
+  ]
+ },
+ {
+  "name": "taxid length",
+  "type": "validate",
+  "fields": [
+   {
+    "name": "Title",
+    "label": "Vendor Name",
+    "type": "text",
+    "required": true,
+    "max_length": 20
+   },
+   {
+    "name": "Country",
+    "label": "Country",
+    "type": "lookup",
+    "required": true,
+    "lookup": {
+     "list": "Countries",
+     "field": "Title"
+    }
+   },
+   {
+    "name": "RiskRating",
+    "label": "Risk Rating",
+    "type": "text"
+   },
+   {
+    "name": "Justification",
+    "label": "Justification",
+    "type": "note"
+   },
+   {
+    "name": "ContractValue",
+    "label": "Contract Value",
+    "type": "currency",
+    "required": true,
+    "min": 0
+   },
+   {
+    "name": "SecondApprover",
+    "label": "Second Approver",
+    "type": "user"
+   },
+   {
+    "name": "RequestDate",
+    "label": "Request Date",
+    "type": "date"
+   },
+   {
+    "name": "StartDate",
+    "label": "Start Date",
+    "type": "date"
+   },
+   {
+    "name": "Status",
+    "label": "Status",
+    "type": "choice",
+    "choices": [
+     "Submitted",
+     "Approved",
+     "Rejected"
+    ]
+   },
+   {
+    "name": "TaxID",
+    "label": "Tax ID",
+    "type": "text"
+   }
+  ],
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "new",
+   "values": {
+    "Title": "Acme",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "Low",
+    "ContractValue": "18,500",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-10-05",
+    "TaxID": "123"
+   },
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": [
+   [
+    "TaxID",
+    "Tax ID must be exactly 9 digits.",
+    "R6"
+   ]
+  ]
+ },
+ {
+  "name": "max length + min",
+  "type": "validate",
+  "fields": [
+   {
+    "name": "Title",
+    "label": "Vendor Name",
+    "type": "text",
+    "required": true,
+    "max_length": 20
+   },
+   {
+    "name": "Country",
+    "label": "Country",
+    "type": "lookup",
+    "required": true,
+    "lookup": {
+     "list": "Countries",
+     "field": "Title"
+    }
+   },
+   {
+    "name": "RiskRating",
+    "label": "Risk Rating",
+    "type": "text"
+   },
+   {
+    "name": "Justification",
+    "label": "Justification",
+    "type": "note"
+   },
+   {
+    "name": "ContractValue",
+    "label": "Contract Value",
+    "type": "currency",
+    "required": true,
+    "min": 0
+   },
+   {
+    "name": "SecondApprover",
+    "label": "Second Approver",
+    "type": "user"
+   },
+   {
+    "name": "RequestDate",
+    "label": "Request Date",
+    "type": "date"
+   },
+   {
+    "name": "StartDate",
+    "label": "Start Date",
+    "type": "date"
+   },
+   {
+    "name": "Status",
+    "label": "Status",
+    "type": "choice",
+    "choices": [
+     "Submitted",
+     "Approved",
+     "Rejected"
+    ]
+   },
+   {
+    "name": "TaxID",
+    "label": "Tax ID",
+    "type": "text"
+   }
+  ],
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "new",
+   "values": {
+    "Title": "xxxxxxxxxxxxxxxxxxxxxxxxx",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "Low",
+    "ContractValue": "-5",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-10-05",
+    "TaxID": "123456789"
+   },
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": [
+   [
+    "Title",
+    "The value of this field may not contain more than 20 characters.",
+    "schema"
+   ],
+   [
+    "ContractValue",
+    "The value of this field must be greater than or equal to 0.",
+    "schema"
+   ]
+  ]
+ },
+ {
+  "name": "display mode never validates",
+  "type": "validate",
+  "fields": [
+   {
+    "name": "Title",
+    "label": "Vendor Name",
+    "type": "text",
+    "required": true,
+    "max_length": 20
+   },
+   {
+    "name": "Country",
+    "label": "Country",
+    "type": "lookup",
+    "required": true,
+    "lookup": {
+     "list": "Countries",
+     "field": "Title"
+    }
+   },
+   {
+    "name": "RiskRating",
+    "label": "Risk Rating",
+    "type": "text"
+   },
+   {
+    "name": "Justification",
+    "label": "Justification",
+    "type": "note"
+   },
+   {
+    "name": "ContractValue",
+    "label": "Contract Value",
+    "type": "currency",
+    "required": true,
+    "min": 0
+   },
+   {
+    "name": "SecondApprover",
+    "label": "Second Approver",
+    "type": "user"
+   },
+   {
+    "name": "RequestDate",
+    "label": "Request Date",
+    "type": "date"
+   },
+   {
+    "name": "StartDate",
+    "label": "Start Date",
+    "type": "date"
+   },
+   {
+    "name": "Status",
+    "label": "Status",
+    "type": "choice",
+    "choices": [
+     "Submitted",
+     "Approved",
+     "Rejected"
+    ]
+   },
+   {
+    "name": "TaxID",
+    "label": "Tax ID",
+    "type": "text"
+   }
+  ],
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "display",
+   "values": {},
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": []
+ },
+ {
+  "name": "status hidden on new",
+  "type": "field_state",
+  "field": {
+   "name": "Status",
+   "label": "Status",
+   "type": "choice",
+   "choices": [
+    "Submitted",
+    "Approved",
+    "Rejected"
+   ]
+  },
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "new",
+   "values": {
+    "Title": "Acme",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "Low",
+    "ContractValue": "18,500",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-10-05",
+    "TaxID": "123456789"
+   },
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": {
+   "visible": false,
+   "readonly": true,
+   "required": false
+  }
+ },
+ {
+  "name": "status readonly for requester",
+  "type": "field_state",
+  "field": {
+   "name": "Status",
+   "label": "Status",
+   "type": "choice",
+   "choices": [
+    "Submitted",
+    "Approved",
+    "Rejected"
+   ]
+  },
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Title": "Acme",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "Low",
+    "ContractValue": "18,500",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-10-05",
+    "TaxID": "123456789"
+   },
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": {
+   "visible": true,
+   "readonly": true,
+   "required": false
+  }
+ },
+ {
+  "name": "status editable for reviewer",
+  "type": "field_state",
+  "field": {
+   "name": "Status",
+   "label": "Status",
+   "type": "choice",
+   "choices": [
+    "Submitted",
+    "Approved",
+    "Rejected"
+   ]
+  },
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Title": "Acme",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "Low",
+    "ContractValue": "18,500",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-10-05",
+    "TaxID": "123456789"
+   },
+   "original": {},
+   "user": {
+    "id": 7,
+    "login": "corp\\bob",
+    "title": "Bob",
+    "groups": [
+     "Compliance Reviewers"
+    ]
+   }
+  },
+  "expected": {
+   "visible": true,
+   "readonly": false,
+   "required": false
+  }
+ },
+ {
+  "name": "justification shown when high",
+  "type": "field_state",
+  "field": {
+   "name": "Justification",
+   "label": "Justification",
+   "type": "note"
+  },
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "new",
+   "values": {
+    "Title": "Acme",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "High",
+    "ContractValue": "18,500",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-10-05",
+    "TaxID": "123456789"
+   },
+   "original": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": {
+   "visible": true,
+   "readonly": false,
+   "required": true
+  }
+ },
+ {
+  "name": "display readonly",
+  "type": "field_state",
+  "field": {
+   "name": "Title",
+   "label": "Vendor Name",
+   "type": "text",
+   "required": true,
+   "max_length": 20
+  },
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "display",
+   "values": {
+    "Title": "Acme",
+    "Country": {
+     "id": 3,
+     "title": "Germany"
+    },
+    "RiskRating": "Low",
+    "ContractValue": "18,500",
+    "RequestDate": "2026-10-01",
+    "StartDate": "2026-10-05",
+    "TaxID": "123456789"
+   },
+   "original": {},
+   "user": {
+    "id": 7,
+    "login": "corp\\bob",
+    "title": "Bob",
+    "groups": [
+     "Compliance Reviewers"
+    ]
+   }
+  },
+  "expected": {
+   "visible": true,
+   "readonly": true,
+   "required": false
+  }
+ },
+ {
+  "name": "lock for requester",
+  "type": "lock",
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved"
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": "R8",
+  "message": "This request has been approved and can no longer be edited."
+ },
+ {
+  "name": "no lock for reviewer",
+  "type": "lock",
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Status": "Approved"
+   },
+   "user": {
+    "id": 7,
+    "login": "corp\\bob",
+    "title": "Bob",
+    "groups": [
+     "Compliance Reviewers"
+    ]
+   }
+  },
+  "expected": null
+ },
+ {
+  "name": "set on save",
+  "type": "set_on_save",
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "new",
+   "values": {},
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": {
+   "Status": "Submitted"
+  }
+ },
+ {
+  "name": "banner",
+  "type": "banners",
+  "rules": [
+   {
+    "id": "R1",
+    "kind": "visible",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    }
+   },
+   {
+    "id": "R2",
+    "kind": "required",
+    "field": "Justification",
+    "when": {
+     "field": "RiskRating",
+     "eq": "High"
+    },
+    "message": "Justification is required for high-risk vendors.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R3",
+    "kind": "required",
+    "field": "SecondApprover",
+    "when": {
+     "field": "ContractValue",
+     "gt": 100000
+    },
+    "message": "A Second Approver is required for contracts over $100,000.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R4",
+    "kind": "compare",
+    "field": "StartDate",
+    "params": {
+     "op": "gte",
+     "other": "RequestDate"
+    },
+    "message": "Start Date cannot be before the Request Date.",
+    "presentation": "alert"
+   },
+   {
+    "id": "R5",
+    "kind": "readonly",
+    "field": "Status",
+    "when": {
+     "not": {
+      "role": "Compliance Reviewers"
+     }
+    }
+   },
+   {
+    "id": "R6",
+    "kind": "length",
+    "field": "TaxID",
+    "params": {
+     "op": "eq",
+     "value": 9,
+     "allow_empty": true
+    },
+    "message": "Tax ID must be exactly 9 digits."
+   },
+   {
+    "id": "R7",
+    "kind": "visible",
+    "field": "Status",
+    "modes": [
+     "edit",
+     "display"
+    ]
+   },
+   {
+    "id": "R8",
+    "kind": "lock_item",
+    "modes": [
+     "edit"
+    ],
+    "when": {
+     "all": [
+      {
+       "field": "Status",
+       "in": [
+        "Approved",
+        "Rejected"
+       ]
+      },
+      {
+       "not": {
+        "role": "Compliance Reviewers"
+       }
+      }
+     ]
+    },
+    "message": "This request has been {Status|lower} and can no longer be edited."
+   },
+   {
+    "id": "R9",
+    "kind": "set_on_save",
+    "field": "Status",
+    "modes": [
+     "new"
+    ],
+    "params": {
+     "value": "Submitted"
+    }
+   },
+   {
+    "id": "R10",
+    "kind": "banner",
+    "modes": [
+     "display"
+    ],
+    "when": {
+     "field": "Country.title",
+     "eq": "Iran"
+    },
+    "message": "Sanctioned country: {Country.title}"
+   }
+  ],
+  "ctx": {
+   "mode": "display",
+   "values": {
+    "Country": {
+     "id": 5,
+     "title": "Iran"
+    }
+   },
+   "user": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice",
+    "groups": [
+     "Procurement Members"
+    ]
+   }
+  },
+  "expected": [
+   "Sanctioned country: Iran"
+  ]
+ },
+ {
+  "name": "defaults",
+  "type": "defaults",
+  "fields": [
+   {
+    "name": "Requester",
+    "label": "Requester",
+    "type": "user",
+    "default": "@me"
+   },
+   {
+    "name": "RequestDate",
+    "label": "Request Date",
+    "type": "date",
+    "default": "@today"
+   },
+   {
+    "name": "Kind",
+    "label": "Kind",
+    "type": "choice",
+    "default": "Supplier"
+   }
+  ],
+  "rules": [],
+  "user": {
+   "id": 6,
+   "login": "corp\\alice",
+   "title": "Alice",
+   "groups": [
+    "Procurement Members"
+   ]
+  },
+  "today": "2026-10-28",
+  "expected": {
+   "Requester": {
+    "id": 6,
+    "login": "corp\\alice",
+    "title": "Alice"
+   },
+   "RequestDate": "2026-10-28",
+   "Kind": "Supplier"
+  }
+ },
+ {
+  "name": "template",
+  "type": "fill",
+  "text": "Value {ContractValue} for {Country.title} by {Owner.title}, {Status|upper}",
+  "values": {
+   "ContractValue": 240000.0,
+   "Country": {
+    "id": 1,
+    "title": "Peru"
+   },
+   "Status": "Draft"
+  },
+  "expected": "Value 240000 for Peru by , DRAFT"
+ },
+ {
+  "name": "clear hidden",
+  "type": "clear_hidden",
+  "fields": [
+   {
+    "name": "Screened",
+    "label": "S",
+    "type": "boolean"
+   },
+   {
+    "name": "Result",
+    "label": "R",
+    "type": "choice",
+    "choices": [
+     "Clear"
+    ]
+   }
+  ],
+  "rules": [
+   {
+    "id": "V1",
+    "kind": "visible",
+    "field": "Result",
+    "when": {
+     "field": "Screened",
+     "eq": true
+    },
+    "params": {
+     "clear": true
+    }
+   }
+  ],
+  "ctx": {
+   "mode": "edit",
+   "values": {
+    "Screened": false,
+    "Result": "Clear"
+   },
+   "user": {
+    "groups": []
+   }
+  },
+  "expected": {
+   "Result": null
+  }
+ }
+]

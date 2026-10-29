@@ -1,0 +1,9 @@
+.db-tiles { display: flex; gap: 12px; margin-bottom: 16px; }
+.db-tile { flex: 1; background: #0072c6; color: #fff; padding: 12px 14px; min-width: 110px; }
+.db-tile .db-count { display: block; font-size: 28px; font-weight: 300; }
+.db-tile.db-alert { background: #a80000; }
+.db-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.db-table th { text-align: left; color: #666; font-weight: 400; border-bottom: 1px solid #c6c6c6; padding: 6px 8px; }
+.db-table td { border-bottom: 1px solid #eaeaea; padding: 6px 8px; }
+.db-num { text-align: right; }
+.db-muted { color: #777; }

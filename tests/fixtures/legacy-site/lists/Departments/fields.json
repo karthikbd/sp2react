@@ -1,0 +1,251 @@
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "type": "SP.FieldText"
+        },
+        "InternalName": "Title",
+        "StaticName": "Title",
+        "EntityPropertyName": "Title",
+        "Title": "Title",
+        "TypeAsString": "Text",
+        "Required": true,
+        "Hidden": false,
+        "ReadOnlyField": false,
+        "Sealed": false,
+        "CanBeDeleted": false,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false,
+        "MaxLength": 255
+      },
+      {
+        "__metadata": {
+          "type": "SP.Field"
+        },
+        "InternalName": "ID",
+        "StaticName": "ID",
+        "EntityPropertyName": "ID",
+        "Title": "ID",
+        "TypeAsString": "Counter",
+        "Required": false,
+        "Hidden": false,
+        "ReadOnlyField": true,
+        "Sealed": true,
+        "CanBeDeleted": false,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false
+      },
+      {
+        "__metadata": {
+          "type": "SP.FieldComputed"
+        },
+        "InternalName": "ContentType",
+        "StaticName": "ContentType",
+        "EntityPropertyName": "ContentType",
+        "Title": "Content Type",
+        "TypeAsString": "Computed",
+        "Required": false,
+        "Hidden": false,
+        "ReadOnlyField": true,
+        "Sealed": true,
+        "CanBeDeleted": false,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false
+      },
+      {
+        "__metadata": {
+          "type": "SP.FieldDateTime"
+        },
+        "InternalName": "Modified",
+        "StaticName": "Modified",
+        "EntityPropertyName": "Modified",
+        "Title": "Modified",
+        "TypeAsString": "DateTime",
+        "Required": false,
+        "Hidden": false,
+        "ReadOnlyField": true,
+        "Sealed": true,
+        "CanBeDeleted": false,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false,
+        "DisplayFormat": 1
+      },
+      {
+        "__metadata": {
+          "type": "SP.FieldDateTime"
+        },
+        "InternalName": "Created",
+        "StaticName": "Created",
+        "EntityPropertyName": "Created",
+        "Title": "Created",
+        "TypeAsString": "DateTime",
+        "Required": false,
+        "Hidden": false,
+        "ReadOnlyField": true,
+        "Sealed": true,
+        "CanBeDeleted": false,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false,
+        "DisplayFormat": 1
+      },
+      {
+        "__metadata": {
+          "type": "SP.FieldUser"
+        },
+        "InternalName": "Author",
+        "StaticName": "Author",
+        "EntityPropertyName": "Author",
+        "Title": "Created By",
+        "TypeAsString": "User",
+        "Required": false,
+        "Hidden": false,
+        "ReadOnlyField": true,
+        "Sealed": true,
+        "CanBeDeleted": false,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false
+      },
+      {
+        "__metadata": {
+          "type": "SP.FieldUser"
+        },
+        "InternalName": "Editor",
+        "StaticName": "Editor",
+        "EntityPropertyName": "Editor",
+        "Title": "Modified By",
+        "TypeAsString": "User",
+        "Required": false,
+        "Hidden": false,
+        "ReadOnlyField": true,
+        "Sealed": true,
+        "CanBeDeleted": false,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false
+      },
+      {
+        "__metadata": {
+          "type": "SP.FieldText"
+        },
+        "InternalName": "_UIVersionString",
+        "StaticName": "_UIVersionString",
+        "EntityPropertyName": "_UIVersionString",
+        "Title": "Version",
+        "TypeAsString": "Text",
+        "Required": false,
+        "Hidden": false,
+        "ReadOnlyField": true,
+        "Sealed": true,
+        "CanBeDeleted": false,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false
+      },
+      {
+        "__metadata": {
+          "type": "SP.Field"
+        },
+        "InternalName": "Attachments",
+        "StaticName": "Attachments",
+        "EntityPropertyName": "Attachments",
+        "Title": "Attachments",
+        "TypeAsString": "Attachments",
+        "Required": false,
+        "Hidden": false,
+        "ReadOnlyField": false,
+        "Sealed": true,
+        "CanBeDeleted": false,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false
+      },
+      {
+        "__metadata": {
+          "type": "SP.Field"
+        },
+        "InternalName": "_ModerationStatus",
+        "StaticName": "_ModerationStatus",
+        "EntityPropertyName": "_ModerationStatus",
+        "Title": "Approval Status",
+        "TypeAsString": "ModStat",
+        "Required": false,
+        "Hidden": true,
+        "ReadOnlyField": true,
+        "Sealed": false,
+        "CanBeDeleted": true,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false
+      },
+      {
+        "__metadata": {
+          "type": "SP.Field"
+        },
+        "InternalName": "FileLeafRef",
+        "StaticName": "FileLeafRef",
+        "EntityPropertyName": "FileLeafRef",
+        "Title": "Name",
+        "TypeAsString": "File",
+        "Required": false,
+        "Hidden": true,
+        "ReadOnlyField": true,
+        "Sealed": false,
+        "CanBeDeleted": true,
+        "DefaultValue": null,
+        "Description": "",
+        "ValidationFormula": null,
+        "ValidationMessage": null,
+        "Group": "Custom Columns",
+        "Indexed": false,
+        "EnforceUniqueValues": false
+      }
+    ]
+  }
+}

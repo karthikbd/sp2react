@@ -1,0 +1,93 @@
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "type": "SP.Data.VendorRequestsListItem"
+        },
+        "Id": 1,
+        "ID": 1,
+        "Title": "Northwind Office Supply",
+        "VendorType": "Supplier",
+        "DepartmentId": 2,
+        "CostCenterId": 3,
+        "CountryId": 12,
+        "RiskRating": "Low",
+        "HighRiskJustification": null,
+        "TaxID": "741852963",
+        "ContractValue": 18500.0,
+        "SecondApproverId": null,
+        "RequesterId": 6,
+        "RequestDate": "2026-09-14T04:00:00Z",
+        "StartDate": "2026-10-01T04:00:00Z",
+        "SanctionsScreened": true,
+        "ScreeningResult": "Clear",
+        "Status": "Approved",
+        "ReviewerComments": "Screened clean. Approved.",
+        "AuthorId": 6,
+        "EditorId": 7,
+        "Created": "2026-09-14T15:02:11Z",
+        "Modified": "2026-09-18T19:40:52Z",
+        "_UIVersionString": "3.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.VendorRequestsListItem"
+        },
+        "Id": 2,
+        "ID": 2,
+        "Title": "Lagos Freight Partners Ltd",
+        "VendorType": "Service Provider",
+        "DepartmentId": 2,
+        "CostCenterId": 4,
+        "CountryId": 8,
+        "RiskRating": "High",
+        "HighRiskJustification": "Only carrier with customs bonding at Apapa port.",
+        "TaxID": "963258741",
+        "ContractValue": 240000.0,
+        "SecondApproverId": 9,
+        "RequesterId": 8,
+        "RequestDate": "2026-10-06T04:00:00Z",
+        "StartDate": "2026-11-15T05:00:00Z",
+        "SanctionsScreened": true,
+        "ScreeningResult": "Potential Match",
+        "Status": "Under Review",
+        "ReviewerComments": null,
+        "AuthorId": 8,
+        "EditorId": 7,
+        "Created": "2026-10-06T13:20:45Z",
+        "Modified": "2026-10-08T14:05:10Z",
+        "_UIVersionString": "2.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.VendorRequestsListItem"
+        },
+        "Id": 3,
+        "ID": 3,
+        "Title": "Brightline Analytics GmbH",
+        "VendorType": "Consultant",
+        "DepartmentId": 3,
+        "CostCenterId": 6,
+        "CountryId": 3,
+        "RiskRating": "Low",
+        "HighRiskJustification": null,
+        "TaxID": "852741963",
+        "ContractValue": 72000.0,
+        "SecondApproverId": null,
+        "RequesterId": 6,
+        "RequestDate": "2026-10-20T04:00:00Z",
+        "StartDate": null,
+        "SanctionsScreened": false,
+        "ScreeningResult": null,
+        "Status": "Submitted",
+        "ReviewerComments": null,
+        "AuthorId": 6,
+        "EditorId": 6,
+        "Created": "2026-10-20T16:44:02Z",
+        "Modified": "2026-10-20T16:44:02Z",
+        "_UIVersionString": "1.0"
+      }
+    ]
+  }
+}

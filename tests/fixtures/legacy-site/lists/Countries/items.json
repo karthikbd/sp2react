@@ -1,0 +1,188 @@
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 1,
+        "ID": 1,
+        "Title": "Brazil",
+        "RiskLevel": "Medium",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 2,
+        "ID": 2,
+        "Title": "Canada",
+        "RiskLevel": "Low",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 3,
+        "ID": 3,
+        "Title": "Germany",
+        "RiskLevel": "Low",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 4,
+        "ID": 4,
+        "Title": "India",
+        "RiskLevel": "Medium",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 5,
+        "ID": 5,
+        "Title": "Iran",
+        "RiskLevel": "High",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 6,
+        "ID": 6,
+        "Title": "Mexico",
+        "RiskLevel": "Medium",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 7,
+        "ID": 7,
+        "Title": "Myanmar",
+        "RiskLevel": "High",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 8,
+        "ID": 8,
+        "Title": "Nigeria",
+        "RiskLevel": "High",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 9,
+        "ID": 9,
+        "Title": "Singapore",
+        "RiskLevel": "Low",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 10,
+        "ID": 10,
+        "Title": "United Arab Emirates",
+        "RiskLevel": "Medium",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 11,
+        "ID": 11,
+        "Title": "United Kingdom",
+        "RiskLevel": "Low",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 12,
+        "ID": 12,
+        "Title": "United States",
+        "RiskLevel": "Low",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      },
+      {
+        "__metadata": {
+          "type": "SP.Data.CountriesListItem"
+        },
+        "Id": 13,
+        "ID": 13,
+        "Title": "Venezuela",
+        "RiskLevel": "High",
+        "Created": "2019-02-04T14:10:00Z",
+        "Modified": "2019-02-04T14:10:00Z",
+        "AuthorId": 9,
+        "EditorId": 9,
+        "_UIVersionString": "1.0"
+      }
+    ]
+  }
+}
