@@ -7,3 +7,4 @@ recursive-include src/sp2react/scaffold *
 recursive-include tests *
 prune examples
 global-exclude __pycache__ *.py[cod] *.db
+exclude CLAUDE.md
