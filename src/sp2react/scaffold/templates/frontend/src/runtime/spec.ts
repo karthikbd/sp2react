@@ -68,7 +68,7 @@ export interface ListSpec {
   primary?: boolean;
   fields: Field[];
   attachments?: boolean;
-  views?: Record<string, { fields: string[]; title?: string; rowLimit?: number }>;
+  views?: Record<string, { fields: string[]; title?: string; rowLimit?: number; query?: string | null; default?: boolean }>;
 }
 
 export interface Spec {

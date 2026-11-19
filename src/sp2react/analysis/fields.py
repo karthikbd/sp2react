@@ -27,6 +27,13 @@ TYPE_MAP = {
 }
 
 
+def rest_name(f: dict) -> str:
+    """The property name list items carry in REST: EntityPropertyName (OData__x0032_nd... for internal names
+    that start with '_' or a digit). SharePoint 2010 has no EntityPropertyName, so the same rule is applied here."""
+    name = f["InternalName"]
+    return f.get("EntityPropertyName") or (("OData_" + name) if re.match(r"[_0-9]", name) else name)
+
+
 def _choices(f: dict) -> list[str]:
     c = f.get("Choices")
     return list(unwrap(c) or []) if c else []
@@ -41,6 +48,8 @@ def map_field(f: dict, list_by_id: dict[str, str]) -> Optional[dict]:
     t = f.get("TypeAsString", "Text")
     spec: dict = {"name": name, "label": f.get("Title", name), "type": TYPE_MAP.get(t, "text"), "sp_type": t,
                   "required": bool(f.get("Required"))}
+    if rest_name(f) != name:
+        spec["rest_name"] = rest_name(f)
     if f.get("Description"):
         spec["description"] = f["Description"]
     if t == "Text" and f.get("MaxLength"):

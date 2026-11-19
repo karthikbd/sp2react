@@ -36,6 +36,7 @@ from .spec.coverage import check
 from .spec.model import Spec
 
 log = logging.getLogger(__name__)
+CRITICAL_EXTRACT_ERRORS = ("fields of ", "source of ", "views of ", "forms of ")
 STAGES = ["inputs", "extract", "inventory", "spec", "approve_spec", "convert", "review", "test", "fix", "approve"]
 
 
@@ -178,7 +179,15 @@ class Pipeline:
         self.mark(None, "extract", "running")
         man = Extractor(self.sp, self.ws, self.progress).run(pages, self.cfg.sharepoint.sample_items)
         s = man["summary"]
-        self.mark(None, "extract", "done", f"{s['lists']} lists, {s['pages']} pages, {s['files']} custom files, {s['errors']} errors", summary=s)
+        msg = f"{s['lists']} lists, {s['pages']} pages, {s['files']} custom files, {s['errors']} errors"
+        # a list without its fields or a page without its source would become a screen with nothing in it
+        critical = [e for e in man.get("errors", []) if e["what"].startswith(CRITICAL_EXTRACT_ERRORS)]
+        if critical:
+            self.mark(None, "extract", "failed", msg + "; could not read: " + "; ".join(f"{e['what']} ({e['error'][:120]})" for e in critical[:5])
+                      + ". Fix access or throttling and run extract again.", summary=s)
+            self.progress(f"[extract] FAILED: could not read {len(critical)} required item(s), first: {critical[0]['what']}")
+            return
+        self.mark(None, "extract", "done", msg, summary=s)
 
     def stage_inventory(self, pages: Optional[list[str]]) -> list[dict]:
         self.require(None, "inventory")
@@ -275,6 +284,9 @@ class Pipeline:
         info = generate(self.out, all_specs, self.legacy, export_dir, self.cfg.pipeline.data_source,
                         Path(self.cfg.database.mapping) if self.cfg.pipeline.data_source == "database" else None)
         self.progress(f"[convert] scaffold written in {time.time() - t0:.1f}s ({info['files']} files)")
+        if info.get("kept"):
+            self.progress(f"[convert] kept {len(info['kept'])} changed file(s) as they are; the new versions are next to them "
+                          f"as *.sp2react-new: {', '.join(info['kept'][:10])}")
         routes = [{"screen": sp.screen.id, "kind": sp.screen.kind, "route": sp.screen.route, "list": sp.screen.list,
                    "legacy_urls": sp.screen.legacy_urls} for sp in all_specs]
 
@@ -517,6 +529,9 @@ class Pipeline:
         self.stage_inputs(offline)
         if stop >= 1:
             self.stage_extract(pages, offline)
+            if self.status(None, "extract") == "failed":
+                write_report(self)
+                return self.state
         sids: list[str] = []
         if stop >= 2:
             sids = [s["id"] for s in self.stage_inventory(pages)]

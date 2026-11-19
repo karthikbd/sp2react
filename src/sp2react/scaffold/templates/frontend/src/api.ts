@@ -59,30 +59,30 @@ export const api = {
       .filter(([, v]) => v !== undefined && v !== null && v !== "")
       .map(([k, v]) => `$${k}=${enc(String(v))}`)
       .join("&");
-    return request<{ value: Values[]; count: number }>("GET", `/api/lists/${list}/items${qs ? "?" + qs : ""}`);
+    return request<{ value: Values[]; count: number }>("GET", `/api/lists/${enc(list)}/items${qs ? "?" + qs : ""}`);
   },
-  get: (list: string, id: number | string) => request<Values>("GET", `/api/lists/${list}/items/${id}`),
+  get: (list: string, id: number | string) => request<Values>("GET", `/api/lists/${enc(list)}/items/${id}`),
   state: (list: string, id: number | string, mode = "edit") =>
-    request<{ locked: boolean; message: string | null; redirect: string | null; banners: string[] }>("GET", `/api/lists/${list}/items/${id}/state?mode=${mode}`),
-  create: (list: string, values: Values) => request<Values>("POST", `/api/lists/${list}/items`, { values }),
+    request<{ locked: boolean; message: string | null; redirect: string | null; banners: string[] }>("GET", `/api/lists/${enc(list)}/items/${id}/state?mode=${mode}`),
+  create: (list: string, values: Values) => request<Values>("POST", `/api/lists/${enc(list)}/items`, { values }),
   update: (list: string, id: number | string, values: Values, etag?: string) =>
-    request<Values>("PATCH", `/api/lists/${list}/items/${id}`, { values }, etag ? { "If-Match": etag } : {}),
-  remove: (list: string, id: number | string) => request<null>("DELETE", `/api/lists/${list}/items/${id}`),
+    request<Values>("PATCH", `/api/lists/${enc(list)}/items/${id}`, { values }, etag ? { "If-Match": etag } : {}),
+  remove: (list: string, id: number | string) => request<null>("DELETE", `/api/lists/${enc(list)}/items/${id}`),
   lookup: (list: string, field: string, parent?: number | null, q = "") =>
     request<{ id: number; title: string; [k: string]: any }[]>(
       "GET",
-      `/api/lists/${list}/lookup/${field}?q=${enc(q)}${parent !== undefined && parent !== null ? `&parent=${parent}` : ""}`
+      `/api/lists/${enc(list)}/lookup/${field}?q=${enc(q)}${parent !== undefined && parent !== null ? `&parent=${parent}` : ""}`
     ),
   unique: (list: string, field: string, value: string, exclude = 0) =>
-    request<{ duplicate_id: number | null }>("GET", `/api/lists/${list}/unique/${field}?value=${enc(value)}&exclude=${exclude}`),
-  attachmentUrl: (list: string, id: number | string, name: string) => `/api/lists/${list}/items/${id}/attachments/${enc(name)}`,
+    request<{ duplicate_id: number | null }>("GET", `/api/lists/${enc(list)}/unique/${field}?value=${enc(value)}&exclude=${exclude}`),
+  attachmentUrl: (list: string, id: number | string, name: string) => `/api/lists/${enc(list)}/items/${id}/attachments/${enc(name)}`,
   uploadAttachment: async (list: string, id: number | string, file: File) => {
     const buf = new Uint8Array(await file.arrayBuffer());
     let bin = "";
     for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
-    return request("POST", `/api/lists/${list}/items/${id}/attachments`, { name: file.name, content_base64: btoa(bin) });
+    return request("POST", `/api/lists/${enc(list)}/items/${id}/attachments`, { name: file.name, content_base64: btoa(bin) });
   },
-  deleteAttachment: (list: string, id: number | string, name: string) => request("DELETE", `/api/lists/${list}/items/${id}/attachments/${enc(name)}`),
+  deleteAttachment: (list: string, id: number | string, name: string) => request("DELETE", `/api/lists/${enc(list)}/items/${id}/attachments/${enc(name)}`),
 };
 
 export type Api = typeof api;

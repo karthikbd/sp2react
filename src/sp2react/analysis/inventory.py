@@ -77,10 +77,26 @@ class Legacy:
         return None
 
 
+def safe_id(text: str) -> str:
+    """A screen id that is also a folder name: letters, digits, '_', '-' and '.' (never leading)."""
+    s = re.sub(r"[^A-Za-z0-9_.\-]+", "_", text).strip("._") or "screen"
+    return s
+
+
+def _page_stem(page: str) -> str:
+    return page.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+
+
 def screens(legacy: Legacy, only: Optional[list[str]] = None) -> list[dict]:
-    """Group pages into screens: one per list with forms, one per other page."""
+    """Group pages into screens: one per list with forms, one per other page.
+
+    A page's id is its file name; when two pages share a file name (Home.aspx in SitePages and in Pages)
+    both get their folder in the id, so no screen overwrites another."""
     out, used = [], set()
     pages = legacy.pages()
+    stems: dict[str, int] = {}
+    for page in pages:
+        stems[_page_stem(page).lower()] = stems.get(_page_stem(page).lower(), 0) + 1
     wanted = None
     if only:
         wanted = {legacy.site_rel(p) if p.startswith(("/", "http")) else p for p in only}
@@ -93,13 +109,14 @@ def screens(legacy: Legacy, only: Optional[list[str]] = None) -> list[dict]:
             l = legacy.lists[key]
             members = [f"{l['url']}/{f}" for f in l.get("forms", {}).values() if f"{l['url']}/{f}" in pages] or [page]
             used.update(members)
-            scr = {"id": f"{key}-form", "kind": "list-form", "list": key, "title": l["title"], "pages": members,
+            scr = {"id": safe_id(f"{key}-form"), "kind": "list-form", "list": key, "title": l["title"], "pages": members,
                    "route": f"/lists/{kebab(key)}"}
         else:
             used.add(page)
-            stem = page.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-            scr = {"id": stem, "kind": "page", "list": None, "title": parsed.title or stem, "pages": [page],
-                   "route": f"/pages/{kebab(stem)}"}
+            stem = _page_stem(page)
+            name = page.rsplit(".", 1)[0].replace("/", "-") if stems[stem.lower()] > 1 else stem
+            scr = {"id": safe_id(name), "kind": "page", "list": None, "title": parsed.title or stem, "pages": [page],
+                   "route": f"/pages/{kebab(name)}"}
         if wanted is None or wanted & set(scr["pages"]):
             out.append(scr)
     return out

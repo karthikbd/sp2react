@@ -22,6 +22,8 @@ class SharePointConfig(BaseModel):
     token_env: str = "SP_TOKEN"                # bearer token (SharePoint Online / Entra)
     verify_ssl: Union[bool, str] = True        # True, False, or path to a corporate CA bundle
     timeout: int = 60
+    retries: int = 4                           # re-tries of a GET that was throttled (429/503) or cut off; waits honour Retry-After
+    max_retry_wait: int = 120                  # longest single wait between re-tries (seconds)
     sample_items: int = 200                    # rows exported per list (lookup values, seed data)
     extra_headers: dict[str, str] = Field(default_factory=dict)
 

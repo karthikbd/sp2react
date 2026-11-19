@@ -155,6 +155,7 @@ def test_existing_database_mode_reads_no_list_items(tmp_path, mock, monkeypatch)
     monkeypatch.setenv("DB_URL", url)
     monkeypatch.setenv("MAPPING_FILE", str(be / "mapping.json"))
     monkeypatch.setenv("DATA_SOURCE", "database")
+    monkeypatch.setenv("AUTH_MODE", "dev")          # X-User picks the seeded user; the default is header (fails closed)
     sys.path.insert(0, str(be))
     for m in [k for k in sys.modules if k == "app" or k.startswith("app.")]:
         del sys.modules[m]

@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import re
 from typing import Any, Optional
+from urllib.parse import quote
 
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
@@ -15,6 +16,8 @@ from .odata import ODataError, apply_query
 from .store import Conflict
 
 router = APIRouter(prefix="/api")
+# SharePoint's own rule: no " * : < > ? / \\ | and no leading or trailing dot or space
+ATTACHMENT_NAME = re.compile(r'^[^"*:<>?/\\|\x00-\x1f]{1,128}$')
 SAVE_CONFLICT = "Save Conflict. Your changes conflict with those made concurrently by another user. Refresh the page and resubmit your changes."
 
 
@@ -39,6 +42,25 @@ def _authorize(request: Request, user: dict, method: str, path: str) -> None:
         raise HTTPException(403, "Sorry, you don't have access to this page.")
 
 
+def _locked(request: Request, list_name: str, item: dict, user: dict) -> Optional[JSONResponse]:
+    """423 when the list's lock rules say this user may no longer change the item (same rule as editing it)."""
+    locked = R.lock(_specs(request).list_rules(list_name), {"mode": "edit", "values": item, "original": item, "user": user})
+    if not locked:
+        return None
+    return JSONResponse(status_code=423, content={"message": R.fill_template(locked.get("message", ""), item),
+                                                  "redirect": (locked.get("params") or {}).get("redirect", "display")})
+
+
+def _changeable(request: Request, list_name: str, iid: int, user: dict, method: str) -> tuple[dict, Optional[JSONResponse]]:
+    """Checks every change to an existing item (delete, attachments) goes through: list, roles, existence, lock."""
+    _list(request, list_name)
+    _authorize(request, user, method, f"/api/lists/{list_name}/items/{{id}}")
+    item = _repo(request).get(list_name, iid)
+    if not item:
+        raise HTTPException(404, "Item does not exist. It may have been deleted by another user.")
+    return item, _locked(request, list_name, item, user)
+
+
 # ----------------------------------------------------------------- meta
 @router.get("/me")
 def me(user: dict = Depends(current_user)):
@@ -54,13 +76,13 @@ def users(request: Request, search: str = "", user: dict = Depends(current_user)
 
 
 @router.get("/screens")
-def screens(request: Request):
+def screens(request: Request, user: dict = Depends(current_user)):
     return [{"id": sid, "title": s["screen"]["title"], "route": s["screen"]["route"], "kind": s["screen"]["kind"],
              "legacy_urls": s["screen"].get("legacy_urls", [])} for sid, s in _specs(request).screens.items()]
 
 
 @router.get("/specs/{screen_id}")
-def spec(request: Request, screen_id: str):
+def spec(request: Request, screen_id: str, user: dict = Depends(current_user)):
     s = _specs(request).screens.get(screen_id)
     if not s:
         raise HTTPException(404, "Unknown screen")
@@ -149,10 +171,9 @@ def _save(request: Request, list_name: str, mode: str, payload: dict, user: dict
     if iid and not original:
         raise HTTPException(404, "Item does not exist. It may have been deleted by another user.")
     if mode == "edit":
-        locked = R.lock(rules, {"mode": mode, "values": original, "original": original, "user": user})
-        if locked:
-            msg = R.fill_template(locked.get("message", ""), original)
-            return JSONResponse(status_code=423, content={"message": msg, "redirect": (locked.get("params") or {}).get("redirect", "display")})
+        refused = _locked(request, list_name, original, user)
+        if refused:
+            return refused
 
     values: dict = dict(original) if mode == "edit" else R.defaults(fields, rules, user)
     incoming = {k: _coerce(by_name.get(k), v) for k, v in (payload or {}).items() if k in by_name}
@@ -228,8 +249,9 @@ def update_item(request: Request, list_name: str, iid: int, body: dict = Body(..
 
 @router.delete("/lists/{list_name}/items/{iid}", status_code=204)
 def delete_item(request: Request, list_name: str, iid: int, user: dict = Depends(current_user)):
-    _list(request, list_name)
-    _authorize(request, user, "DELETE", f"/api/lists/{list_name}/items/{{id}}")
+    _, refused = _changeable(request, list_name, iid, user, "DELETE")
+    if refused:
+        return refused
     _repo(request).delete(list_name, iid)
     return Response(status_code=204)
 
@@ -266,28 +288,42 @@ def lookup_options(request: Request, list_name: str, field: str, parent: Optiona
 @router.get("/lists/{list_name}/unique/{field}")
 def unique_check(request: Request, list_name: str, field: str, value: str, exclude: int = 0, user: dict = Depends(current_user)):
     _list(request, list_name)
+    _authorize(request, user, "GET", f"/api/lists/{list_name}/items")
     dup = _find_duplicate(_repo(request), list_name, field, value, exclude)
     return {"duplicate_id": dup["ID"] if dup else None}
 
 
 @router.get("/lists/{list_name}/items/{iid}/attachments/{name}")
 def get_attachment(request: Request, list_name: str, iid: int, name: str, user: dict = Depends(current_user)):
+    get_item(request, list_name, iid, user)
     data = _repo(request).attachment(list_name, iid, name)
     if data is None:
         raise HTTPException(404, "Attachment not found")
-    return Response(content=data, media_type="application/octet-stream", headers={"Content-Disposition": f'attachment; filename="{name}"'})
+    return Response(content=data, media_type="application/octet-stream", headers={"Content-Disposition": "attachment; filename*=UTF-8''" + quote(name, safe="")})
 
 
 @router.post("/lists/{list_name}/items/{iid}/attachments")
 def add_attachment(request: Request, list_name: str, iid: int, body: dict = Body(...), user: dict = Depends(current_user)):
+    _, refused = _changeable(request, list_name, iid, user, "PATCH")
+    if refused:
+        return refused
     if not _specs(request).lists.get(list_name, {}).get("attachments"):
         raise HTTPException(400, "Attachments are disabled for this list")
-    base64.b64decode(body["content_base64"], validate=True)
-    _repo(request).add_attachment(list_name, iid, body["name"], body["content_base64"])
+    name = str(body.get("name") or "")
+    if not ATTACHMENT_NAME.match(name) or name.strip(". ") != name or ".." in name:
+        raise HTTPException(400, "That file name is not allowed")
+    try:
+        base64.b64decode(body["content_base64"], validate=True)
+    except (KeyError, ValueError):
+        raise HTTPException(400, "content_base64 must be base64")
+    _repo(request).add_attachment(list_name, iid, name, body["content_base64"])
     return {"ok": True}
 
 
 @router.delete("/lists/{list_name}/items/{iid}/attachments/{name}", status_code=204)
 def delete_attachment(request: Request, list_name: str, iid: int, name: str, user: dict = Depends(current_user)):
+    _, refused = _changeable(request, list_name, iid, user, "PATCH")
+    if refused:
+        return refused
     _repo(request).delete_attachment(list_name, iid, name)
     return Response(status_code=204)

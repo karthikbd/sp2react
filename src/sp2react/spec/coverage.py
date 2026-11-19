@@ -12,7 +12,9 @@ from .model import NEEDS_FIELD, NEEDS_MESSAGE, RULE_PARAMS, Spec
 
 OPS = {"eq", "ne", "in", "nin", "gt", "gte", "lt", "lte", "empty", "notEmpty", "changed"}
 COMPARE_OPS = {"eq", "ne", "gt", "gte", "lt", "lte"}
-ENDPOINT_PATH = re.compile(r"^/api/[A-Za-z0-9_\-/{}.]+$")
+# list names in SharePoint URLs may hold spaces and other characters; '..', '?', '#' and '%' are never valid here
+ENDPOINT_PATH = re.compile(r"^/api/(?!.*\.\.)[\w\-/{}. ()',+@$=;!&]+$")
+HANDLER_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
 
 
 @dataclass
@@ -153,6 +155,8 @@ def check(spec: Spec, inv: dict) -> CoverageReport:
             for p in ("parent",):
                 if r.params.get(p) not in flds:
                     problems.append(f"{where}: params.{p} '{r.params.get(p)}' is not in list {lst}")
+        if r.kind == "custom" and not HANDLER_NAME.match(str(r.params.get("handler", ""))):
+            problems.append(f"{where}: params.handler '{r.params.get('handler')}' must be a plain identifier (letters, digits, _)")
         if r.kind == "on_save":
             act = r.params.get("action")
             if not isinstance(act, dict) or act.get("type") not in ("create_item", "update_item", "custom"):

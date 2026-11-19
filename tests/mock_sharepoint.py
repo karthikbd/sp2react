@@ -27,6 +27,7 @@ class MockSharePoint:
         self.prefix = self.site["serverRelativeUrl"]
         self.cookie = cookie
         self.requests: list[tuple[str, str]] = []
+        self.faults: dict[str, list[int]] = {}       # path substring -> statuses to answer with first (throttling, outages)
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), self._handler())
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
 
@@ -156,6 +157,13 @@ class MockSharePoint:
                     return
                 parts = urlsplit(self.path)
                 path = unquote(parts.path)
+                for frag, statuses in mock.faults.items():
+                    if frag in path and statuses:
+                        self.send_response(statuses.pop(0))
+                        self.send_header("Retry-After", "0")
+                        self.send_header("Content-Length", "0")
+                        self.end_headers()
+                        return
                 from urllib.parse import parse_qs
                 q = {k: v[0] for k, v in parse_qs(parts.query).items()}
                 if "$skiptoken" in q:

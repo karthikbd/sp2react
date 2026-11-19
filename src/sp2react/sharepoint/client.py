@@ -5,7 +5,9 @@ Only GET requests are ever issued: the extractor must never change the source si
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+import time
+from email.utils import parsedate_to_datetime
+from typing import Any, Callable, Optional
 from urllib.parse import quote, urlsplit
 
 import requests
@@ -109,14 +111,45 @@ class SharePointClient:
         if not self.item_reads:
             raise ItemReadBlocked(f"Reading {what} from SharePoint is disabled (data_source=database / security.sharepoint_item_reads=false).")
 
+    RETRY_STATUS = (429, 503)
+    sleep: Callable[[float], None] = staticmethod(time.sleep)
+
+    def _wait(self, attempt: int, r: Optional[requests.Response]) -> float:
+        """Seconds to wait before the next try: SharePoint's Retry-After when it sends one, else 1, 2, 4, 8 ..."""
+        ra = r.headers.get("Retry-After") if r is not None else None
+        wait = float(2 ** attempt)
+        if ra:
+            try:
+                wait = float(ra)
+            except ValueError:
+                try:
+                    wait = parsedate_to_datetime(ra).timestamp() - time.time()
+                except (TypeError, ValueError):
+                    pass
+        return max(0.0, min(wait, float(self.cfg.max_retry_wait)))
+
     def _get(self, url: str, accept: Optional[str] = None, params: Optional[dict] = None) -> requests.Response:
         headers = {"Accept": accept} if accept else None
-        try:
-            r = self.session.get(self.absolute(url), headers=headers, params=params, timeout=self.cfg.timeout)
-        except requests.RequestException as e:
-            raise SharePointError(f"GET {url} failed: {e}") from e
+        attempt = 0
+        while True:
+            try:
+                r = self.session.get(self.absolute(url), headers=headers, params=params, timeout=self.cfg.timeout)
+            except (requests.ConnectionError, requests.Timeout) as e:
+                if attempt >= self.cfg.retries:
+                    raise SharePointError(f"GET {url} failed after {attempt + 1} tries: {e}") from e
+                r, err = None, e
+            except requests.RequestException as e:
+                raise SharePointError(f"GET {url} failed: {e}") from e
+            else:
+                if r.status_code not in self.RETRY_STATUS or attempt >= self.cfg.retries:
+                    break
+            wait = self._wait(attempt, r)
+            log.warning("GET %s: %s; trying again in %.0fs (%d/%d)", url, f"HTTP {r.status_code}" if r is not None else err,
+                        wait, attempt + 1, self.cfg.retries)
+            self.sleep(wait)
+            attempt += 1
         if r.status_code >= 400:
-            raise SharePointError(f"GET {url} -> HTTP {r.status_code}: {r.text[:300]}", r.status_code)
+            raise SharePointError(f"GET {url} -> HTTP {r.status_code}{f' after {attempt + 1} tries' if attempt else ''}: {r.text[:300]}", r.status_code)
         return r
 
     def api(self, path: str, params: Optional[dict] = None) -> Any:

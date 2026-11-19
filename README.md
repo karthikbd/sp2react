@@ -142,7 +142,7 @@ cd converted-app/frontend && npm install && npm run dev
 - Behaviour comes from the spec at runtime. `runtime/rules.ts` (browser) and `app/rules.py` (API) interpret the same rules, and shared vectors keep them in agreement, so a direct API call cannot bypass a rule.
 - The form uses SharePoint's layout, labels and control titles, the legacy site CSS is carried over, and old URLs (`/Lists/X/EditForm.aspx?ID=3&Source=...`) redirect to the new routes.
 - SharePoint groups become roles. Membership comes from your users/groups tables or `data/roles.json`.
-- Authentication: `AUTH_MODE=dev` for local work; `header` behind your gateway, or Entra ID in `app/auth.py`.
+- Authentication: `AUTH_MODE=header` (default) behind your gateway, or Entra ID in `app/auth.py`; `AUTH_MODE=dev` for local work only.
 
 ## Use it from your own tool
 
@@ -166,8 +166,8 @@ p.state            # also written to sp2react-work/state.json
 
 | Converts | Needs your input, or is not converted yet |
 |---|---|
-| List forms (New/Edit/Display) and their jQuery/SPServices behaviour | Workflows, event receivers, compiled solutions: their code is not reachable over REST. They are flagged; export the definitions or source to convert them |
-| Web part pages (SitePages) with Script Editor / Content Editor JavaScript | InfoPath and Power Apps forms: reported, not converted |
+| List forms (New/Edit/Display) and their jQuery/SPServices behaviour | Workflows, event receivers, compiled solutions: their code is not reachable over REST, and sp2react does not detect them yet. Check Site Contents; export the definitions or source to convert them |
+| Web part pages (SitePages) with Script Editor / Content Editor JavaScript | InfoPath and Power Apps forms: not detected, not converted |
 | Basic list views (columns, sort, row limit) | Views with filters and grouping, document libraries, custom master-page branding, rich grids (sort/search/select/export), modal dialogs: planned |
 | SharePoint groups as roles, old URL redirects | Calculated columns are shown but not recomputed; managed metadata, item-level permissions, alert emails |
 

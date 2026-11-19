@@ -1,0 +1,118 @@
+{
+ "backend/app/__init__.py": [
+  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+ ],
+ "backend/app/api.py": [
+  "e848a2051bbe347c6cdfb8c17ff861da1dfb3593680ecac04ad6c1870aa9735e"
+ ],
+ "backend/app/auth.py": [
+  "0a6ef2e3b88035879850f4539630fe60351ccdc20bc323139895b1c53e66aa0f"
+ ],
+ "backend/app/custom/__init__.py": [
+  "4c2d3987d7a12832c9864572375c276001247bf701b0c350eff9fc0f61ddf2fb"
+ ],
+ "backend/app/main.py": [
+  "c99a23fd2185c3dcde55dd6db5c7ca3790795e5069f7eb80c5f6751376a9354f"
+ ],
+ "backend/app/odata.py": [
+  "9144790e6a7c6c8575d0d57a8265b6ce6412a4216c229f2abd35ebd7995521eb"
+ ],
+ "backend/app/rules.py": [
+  "71ff39dbc4c982a22483c8a75bbe7ce59d6f608269d2b10acf984052291a0ccd"
+ ],
+ "backend/app/sp_repo.py": [
+  "53d8caa38e6e4c2a68a5be518fd4771a5dbb8908d5394a14120acaeb2333f164"
+ ],
+ "backend/app/sql_repo.py": [
+  "286fdf6aefa8ebd16d841bd0790c07e5ad92d270092309d7b2ba18cc9ecd534e"
+ ],
+ "backend/app/store.py": [
+  "249192a60c1d9afa29d67f540a8794cfaa609d6499dcb784fe81ee571e4d4e76"
+ ],
+ "backend/requirements.txt": [
+  "1f2c9bde89f1cd61e77c976b668060daf8318a3c631579cf7853c046e5c6d84c",
+  "374f1d8a2cf7e385e53eb7593d44d513985f1ae90530a60c29c963a6ce0a93e6"
+ ],
+ "backend/tests/conftest.py": [
+  "e962eb5960200b8bb374ac74f87878a901ff536ce8eefbb98abe255815982a5a"
+ ],
+ "backend/tests/test_rule_vectors.py": [
+  "79855b93a5269bb4514dfa475f24b8ad1f8822881d5fd50a7ebabd0ea4f89694"
+ ],
+ "frontend/index.html": [
+  "848827ce8a18c13c48591542440f0121ec8bc4cd6604ae3df1a52a2ad04c07e6"
+ ],
+ "frontend/package.json": [
+  "3d892797321f40f1550d0eb773522868b23e7dd859c4350d077feb89e9038171",
+  "52fc50ce67f4bd9452add834e8a604dac4e711e24b9701434c291256decdf544"
+ ],
+ "frontend/scripts/check-rules.ts": [
+  "c79968de58caf4ba38adc56e807799cc134bc3d18136454f3de2d397c961e3ac"
+ ],
+ "frontend/src/api.ts": [
+  "5370498ccab46a59442f174fed3043d90bb003866457ef503c34aa022b99a76b"
+ ],
+ "frontend/src/components/sp/Banner.tsx": [
+  "e4a30d18edad761f2b7d53ff5864688c145ce4e9532c19cb20855cb6247a47c7"
+ ],
+ "frontend/src/components/sp/DataTable.tsx": [
+  "550684b2a823918c23281441f5a4a2de441061440aec426ea7e1606fec2ca677"
+ ],
+ "frontend/src/components/sp/Form.tsx": [
+  "f106935655dd65ea7639ae58920dc8435dceae46646e1ccaeb49ed7bbe764343"
+ ],
+ "frontend/src/components/sp/GenericPage.tsx": [
+  "af88c3e398388f4eb1c53de0c1c38c2561bdc4919c984585e0a8b9a4496723c9"
+ ],
+ "frontend/src/components/sp/Layout.tsx": [
+  "d99294a74bfcde8d2dfeebd761cf29c71aa2fee20a31b9f70f36dc800944028c"
+ ],
+ "frontend/src/components/sp/LegacyHtml.tsx": [
+  "0606c35c24ab8bf4d7be85e60d8683156b63b6512049b8af52bed15be9c57885"
+ ],
+ "frontend/src/components/sp/ListView.tsx": [
+  "c289adf0888d2169ec4c824bc9be6e838a71f55480be12a2abfdac3b06b49e3d"
+ ],
+ "frontend/src/components/sp/Tiles.tsx": [
+  "d0b156cd94600e12458de6041faca067ea28b86ee1ea8fc9596fb1ab7220d336"
+ ],
+ "frontend/src/components/sp/fields.tsx": [
+  "497e1fdcaf3fbb3fcb2098026008e45e973b35d7489fa831e6e0fc17073d5112"
+ ],
+ "frontend/src/custom/types.ts": [
+  "1065021a42b6be1be7b499efd8a0d84974fb5526c00fff706e51c323ab3f7a2e"
+ ],
+ "frontend/src/main.tsx": [
+  "bee98d288097c4414891345561d77f5c837d9d9611fede63b278d520daf8eadd"
+ ],
+ "frontend/src/runtime/format.ts": [
+  "05456338f5945d0983adf0c6611b94ed37f23d0cf7b4696ef9772076975eb0c8"
+ ],
+ "frontend/src/runtime/rules.ts": [
+  "8385aa30ca32919fc21a468b98723af184452366b99c5caa6d72a6c3215ba2e0"
+ ],
+ "frontend/src/runtime/spec.ts": [
+  "d1218a72ecf991cf239682d0973f14b70eaf458681c5ed0ea7241c763f55aa6d"
+ ],
+ "frontend/src/runtime/user.tsx": [
+  "e519e447eb714195e8b4160293b1844935cbdebd98082dde40cc91d689b483df"
+ ],
+ "frontend/src/screens/LegacyRedirect.tsx": [
+  "4b93b6f6bf57127931a6ca1657c05e53c135c8b919b341704617a37ea6f51175"
+ ],
+ "frontend/src/screens/ListFormScreen.tsx": [
+  "ca63ae31965bdfb60ba574c4cb210fa0208ff2a51268c1d868145f294129110d"
+ ],
+ "frontend/src/styles/sp.css": [
+  "a6f26932b443b7a2db18667b0f4ae70d95270e50e422f673bf6151fd54eec3f4"
+ ],
+ "frontend/src/vite-env.d.ts": [
+  "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+ ],
+ "frontend/tsconfig.json": [
+  "c10a3d5a639be7a8c520d1028bce608abf40cc4179aeeb64e8b87430e7db81b4"
+ ],
+ "frontend/vite.config.ts": [
+  "acc6b54beb2f360ad9db51c7f56f451e1c2dde9ef2061539f201b606112cb477"
+ ]
+}

@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -67,6 +68,21 @@ def _results(v):
     return v.get("results", []) if isinstance(v, dict) else (v or [])
 
 
+def source_value(f: dict, it: dict, suffix: str = ""):
+    """A field's value in a raw REST item. Items are keyed by the field's REST name (EntityPropertyName), which
+    differs from the internal name for columns that start with '_' or a digit; older specs only have the name."""
+    for key in dict.fromkeys((f.get("rest_name") or "", f["name"], ("OData_" + f["name"]) if re.match(r"[_0-9]", f["name"]) else "")):
+        if key and key + suffix in it:
+            return it[key + suffix]
+    return None
+
+
+def has_source_key(f: dict, it: dict) -> bool:
+    """REST returns every column of an item, null or not: a field that is in no exported item was read by the wrong name."""
+    names = {f.get("rest_name") or "", f["name"], ("OData_" + f["name"]) if re.match(r"[_0-9]", f["name"]) else ""} - {""}
+    return any(n in it or n + "Id" in it for n in names)
+
+
 def transform(items: list[dict], fields: list[dict]) -> list[dict]:
     rows = []
     for it in items:
@@ -74,20 +90,21 @@ def transform(items: list[dict], fields: list[dict]) -> list[dict]:
         for f in fields:
             n, t = f["name"], f["type"]
             if t in ("lookup", "user"):
-                raw = it.get(f"{n}Id", it.get(n))
+                raw = source_value(f, it, "Id")
+                raw = source_value(f, it) if raw is None else raw
                 row[n] = sorted(_results(raw)) if f.get("multi") else (raw if isinstance(raw, int) else None)
             elif t == "multichoice":
-                row[n] = list(_results(it.get(n)))
+                row[n] = list(_results(source_value(f, it)))
             elif t == "date":
-                row[n] = date_only(it.get(n))
+                row[n] = date_only(source_value(f, it))
             elif t == "url":
-                v = it.get(n)
+                v = source_value(f, it)
                 row[n] = v.get("Url") if isinstance(v, dict) else v
             elif t in ("number", "currency"):
-                v = it.get(n)
+                v = source_value(f, it)
                 row[n] = float(v) if v not in (None, "") else None
             else:
-                row[n] = it.get(n)
+                row[n] = source_value(f, it)
         ver = str(it.get("_UIVersionString") or it.get("OData__UIVersionString") or "1.0").split(".")[0]
         row["_meta"] = {"version": int(ver) if ver.isdigit() else 1, "created": it.get("Created"), "modified": it.get("Modified"),
                         "author": it.get("AuthorId"), "editor": it.get("EditorId")}
@@ -143,11 +160,12 @@ def read_through_app(app: Path, db_path: Path, load: bool, env: Optional[dict] =
 
 # --------------------------------------------------------------- reconcile
 def _norm_source(f: dict, it: dict):
-    n, t = f["name"], f["type"]
+    t = f["type"]
     if t in ("lookup", "user"):
-        raw = it.get(f"{n}Id", it.get(n))
+        raw = source_value(f, it, "Id")
+        raw = source_value(f, it) if raw is None else raw
         return sorted(_results(raw)) if f.get("multi") else (raw if isinstance(raw, int) else None)
-    v = it.get(n)
+    v = source_value(f, it)
     if t == "multichoice":
         return sorted(_results(v))
     if t == "date":
@@ -188,7 +206,9 @@ def reconcile(export_dir: Path, app_items: dict, specs_lists: dict, max_rows: in
         dst = {int(it["ID"]): it for it in app_items.get(key, [])}
         lr = {"source_items": len(src), "app_items": len(dst), "missing_in_app": sorted(set(src) - set(dst)),
               "extra_in_app": sorted(set(dst) - set(src)), "field_mismatches": [], "orphan_lookups": [], "attachment_mismatches": [],
-              "fields_checked": len(fields) + len(SYSTEM)}
+              "fields_checked": len(fields) + len(SYSTEM),
+              "fields_not_in_export": [f["name"] for f in fields if src and not f.get("read_only") and f["type"] != "calculated"
+                                       and not any(has_source_key(f, it) for it in src.values())]}
         canon_src, canon_dst = [], []
         for iid in sorted(set(src) & set(dst)):
             s, d = src[iid], dst[iid]
@@ -222,7 +242,8 @@ def reconcile(export_dir: Path, app_items: dict, specs_lists: dict, max_rows: in
             canon_dst.append(rd)
         fp = lambda rows: hashlib.sha256(json.dumps(rows, sort_keys=True, default=str).encode()).hexdigest()[:16]
         lr["fingerprint_sharepoint"], lr["fingerprint_app"] = fp(canon_src), fp(canon_dst)
-        lr["ok"] = not (lr["missing_in_app"] or lr["extra_in_app"] or lr["field_mismatches"] or lr["orphan_lookups"] or lr["attachment_mismatches"])
+        lr["ok"] = not (lr["missing_in_app"] or lr["extra_in_app"] or lr["field_mismatches"] or lr["orphan_lookups"]
+                        or lr["attachment_mismatches"] or lr["fields_not_in_export"])
         report["lists"][key] = lr
         report["ok"] = report["ok"] and lr["ok"]
     return report
@@ -242,6 +263,9 @@ def report_markdown(rep: dict, export_meta: dict) -> str:
         if l["ok"]:
             continue
         lines += ["", f"## {key}", ""]
+        if l.get("fields_not_in_export"):
+            lines.append(f"- Not found in any exported item, so not compared: {', '.join(l['fields_not_in_export'])} "
+                         "(the field's REST name differs from its internal name; re-run extract to record it)")
         if l["missing_in_app"]:
             lines.append(f"- Missing in the app: IDs {l['missing_in_app'][:50]}")
         if l["extra_in_app"]:

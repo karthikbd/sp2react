@@ -37,10 +37,14 @@ def create_app() -> FastAPI:
     if dist.exists():
         app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
 
+        root = dist.resolve()
+
         @app.get("/{path:path}", include_in_schema=False)
         def spa(path: str):
-            f = dist / path
-            return FileResponse(f if f.is_file() else dist / "index.html")
+            # Only files inside the built frontend are served; anything else (including ../ tricks) gets the app shell.
+            f = (root / path).resolve()
+            inside = f != root and root in f.parents
+            return FileResponse(f if inside and f.is_file() else root / "index.html")
     return app
 
 

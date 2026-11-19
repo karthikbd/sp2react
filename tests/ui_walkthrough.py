@@ -1,7 +1,8 @@
 """Drive the generated app in a browser and check the legacy behaviours end to end.
 
 Usage: python tests/ui_walkthrough.py http://localhost:8000 <screenshot dir>
-(backend serving the built frontend, seeded with the replica site's data)
+(backend serving the built frontend, seeded with the replica site's data, started with AUTH_MODE=dev so the
+walkthrough can act as each seeded user)
 """
 from __future__ import annotations
 

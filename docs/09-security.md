@@ -62,7 +62,12 @@ All credentials come from environment variables named in the config: SharePoint 
 
 ## The generated app
 
-- Ships with `AUTH_MODE=dev` for local work. Production must use `AUTH_MODE=header` behind an authenticating gateway, or Entra ID token validation in `app/auth.py`.
+- Fails closed: without `AUTH_MODE`, the API expects an identity header from an authenticating gateway (`AUTH_MODE=header`) and answers 401 without it. `AUTH_MODE=dev` (set in `.env.example` for local work) only accepts requests from the same machine. For production use `header` behind your gateway, or Entra ID token validation in `app/auth.py`.
+- Every API route, including `/api/screens` and `/api/specs`, needs a signed-in user. Deleting an item and adding or removing attachments follow the same lock and role rules as editing it.
+- Serves only files inside the built front end (`FRONTEND_DIST`); other paths get the app shell.
+- Legacy Content Editor / Script Editor markup is rebuilt from an allow-list of tags and attributes (`runtime/sanitize.ts`), so scripts, event handlers, `svg` and `javascript:` links cannot reach the page.
+- Files written by agents must be plain relative paths inside the screen's own folder (or the handler's two files); anything else is refused before it is written.
+- Regenerating never overwrites a template file someone changed (such as `app/auth.py`): the new version is written next to it as `<file>.sp2react-new`.
 - Enforces every rule on the server (`app/rules.py`), so a direct API call cannot bypass validation, read-only fields, locks or role checks.
 - Uses parameterised SQL through SQLAlchemy; `$filter` input is parsed into expressions, never concatenated into SQL.
 - Restricts CORS to `CORS_ORIGINS`.

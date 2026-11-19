@@ -64,9 +64,9 @@ The back end reads environment variables (or `--env-file .env` with uvicorn).
 | `DB_URL` | – | SQLAlchemy URL of your database (same format as `SP2REACT_DB_URL`) |
 | `MAPPING_FILE` | `./mapping.json` | list-to-table mapping |
 | `DB_SCHEMA` | from the mapping | schema, if not in the mapping |
-| `AUTH_MODE` | `dev` | `dev` (local only) or `header` |
+| `AUTH_MODE` | `header` | `header` (identity from your gateway) or `dev` (local testing only; `.env.example` sets it) |
 | `IDENTITY_HEADER` | `X-MS-CLIENT-PRINCIPAL-NAME` | header carrying the signed-in login when `AUTH_MODE=header` |
-| `DEV_USER` | first user | default user in `dev` mode |
+| `DEV_USER` | first user | user in `dev` mode when no `X-User` header is sent |
 | `CORS_ORIGINS` | `http://localhost:5173` | comma-separated origins allowed to call the API |
 | `FRONTEND_DIST` | `../frontend/dist` | built front end to serve; if present, the API serves the UI too |
 | `SPEC_DIR`, `DATA_DIR` | `specs/`, `data/` | where specs and data files are read from |
@@ -77,8 +77,8 @@ The back end reads environment variables (or `--env-file .env` with uvicorn).
 
 SharePoint groups become roles with the same names, so rules such as "only Compliance Reviewers may edit Status" keep working unchanged.
 
-- **`AUTH_MODE=dev`**: the caller is chosen by an `X-User` header, the `DEV_USER` variable, or the "Acting as" switcher shown in `npm run dev`. Local testing only.
-- **`AUTH_MODE=header`**: the login comes from `IDENTITY_HEADER`, set by an authenticating gateway in front of the API (for example Azure App Service authentication, or a reverse proxy doing Windows authentication). Never expose the API directly in this mode.
+- **`AUTH_MODE=dev`**: the caller is chosen by an `X-User` header, the `DEV_USER` variable, or the "Acting as" switcher shown in `npm run dev`. Local testing only: it must be set explicitly, and the API refuses dev-mode requests that do not come from the same machine. Since 0.1.3 the `?as=` query parameter is no longer accepted.
+- **`AUTH_MODE=header`** (the default since 0.1.3): the login comes from `IDENTITY_HEADER`, set by an authenticating gateway in front of the API (for example Azure App Service authentication, or a reverse proxy doing Windows authentication). Never expose the API directly in this mode.
 - **Entra ID**: replace `current_user()` in `app/auth.py` with token validation (e.g. `fastapi-azure-auth` or MSAL).
 
 The user is looked up in the mapped users table (database mode). Their roles come from the mapped groups table, or from `data/roles.json`. A user who is not found gets "Your account does not have access to this site."
