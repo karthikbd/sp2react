@@ -4,6 +4,7 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+
 from app import rules as R
 
 VECTORS = json.loads((Path(__file__).resolve().parents[2] / "shared" / "rule_vectors.json").read_text())

@@ -2,7 +2,7 @@
 
 All notable changes to `sp2react` are documented here.
 
-## [Unreleased]
+## [0.1.4] - 2026-11-19
 
 OpenSSF Best Practices silver and baseline groundwork, as in lodestream and mssql-ocp-migrate, and the fixes its threat model found. Each fix has a test in `tests/test_threat_model.py` that fails on 0.1.3.
 
