@@ -73,7 +73,8 @@ Python 3.10+. Node.js 20+ is needed to build the generated React app.
 ## Security and supply chain
 
 No runtime dependencies, no telemetry; connections go only to the SharePoint site and the model endpoint in your
-config. Releases are published with PyPI Trusted Publishing and carry provenance attestations, plus
+config. Code the agents write runs only in a sandbox (a Docker/Podman container, or a guard that blocks
+writes, processes and network) while sp2react tests it; NTLM sign-in is an explicit, https-only choice. Releases are published with PyPI Trusted Publishing and carry provenance attestations, plus
 Sigstore-signed assets and a CycloneDX SBOM on GitHub, and builds are reproducible. CI is hash-locked, runs a weekly
 `pip-audit` (and `npm audit` of the generated app's front end), CodeQL, `mypy --strict` with Bandit security lint,
 a coverage floor, OpenSSF Scorecard and ClusterFuzzLite fuzzing of the parsers; pull requests need signed-off commits
@@ -103,7 +104,7 @@ sp2react status
 ```yaml
 sharepoint:
   site_url: https://sharepoint.example.com/sites/SEA
-  auth: ntlm                 # ntlm | cookie | bearer | none ; secrets come from environment variables
+  auth: ntlm                 # required: ntlm (https only) | cookie | bearer | none ; secrets come from environment variables
 llm:
   provider: bridger          # bridger | anthropic | openai | azure_openai
   api_format: anthropic      # how Bridger serves Claude: anthropic (/v1/messages) or openai (/v1/chat/completions)

@@ -12,13 +12,11 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import subprocess
-import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, cast
 
-from .checks import app_env
+from .sandbox import Sandbox
 
 if TYPE_CHECKING:
     from .sharepoint.client import SharePointClient
@@ -189,13 +187,16 @@ print(json.dumps(out, default=str))
 """
 
 
-def read_through_app(app: Path, db_path: Path, load: bool, env: Optional[dict[str, Any]] = None) -> dict[str, Any]:
-    """Run the generated backend's own repository (same code the API uses) and return every item it serves."""
-    r = subprocess.run([sys.executable, "-c", LOADER, str(db_path), "load" if load else "read"], cwd=app / "backend",  # noqa: S603
-                       capture_output=True, text=True, timeout=900,
-                       env=app_env({"DB_PATH": str(db_path), "DATA_SOURCE": "sqlite", **(env or {})}))
-    if r.returncode != 0:
-        raise RuntimeError(f"could not read the app database: {r.stderr[-2000:]}")
+def read_through_app(app: Path, db_path: Path, load: bool, env: Optional[dict[str, Any]] = None,
+                     sandbox: Optional[Sandbox] = None) -> dict[str, Any]:
+    """Run the generated backend's own repository (same code the API uses) and return every item it serves.
+    It imports agent-written handlers, so it runs in the sandbox and may write only next to `db_path`."""
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    box = sandbox or Sandbox()
+    r = box.python(["-c", LOADER, str(db_path), "load" if load else "read"], app / "backend",
+                   {"DB_PATH": str(db_path), "DATA_SOURCE": "sqlite", **(env or {})}, write=[db_path.parent], read=[app])
+    if r.code != 0:
+        raise RuntimeError(f"could not read the app database ({box.describe()}): {r.stderr[-2000:]}")
     return cast("dict[str, Any]", json.loads(r.stdout))
 
 

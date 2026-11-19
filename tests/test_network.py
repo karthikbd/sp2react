@@ -72,9 +72,12 @@ def test_no_other_network_code_in_the_package():
             continue
         text = f.read_text()
         if re.search(r"\b(urllib\.request|http\.client|socket\.|httpx|aiohttp|requests\.(get|post|put|request))\b", text) and \
-                rel not in ("transport.py",):
+                rel not in ("transport.py", "sandbox_guard.py"):
             offenders.append(rel)
     assert offenders == []
+    # the guard only resolves the hosts generated code may reach, and opens no connection
+    guard = (root / "sandbox_guard.py").read_text()
+    assert re.findall(r"socket\.\w+\(", guard) == ["socket.getaddrinfo("]
 
 
 def test_sharepoint_client_refuses_writes(monkeypatch):

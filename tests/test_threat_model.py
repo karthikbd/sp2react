@@ -109,12 +109,12 @@ def test_paths_are_resolved_inside(tmp_path: Path):
 
 
 def test_generated_app_processes_do_not_get_sp2react_credentials(monkeypatch):
-    from sp2react import checks
+    from sp2react import checks, sandbox
 
     monkeypatch.setenv("SP_PASSWORD", "hunter2")
     monkeypatch.setenv("BRIDGER_TOKEN", "tok")
     monkeypatch.setenv("PATH_FOR_TEST", "kept")
-    monkeypatch.setattr(checks, "HIDDEN_ENV", {"SP_PASSWORD", "BRIDGER_TOKEN"})
+    monkeypatch.setattr(sandbox, "HIDDEN_ENV", {"SP_PASSWORD", "BRIDGER_TOKEN"})
     env = checks.app_env({"DB_PATH": "x.db"})
     assert "SP_PASSWORD" not in env and "BRIDGER_TOKEN" not in env
     assert env["PATH_FOR_TEST"] == "kept" and env["DB_PATH"] == "x.db"
@@ -179,3 +179,46 @@ def test_generated_screen_ids_always_pass_the_spec_limit():
     for sid in (a, b, f"{a}-abcdef"):
         assert Screen.model_validate({"id": sid, "kind": "page", "title": "t", "route": "/t"}).id == sid
     assert safe_id("VendorRequests-form") == "VendorRequests-form"
+
+
+def test_sharepoint_sign_in_has_no_default(tmp_path):
+    with pytest.raises(ValidationError, match="auth"):
+        SharePointConfig.model_validate({"site_url": SITE})
+
+
+def test_ntlm_is_refused_without_tls(monkeypatch):
+    from sp2react.config import ConfigError
+
+    monkeypatch.setenv("SP_USERNAME", "CORP\\svc")
+    monkeypatch.setenv("SP_PASSWORD", "pw")
+    with pytest.raises(ConfigError, match="without TLS"):
+        SharePointClient(SharePointConfig(site_url="http://sp.example.com/sites/SEA", auth="ntlm"))
+    SharePointClient(SharePointConfig(site_url="http://sp.example.com/sites/SEA", auth="ntlm", allow_ntlm_over_http=True))
+    SharePointClient(SharePointConfig(site_url=SITE, auth="ntlm"))
+
+
+
+def test_the_generated_sharepoint_source_needs_an_explicit_sign_in(monkeypatch):
+    import importlib.util
+    import types
+
+    import sp2react
+
+    base = Path(sp2react.__file__).parent / "scaffold" / "templates" / "backend" / "app"
+    pkg = types.ModuleType("genapp")
+    pkg.__path__ = [str(base)]
+    monkeypatch.setitem(__import__("sys").modules, "genapp", pkg)
+    spec = importlib.util.spec_from_file_location("genapp.sp_repo", base / "sp_repo.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    specs = types.SimpleNamespace(lists={})
+    monkeypatch.setenv("SP_SITE_URL", "http://sp.example.com/sites/SEA")
+    monkeypatch.delenv("SP_AUTH", raising=False)
+    with pytest.raises(RuntimeError, match="needs SP_AUTH"):
+        mod.SharePointRepo(specs)
+    monkeypatch.setenv("SP_AUTH", "ntlm")
+    with pytest.raises(RuntimeError, match="https"):
+        mod.SharePointRepo(specs)
+    monkeypatch.setenv("SP_AUTH", "cookie")
+    monkeypatch.setenv("SP_COOKIE", "FedAuth=x")
+    assert mod.SharePointRepo(specs).s.headers["Cookie"] == "FedAuth=x"

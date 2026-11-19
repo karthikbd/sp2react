@@ -299,11 +299,15 @@ class Session:
 class NtlmAuth:
     """Answers an NTLM (or Negotiate offering NTLM) 401 with the three-message handshake on one connection."""
 
-    def __init__(self, login: str, password: str):
+    def __init__(self, login: str, password: str, allow_http: bool = False):
         self.user, self.domain = ntlm.split_user(login)
         self.password = password
+        self.allow_http = allow_http          # NTLM (MD4/HMAC-MD5) answers only over TLS unless this is set
 
     def handle_401(self, session: Session, req: Request, first: Response) -> Response:
+        if not self.allow_http and not req.url.lower().startswith("https://"):
+            raise RequestException(f"refusing NTLM sign-in over plain HTTP ({req.url}): the exchange would be sent "
+                                   "without TLS. Use https://, or allow it for a test system (allow_ntlm_over_http).")
         offered = ",".join(v for k, v in first.headers.items() if k.lower() == "www-authenticate")
         scheme = "NTLM" if "ntlm" in offered.lower() else ("Negotiate" if "negotiate" in offered.lower() else None)
         if scheme is None:

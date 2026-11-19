@@ -71,7 +71,7 @@ The back end reads environment variables (or `--env-file .env` with uvicorn).
 | `FRONTEND_DIST` | `../frontend/dist` | built front end to serve; if present, the API serves the UI too |
 | `SPEC_DIR`, `DATA_DIR` | `specs/`, `data/` | where specs and data files are read from |
 | `DB_PATH` | `data/app.db` | `DATA_SOURCE=sqlite` only |
-| `SP_SITE_URL`, `SP_AUTH`, `SP_USERNAME`, `SP_PASSWORD`, `SP_COOKIE`, `SP_TOKEN`, `SP_VERIFY_SSL` | – | `DATA_SOURCE=sharepoint` only |
+| `SP_SITE_URL`, `SP_AUTH`, `SP_USERNAME`, `SP_PASSWORD`, `SP_COOKIE`, `SP_TOKEN`, `SP_VERIFY_SSL` | – | `DATA_SOURCE=sharepoint` only. `SP_AUTH` (`cookie`, `bearer`, `ntlm` or `none`) is required; `ntlm` needs an `https://` `SP_SITE_URL` unless `SP_ALLOW_NTLM_OVER_HTTP=1` |
 
 ## Users and roles
 

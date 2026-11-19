@@ -56,11 +56,16 @@ All credentials come from environment variables named in the config: SharePoint 
 
 ## Windows sign-in (NTLM) and its cryptography
 
-`auth: ntlm` (the default, for on-premises SharePoint with Windows authentication) uses NTLMv2, which
+`auth: ntlm` (for on-premises SharePoint with Windows authentication) uses NTLMv2, which
 the protocol defines with MD4 (the password hash) and HMAC-MD5. Both are weak by today's standards; they
 are used only because the SharePoint server requires this protocol, and only toward the configured
 SharePoint host. Python's `hashlib` no longer offers MD4 with OpenSSL 3, so `ntlm.py` contains a small
 MD4 implementation checked against the RFC 1320 test vectors; HMAC-MD5 comes from `hmac` and `hashlib`.
+
+Because of that, sp2react has **no default sign-in**: `sharepoint.auth` must be set, so NTLM is always a
+choice made for compatibility. And it refuses NTLM over plain HTTP (the exchange would cross the network without TLS), on the site URL
+and on every request after it, so a redirect to `http://` cannot downgrade it, unless `sharepoint.allow_ntlm_over_http: true` is set for a test system; the
+generated app does the same (`SP_AUTH` is required, `SP_ALLOW_NTLM_OVER_HTTP=1` for test systems).
 
 What this means and how to reduce the risk:
 
@@ -85,20 +90,29 @@ Everything else that needs cryptography uses Python's `ssl` (TLS 1.2 or later, O
 
 ## Running the generated app's tests
 
-The `test` stage builds the generated front end and runs the generated back end's tests on the machine
-that runs sp2react. Those include files written by agents (screens and custom handlers), so:
+The `test` stage runs the generated back end's tests, and `reconcile` runs its loader. Both import the
+custom handlers agents wrote (`backend/app/custom/*.py`), so that code runs **in a sandbox**
+(`pipeline.sandbox`):
 
-- they run without sp2react's credentials: the variables named in `sharepoint.*_env`, `llm.api_key_env`
-  and `database.url_env` are removed from their environment (in `data_source: database` the app gets the
-  database URL as `DB_URL`, because its tests need it);
-- they still run with your user's file and network access. Run sp2react in a container or a VM used only
-  for the conversion. (`--no-builds` skips only the front-end build and checks; the back-end tests and
-  the reconciliation still run the generated Python.) Review custom handlers
-  (`custom/*.ts`, `custom/*.py`) like any other code change before approving a screen.
+| Mode | Where | What the generated code can do |
+|---|---|---|
+| `container` | a throwaway Docker or Podman container | nothing outside it: no network (with `data_source: database`, only the database host), a read-only file system except the folder the step writes (`backend/`, or the reconcile database), no Linux capabilities, a non-root user, process and memory limits, and only the variables the app needs. The guard below runs inside it too |
+| `guard` | this machine | writes only in that folder and a private temporary folder (also through directory descriptors); no new processes; network only to loopback and the database host; no native code through `ctypes`. sp2react's credentials are removed from its environment. A guard, not isolation: Python's audit hooks are not a security boundary |
+| `auto` (default) | `container` when Docker or Podman answers, otherwise `guard` | |
+| `off` | plain processes | everything your user can do, minus sp2react's credentials. Not recommended |
 
-Page text can try to steer an agent (prompt injection). Validation limits where agent output can go and
-what shape it has; the approval gates are where a person checks the result. See the
-[security assurance case](../development/security-assurance.md) for every threat considered.
+The check report (`sp2react-work/tests/iteration-N.md`) names the mode each run used. The container image is
+built once from sp2react's `container/Dockerfile` (Python, the app's `requirements.txt`, pytest and the
+database driver); set `pipeline.sandbox_image` to use one from your registry instead. If `auto` cannot build
+it (no access to the registry), the run falls back to `guard` and says so.
+
+The front-end checks (`npm install`, `tsc`, `vite build`, the rule vectors) stay on the host: they run
+template code only, and agent-written TypeScript is type-checked and bundled, never executed.
+
+Page text can try to steer an agent (prompt injection). The sandbox contains what generated code can do
+while sp2react checks it; whether the code is right is decided at the approval gates, where a person
+reviews each screen. Review custom handlers (`custom/*.ts`, `custom/*.py`) like any other code change.
+See the [security assurance case](../development/security-assurance.md) for every threat considered.
 
 ## The generated app
 

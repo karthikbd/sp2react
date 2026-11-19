@@ -15,7 +15,9 @@ class ConfigError(RuntimeError):
 
 class SharePointConfig(BaseModel):
     site_url: str = Field(..., description="Full URL of the site, e.g. https://sp.example.com/sites/SEA")
-    auth: Literal["ntlm", "cookie", "bearer", "none"] = "ntlm"
+    # no default: NTLM (on-premises Windows sign-in) needs MD4 and HMAC-MD5 by protocol, so it is a choice you make
+    auth: Literal["ntlm", "cookie", "bearer", "none"]
+    allow_ntlm_over_http: bool = False         # NTLM is refused on http:// site URLs unless this is set (test systems)
     username_env: str = "SP_USERNAME"          # DOMAIN\\user for NTLM
     password_env: str = "SP_PASSWORD"          # noqa: S105  the variable's name, not a secret
     cookie_env: str = "SP_COOKIE"              # e.g. "FedAuth=...; rtFa=..." copied from a signed-in browser
@@ -57,7 +59,13 @@ class PipelineConfig(BaseModel):
     agent_timeout: int = 900                   # hard limit per agent task (seconds)
     max_fix_iterations: int = 5
     auto_approve: bool = False                 # skip the human gates (spec + screen approval)
-    run_builds: bool = True                    # npm install/build + pytest on the generated app
+    run_builds: bool = True                    # npm install/build on the generated app (its back-end tests always run)
+    sandbox: Literal["auto", "container", "guard", "off"] = "auto"
+    # where the generated app's back-end tests and loader run; they import agent-written handlers:
+    # container = Docker/Podman, no network (or only the database), read-only except the step's folders
+    # guard     = this machine, under an audit hook that blocks other writes, processes and hosts
+    # auto      = container when Docker or Podman answers, else guard;  off = plain processes (not recommended)
+    sandbox_image: Optional[str] = None        # a prebuilt check image (from your registry); built locally if unset
     data_source: Literal["database", "sqlite", "sharepoint"] = "database"
     # database   = your existing database (MySQL / SQL Server / PostgreSQL) through a list->table mapping;
     #              no list items are ever read from SharePoint
@@ -144,7 +152,7 @@ TEMPLATE = """\
 # sp2react configuration. Secrets are read from environment variables, never stored here.
 sharepoint:
   site_url: https://sharepoint.example.com/sites/SEA
-  auth: ntlm                 # ntlm | cookie | bearer | none
+  auth: ntlm                 # required: ntlm (Windows sign-in; MD4/HMAC-MD5 by protocol, https only) | cookie | bearer | none
   username_env: SP_USERNAME  # DOMAIN\\\\user  (ntlm)
   password_env: SP_PASSWORD  #               (ntlm)
   cookie_env: SP_COOKIE      # "FedAuth=...; rtFa=..." from a signed-in browser (cookie)

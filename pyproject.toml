@@ -53,7 +53,7 @@ where = ["src"]
 include = ["sp2react*"]
 
 [tool.setuptools.package-data]
-sp2react = ["py.typed", "agents/prompts/*.md", "scaffold/*.json", "scaffold/templates/**/*"]
+sp2react = ["py.typed", "agents/prompts/*.md", "scaffold/*.json", "scaffold/templates/**/*", "container/Dockerfile"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -28,6 +28,7 @@ from .agents.tasks import run_fix_agent, run_handler_agent, run_page_agent, run_
 from .analysis.inventory import Legacy, build_inventory
 from .analysis.inventory import screens as find_screens
 from .checks import HIDDEN_ENV, failures_by_screen, run_all
+from .sandbox import Sandbox
 from .config import Config
 from .llm.providers import LLM, make_llm
 from .net import policy_for
@@ -438,7 +439,8 @@ class Pipeline:
         for sp in specs:
             for name, l in sp.lists.items():
                 lists.setdefault(name, {"fields": l.fields})
-        app_items = read_through_app(self.out, self.ws / "reconcile.db", load=not database, env=self._app_env())
+        app_items = read_through_app(self.out, self.ws / "reconcile" / "app.db", load=not database, env=self._app_env(),
+                                     sandbox=self.sandbox)
         rep = reconcile(self.export_dir, app_items, lists)
         meta = json.loads((self.export_dir / "export.json").read_text())
         (self.ws / "reconciliation.md").write_text(report_markdown(rep, meta), encoding="utf-8")
@@ -473,7 +475,7 @@ class Pipeline:
         for it in range(max_iter + 1):
             for sid in sids:
                 self.mark(sid, "test", "running", f"iteration {it}")
-            checks = run_all(self.out, self.cfg.pipeline.run_builds, self._app_env())
+            checks = run_all(self.out, self.cfg.pipeline.run_builds, self._app_env(), sandbox=self.sandbox)
             (self.ws / "tests").mkdir(exist_ok=True)
             (self.ws / "tests" / f"iteration-{it}.md").write_text(
                 "\n\n".join(f"## {c.name}: {'skipped' if c.skipped else 'ok' if c.ok else 'FAILED'}\n```\n{c.tail(20000)}\n```" for c in checks), encoding="utf-8")
@@ -517,6 +519,20 @@ class Pipeline:
         for sid in sids:
             if self.status(sid, "test") != "done":
                 self.mark(sid, "fix", "failed", f"still failing after {max_iter} iteration(s); see workspace/tests")
+
+    @property
+    def sandbox(self) -> Sandbox:
+        """Where the generated app's own code runs (its back-end tests and loader); see sandbox.py."""
+        if getattr(self, "_sandbox", None) is None:
+            import os
+            from urllib.parse import urlsplit
+            url = os.environ.get(self.cfg.database.url_env) if self.cfg.pipeline.data_source == "database" else None
+            parts = urlsplit(url) if url else None
+            host = parts.hostname if parts and not parts.scheme.startswith("sqlite") else None
+            data = [Path(parts.path[1:]).resolve().parent] if parts and parts.scheme.startswith("sqlite") and parts.path[1:] else []
+            self._sandbox = Sandbox(self.cfg.pipeline.sandbox, self.cfg.pipeline.sandbox_image,
+                                    [host] if host else [], data, self.progress)
+        return self._sandbox
 
     def _app_env(self) -> dict[str, Any]:
         sp, llm = self.cfg.sharepoint, self.cfg.llm

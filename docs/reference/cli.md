@@ -50,7 +50,7 @@ sp2react run [--page URL]... [--offline] [--until STAGE] [--auto-approve] [--no-
 | `--offline` | Reuse the extraction already in the workspace; do not contact SharePoint |
 | `--until STAGE` | Stop after this stage: `inputs`, `extract`, `inventory`, `spec`, `approve_spec`, `convert`, `review`, `test`, `fix`, `approve` (default `approve`) |
 | `--auto-approve` | Skip both human approvals. For demos and CI only |
-| `--no-builds` | Skip `npm install`, `tsc` and `vite build` in the test stage |
+| `--no-builds` | Skip `npm install`, `tsc` and `vite build` in the test stage (the back-end tests still run, in the sandbox) |
 
 Screens that are not approved stop at `approve_spec`; the others continue. In database mode, `run` also runs `map-db` once specs are approved.
 

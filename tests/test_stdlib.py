@@ -89,12 +89,12 @@ def test_ntlm_handshake_against_a_windows_style_server():
     try:
         url = f"http://127.0.0.1:{srv.server_address[1]}/sites/SEA/_api/web"
         s = transport.Session()
-        s.auth = transport.NtlmAuth("CORP\\alice", "S3cret!")
+        s.auth = transport.NtlmAuth("CORP\\alice", "S3cret!", allow_http=True)   # a local test server without TLS
         r = s.get(url, timeout=10)
         assert r.status_code == 200 and r.json() == {"user": "alice"}
         assert NtlmServer.seen == ["anonymous", "negotiate", "authenticate"]
         bad = transport.Session()
-        bad.auth = transport.NtlmAuth("CORP\\alice", "wrong")
+        bad.auth = transport.NtlmAuth("CORP\\alice", "wrong", allow_http=True)
         assert bad.get(url, timeout=10).status_code == 401
     finally:
         srv.shutdown()
