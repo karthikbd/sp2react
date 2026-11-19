@@ -5,7 +5,8 @@
 `.github/workflows/python-publish.yml` runs when a GitHub release is published (or by hand from the
 Actions tab). It runs the tests, builds the sdist and wheel reproducibly, checks the wheel declares no
 runtime dependencies, writes a CycloneDX SBOM, and publishes with **PyPI Trusted Publishing** (OIDC)
-from the GitHub environment `release`, so no API token is stored anywhere. It then signs the wheel,
+from the GitHub environment `release`, so no API token is stored anywhere. The `release` environment
+accepts only `v*` tags, so a run started from a branch cannot publish. It then signs the wheel,
 sdist and SBOM with Sigstore and attaches them to the release.
 
 Each release:
