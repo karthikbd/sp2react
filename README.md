@@ -68,7 +68,7 @@ pip install "sp2react[mssql]"     # plus SQLAlchemy + pyodbc, for SQL Server tab
 part of the package and use only the Python standard library, so `pip install sp2react` pulls in nothing else and
 an air-gapped install is one wheel. The database extras are needed only for `data_source: database`.
 
-Python 3.10+. Node.js 20+ is needed to build the generated React app.
+Python 3.10+. Node.js 22.12+ (or 20.19+) is needed to build the generated React app.
 
 ## Security and supply chain
 

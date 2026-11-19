@@ -7,6 +7,9 @@ All notable changes to `sp2react` are documented here.
 ### Security
 - Generated app: `requirements.txt` now requires `starlette>=1.3.1` (FastAPI's web layer) and `h11>=0.16.0` (uvicorn's HTTP parser). The old minimums let an existing environment keep versions with known advisories; a fresh install already got fixed versions. `fastapi` moves to `>=0.133.0`, the first release that accepts starlette 1.x, and `pydantic` to `>=2.7.0`, which that fastapi needs anyway. Python 3.10 is still supported. Regenerating an existing app picks this up (files you changed are kept)
 
+### Changed
+- Generated app front end: React 19 (was 18), Vite 8 (was 6) and `@vitejs/plugin-react` 6, with the matching `@types/react` and `@types/react-dom`. **Upgrade note:** building the generated app now needs Node.js 22.12+ or 20.19+ (Vite 8); the `test` stage says so instead of failing inside the build when Node.js is older. Regenerating an existing app picks this up (files you changed are kept); custom code that uses React 18-only APIs (`ReactDOM.render`, the global `JSX` namespace, `useRef()` without an argument) is reported by `tsc` and sent to the `fix` stage
+
 ## [0.1.5] - 2026-11-19
 
 ### Fixed

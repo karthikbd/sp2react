@@ -40,13 +40,31 @@ def backend_tests(out: Path, timeout: int = 900, env: dict[str, Any] | None = No
     return Check(f"backend tests (generated API tests + rule vectors; {box.describe()})", r.code == 0, r.output)
 
 
+NODE_MIN = "20.19 or 22.12"  # Vite 8 and @vitejs/plugin-react 6 (package.json engines)
+
+
+def node_too_old(version: str) -> bool:
+    """True when `node --version` output is below what the generated front end's build tools need."""
+    m = re.match(r"v?(\d+)\.(\d+)", version.strip())
+    if not m:
+        return False
+    major, minor = int(m.group(1)), int(m.group(2))
+    return major < 20 or major == 21 or (major == 20 and minor < 19) or (major == 22 and minor < 12)
+
+
 def frontend_install(out: Path, timeout: int = 1200) -> Check:
     fe = out / "frontend"
+    node = shutil.which("node")
+    if node:
+        code, version = _run([node, "--version"], fe if fe.is_dir() else out, 60)
+        if code == 0 and node_too_old(version):
+            return Check("npm install", False, f"Node.js {version.strip()} is too old for the generated front end "
+                         f"(Vite needs {NODE_MIN} or later); upgrade Node.js or set pipeline.run_builds: false", skipped=True)
     if (fe / "node_modules" / ".bin" / "tsc").exists():
         return Check("npm install", True, "node_modules present", skipped=True)
     npm = shutil.which("npm")
     if not npm:
-        return Check("npm install", False, "npm not found on PATH; install Node.js 20+ or set pipeline.run_builds: false", skipped=True)
+        return Check("npm install", False, "npm not found on PATH; install Node.js 22.12+ (or 20.19+) or set pipeline.run_builds: false", skipped=True)
     code, txt = _run([npm, "install", "--no-audit", "--no-fund", "--loglevel=error"], fe, timeout)
     return Check("npm install", code == 0, txt)
 

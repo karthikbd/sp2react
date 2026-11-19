@@ -23,7 +23,7 @@ converted-app/
 │  ├─ tests/                    generated API tests + rule vector tests
 │  ├─ requirements.txt
 │  └─ .env.example
-├─ frontend/                     React 18, Vite, TypeScript, react-router
+├─ frontend/                     React 19, Vite 8, TypeScript, react-router
 │  ├─ src/
 │  │  ├─ runtime/rules.ts        the same rule engine as rules.py, for the browser
 │  │  ├─ components/sp/          SharePoint-look form engine, list views, tiles, layout

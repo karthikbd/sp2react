@@ -334,3 +334,22 @@ def test_extract_treats_a_failed_page_listing_as_critical():
     assert not critical_extract_error({"what": "SitePages library", "error": "GET ... -> HTTP 404: not found"})
     assert critical_extract_error({"what": "web parts of SitePages/Home.aspx", "error": "HTTP 500"})
     assert not critical_extract_error({"what": "site groups (needs permission to enumerate groups)", "error": "HTTP 403"})
+
+
+def test_node_version_gate():
+    from sp2react.checks import node_too_old
+    for v in ["v18.20.4", "v20.18.1", "v21.7.3", "v22.11.0", "v16.0.0"]:
+        assert node_too_old(v), v
+    for v in ["v20.19.0", "v22.12.0", "v22.23.5", "v24.1.0", "v26.0.0", "garbage", ""]:
+        assert not node_too_old(v), v
+
+
+def test_old_node_is_reported_before_npm_install(tmp_path, monkeypatch):
+    from sp2react import checks
+    (tmp_path / "frontend").mkdir()
+    calls = []
+    monkeypatch.setattr(checks.shutil, "which", lambda name: f"/usr/bin/{name}")
+    monkeypatch.setattr(checks, "_run", lambda cmd, cwd, timeout, env=None: (calls.append(cmd), (0, "v20.11.1\n"))[1])
+    c = checks.frontend_install(tmp_path)
+    assert not c.ok and c.skipped and "v20.11.1" in c.output and "20.19" in c.output
+    assert calls == [["/usr/bin/node", "--version"]]  # npm install never ran

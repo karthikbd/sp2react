@@ -57,7 +57,8 @@ Start with `sp2react status` and `sp2react-work/report.md`: a failed stage alway
 | Message / symptom | Fix |
 |---|---|
 | `convert`: `waiting for spec approval` | Approve the spec: `sp2react approve <screen>` |
-| `npm not found on PATH` | Install Node.js 20+, or use `--no-builds` |
+| `npm not found on PATH` | Install Node.js 22.12+ (or 20.19+), or use `--no-builds` |
+| `Node.js vX is too old for the generated front end` | The generated app builds with Vite 8, which needs Node.js 22.12+ or 20.19+. Upgrade Node.js, or use `--no-builds` |
 | `npm install` fails | Registry access: `npm config set registry <your Artifactory npm remote>` |
 | `fix` failed: `failures are in shared scaffold code or the environment` | The failing code is not agent-owned, so no agent may change it. Read `tests/iteration-N.md`; it is usually the environment (Node version, a missing driver) |
 | `fix` failed: `still failing after N iteration(s)` | Read the last `tests/iteration-N.md`. Raise `max_fix_iterations`, or fix the spec and re-convert |

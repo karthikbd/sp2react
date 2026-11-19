@@ -5,7 +5,7 @@
 | What | Version | Needed for |
 |---|---|---|
 | Python | 3.10 – 3.13 | sp2react itself |
-| Node.js | 20 or later (with npm) | building and type-checking the generated React app (the `test` stage). Without it, run with `--no-builds` |
+| Node.js | 22.12+ or 20.19+ (with npm) | building and type-checking the generated React app (the `test` stage). Without it, run with `--no-builds` |
 | A database driver | see below | `data_source: database` |
 | Docker or Podman | any recent version (optional, recommended) | isolating the generated app's tests (`pipeline.sandbox`); without it they run under a guard on this machine |
 | Network access | to the SharePoint site and to the model endpoint (Bridger) | nothing else (and, once, to the registries that build the check container) |
@@ -117,7 +117,7 @@ For SQL Server on Linux, install `unixodbc` and Microsoft's `msodbcsql18` packag
 The `test` stage runs `npm install`, `tsc` and `vite build` on the generated front end. Check with:
 
 ```powershell
-node --version   # v20 or later
+node --version   # v22.12+ or v20.19+ (Vite 8)
 npm --version
 ```
 
