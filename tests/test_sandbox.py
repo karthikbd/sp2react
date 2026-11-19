@@ -157,8 +157,10 @@ def test_the_container_gets_no_network_no_host_files_and_no_secrets(tmp_path, mo
     run = next(c for c in calls if c[1] == "run")
     s = " ".join(run)
     assert "--network none" in s and "--read-only" in s and "--cap-drop ALL" in s and "no-new-privileges" in s
-    assert f"{app.resolve()}:/work/r0:ro" in s and f"{(app / 'backend').resolve()}:/work/w0:rw" in s
-    assert "DB_PATH=/work/w0/data/t.db" in s and "hunter2" not in s and "SP_PASSWORD" not in s
+    assert f"{app.resolve()}:/work/app:ro" in s and f"{(app / 'backend').resolve()}:/work/app/backend:rw" in s
+    assert s.index("/work/app:ro") < s.index("/work/app/backend:rw")          # nested writable mount comes second
+    assert "DB_PATH=/work/app/backend/data/t.db" in s and "-w /work/app/backend" in s
+    assert "hunter2" not in s and "SP_PASSWORD" not in s
     assert run[-5:] == ["python", "/sp2react/guard.py", "-m", "pytest", "tests"]
     assert any(c[1] == "build" for c in calls)                # image built from container/Dockerfile
 
@@ -230,7 +232,10 @@ def test_a_malicious_handler_cannot_escape_the_container(tmp_path):
             with pytest.raises(OSError): socket.create_connection(("1.1.1.1", 443), 3)
         def test_read_only_outside_backend():
             with pytest.raises(OSError): open("/usr/local/evil", "w")
-        def test_backend_is_writable(): open("data.txt", "w").write("ok")
+        def test_backend_is_writable():
+            st = os.stat(".")
+            assert os.access(".", os.W_OK), (os.getuid(), os.getgid(), st.st_uid, st.st_gid, oct(st.st_mode))
+            open("data.txt", "w").write("ok")
         def test_secrets_not_passed(): assert not [k for k in os.environ if "PASSWORD" in k]
     """))
     import os

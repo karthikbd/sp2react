@@ -168,11 +168,14 @@ class Sandbox:
         image = self._image(backend, env)
         if image is None:
             return None
+        # the app keeps its layout (backend/../shared); folders it may write are mounted over it, writable
         mounts: list[tuple[Path, str, bool]] = []
         for i, p in enumerate(read):
-            mounts.append((p.resolve(), f"/work/r{i}", False))
+            mounts.append((p.resolve(), "/work/app" if i == 0 else f"/work/r{i}", False))
         for i, p in enumerate(write):
-            mounts.append((p.resolve(), f"/work/w{i}", True))
+            host = p.resolve()
+            under = next(((h, t) for h, t, rw in mounts if not rw and (host == h or h in host.parents)), None)
+            mounts.append((host, under[1] + "/" + host.relative_to(under[0]).as_posix() if under else f"/work/w{i}", True))
 
         def inside(value: str) -> str:       # host paths -> container paths, longest mount first
             for host, target, _ in sorted(mounts, key=lambda m: -len(str(m[0]))):
@@ -187,10 +190,10 @@ class Sandbox:
                "--security-opt", "no-new-privileges", "--pids-limit", "512", "--memory", "4g",
                "--network", "host" if self.hosts else "none"]
         if "podman" in Path(rt).name:
-            cmd += ["--userns", "keep-id"]
-        elif hasattr(os, "getuid"):
-            cmd += ["--user", f"{os.getuid()}:{os.getgid()}"]
-        for host, target, rw in mounts:
+            cmd += ["--userns", "keep-id"]       # rootless: this user's id is the same inside
+        if hasattr(os, "getuid"):
+            cmd += ["--user", f"{os.getuid()}:{os.getgid()}"]   # files it writes stay yours
+        for host, target, rw in sorted(mounts, key=lambda m: m[1].count("/")):   # parents before the folders inside them
             cmd += ["-v", f"{host}:{target}:{'rw' if rw else 'ro'}"]
         cmd += ["-v", f"{GUARD}:/sp2react/guard.py:ro"]
         guard_env = {"SP2REACT_GUARD_WRITE": ":".join(inside(str(p.resolve())) for p in write),
