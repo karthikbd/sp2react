@@ -63,8 +63,8 @@ SharePoint host. Python's `hashlib` no longer offers MD4 with OpenSSL 3, so `ntl
 MD4 implementation checked against the RFC 1320 test vectors; HMAC-MD5 comes from `hmac` and `hashlib`.
 
 Because of that, sp2react has **no default sign-in**: `sharepoint.auth` must be set, so NTLM is always a
-choice made for compatibility. And it refuses NTLM on an `http://` site URL (the exchange would cross the
-network without TLS) unless `sharepoint.allow_ntlm_over_http: true` is set for a test system; the
+choice made for compatibility. And it refuses NTLM over plain HTTP (the exchange would cross the network without TLS), on the site URL
+and on every request after it, so a redirect to `http://` cannot downgrade it, unless `sharepoint.allow_ntlm_over_http: true` is set for a test system; the
 generated app does the same (`SP_AUTH` is required, `SP_ALLOW_NTLM_OVER_HTTP=1` for test systems).
 
 What this means and how to reduce the risk:
@@ -97,7 +97,7 @@ custom handlers agents wrote (`backend/app/custom/*.py`), so that code runs **in
 | Mode | Where | What the generated code can do |
 |---|---|---|
 | `container` | a throwaway Docker or Podman container | nothing outside it: no network (with `data_source: database`, only the database host), a read-only file system except the folder the step writes (`backend/`, or the reconcile database), no Linux capabilities, a non-root user, process and memory limits, and only the variables the app needs. The guard below runs inside it too |
-| `guard` | this machine | writes only in that folder and a private temporary folder; no new processes; network only to loopback and the database host; no native code through `ctypes`. sp2react's credentials are removed from its environment. A guard, not isolation: Python's audit hooks are not a security boundary |
+| `guard` | this machine | writes only in that folder and a private temporary folder (also through directory descriptors); no new processes; network only to loopback and the database host; no native code through `ctypes`. sp2react's credentials are removed from its environment. A guard, not isolation: Python's audit hooks are not a security boundary |
 | `auto` (default) | `container` when Docker or Podman answers, otherwise `guard` | |
 | `off` | plain processes | everything your user can do, minus sp2react's credentials. Not recommended |
 

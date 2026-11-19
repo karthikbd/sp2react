@@ -52,6 +52,9 @@ def test_ordinary_work_inside_the_app_folder_is_allowed(tmp_path):
     "import sqlite3; sqlite3.connect({outside!r})",
     "import pathlib; pathlib.Path({outside!r}).write_text('x')",
     "import os; os.symlink('/', 'root-link'); open('root-link' + {outside!r}, 'w')",
+    "import os; d = os.open({outside_dir!r}, os.O_RDONLY); os.open('new.txt', os.O_WRONLY | os.O_CREAT, dir_fd=d)",
+    "import os; os.remove('keep.txt', dir_fd=os.open({outside_dir!r}, os.O_RDONLY))",
+    "import os, pathlib; pathlib.Path('ok').mkdir(); d = os.open('ok', os.O_RDONLY); os.rename('../../outside/keep.txt', 'x', src_dir_fd=d)",
 ])
 def test_writes_outside_the_app_folder_are_refused(tmp_path, code):
     (tmp_path / "outside").mkdir()
@@ -69,7 +72,7 @@ def test_writes_outside_the_app_folder_are_refused(tmp_path, code):
     "import os; os.execv('/bin/echo', ['echo'])",
     "import os; os.fork()",
     "import os; os.posix_spawn('/bin/echo', ['echo'], {})",
-    "import subprocess; subprocess._fork_exec(['/bin/echo'], [b'/bin/echo'], True, (), None, None, -1, -1, -1, -1, -1, -1, -1, -1, True, False, 0, None, None, None, -1, None, False)",
+    "import subprocess, sys; (getattr(subprocess, '_fork_exec', None) or sys.modules['_posixsubprocess'].fork_exec)(['/bin/echo'])",
     "import sys; sys.modules['_posixsubprocess'].fork_exec(['/bin/echo'])",
     "import multiprocessing as m; p = m.Process(target=print); p.start(); p.join()",
 ])
@@ -111,6 +114,29 @@ def test_network_only_to_loopback_and_the_database_host(tmp_path, listener):
     assert "sp2react sandbox" in url.output, url.output
     db = run_guarded(tmp_path, "import socket; socket.getaddrinfo('db.example.test', 3306)", hosts=["db.example.test"])
     assert "sp2react sandbox" not in db.output, db.output     # allowed (it may still fail to resolve)
+
+
+def test_descriptor_relative_writes_inside_the_folder_still_work(tmp_path):
+    r = run_guarded(tmp_path, """
+        import os, pathlib
+        pathlib.Path("sub").mkdir()
+        d = os.open("sub", os.O_RDONLY)
+        os.close(os.open("f.txt", os.O_WRONLY | os.O_CREAT, dir_fd=d))
+        os.mkdir("inner", dir_fd=d)
+        os.rmdir("inner", dir_fd=d)
+        import shutil; shutil.rmtree("sub")
+    """)
+    assert r.code == 0, r.output
+
+
+def test_ntlm_never_answers_over_plain_http():
+    from sp2react import transport
+
+    class Fake:
+        url = "http://sp.example.com/x"
+    auth = transport.NtlmAuth("CORP\\svc", "pw")
+    with pytest.raises(transport.RequestException, match="plain HTTP"):
+        auth.handle_401(None, Fake(), None)       # e.g. after an https -> http redirect
 
 
 def test_the_guard_cannot_be_removed(tmp_path):

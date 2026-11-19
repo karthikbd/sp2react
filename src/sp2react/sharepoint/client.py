@@ -80,6 +80,7 @@ class SharePointClient:
             self.session.auth = transport.NtlmAuth(
                 required_secret(self.cfg.username_env, "SharePoint user name (DOMAIN\\user)"),
                 required_secret(self.cfg.password_env, "SharePoint password"),
+                allow_http=self.cfg.allow_ntlm_over_http,      # also checked on every hop, so a redirect to http:// can't downgrade it
             )
         elif mode == "cookie":
             self.session.headers["Cookie"] = required_secret(self.cfg.cookie_env, "SharePoint session cookie")

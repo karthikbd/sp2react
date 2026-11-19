@@ -28,7 +28,7 @@ import runpy
 import socket
 import sys
 import tempfile
-from typing import Any
+from typing import Any, NoReturn
 
 PREFIX = "sp2react sandbox"
 
@@ -41,14 +41,29 @@ ESCAPE_EVENTS = {
     "ctypes.get_errno", "ctypes.set_errno", "ctypes.string_at", "ctypes.wstring_at", "ctypes.addressof",
     "gc.get_referrers", "gc.get_referents", "gc.get_objects",
 }
-PATH_EVENTS = {          # event -> indexes of the path arguments it writes
-    "os.remove": (0,), "os.rmdir": (0,), "os.mkdir": (0,), "os.rename": (0, 1), "os.symlink": (1,), "os.link": (1,),
-    "os.truncate": (0,), "os.chmod": (0,), "os.chown": (0,), "os.utime": (0,), "os.chflags": (0,), "os.lchflags": (0,),
-    "os.setxattr": (0,), "os.removexattr": (0,), "shutil.rmtree": (0,), "shutil.copyfile": (1,), "shutil.copymode": (1,),
-    "shutil.copystat": (1,), "shutil.copytree": (1,), "shutil.move": (0, 1), "shutil.make_archive": (0,),
-    "shutil.unpack_archive": (1,),
+PATH_EVENTS = {          # event -> (path argument, its dir_fd argument or None) for each path it writes
+    "os.remove": ((0, 1),), "os.rmdir": ((0, 1),), "os.mkdir": ((0, 2),), "os.rename": ((0, 2), (1, 3)),
+    "os.symlink": ((1, 2),), "os.link": ((1, 3),), "os.truncate": ((0, None),), "os.chmod": ((0, 2),),
+    "os.chown": ((0, 3),), "os.utime": ((0, 3),), "os.chflags": ((0, None),), "os.lchflags": ((0, None),),
+    "os.setxattr": ((0, None),), "os.removexattr": ((0, None),), "shutil.rmtree": ((0, 1),),
+    "shutil.copyfile": ((1, None),), "shutil.copymode": ((1, None),), "shutil.copystat": ((1, None),),
+    "shutil.copytree": ((1, None),), "shutil.move": ((0, None), (1, None)), "shutil.make_archive": ((0, None),),
+    "shutil.unpack_archive": ((1, None),),
 }
 WRITE_FLAGS = os.O_WRONLY | os.O_RDWR | os.O_APPEND | os.O_CREAT | os.O_TRUNC
+
+
+def fd_path(fd: int) -> "str | None":
+    """The path an open directory descriptor points to, where the OS can tell (Linux, macOS)."""
+    try:
+        return os.readlink(f"/proc/self/fd/{fd}")
+    except OSError:
+        pass
+    try:
+        import fcntl
+        return os.fsdecode(fcntl.fcntl(fd, 50, b"\0" * 1024).split(b"\0", 1)[0])   # F_GETPATH (macOS)
+    except (ImportError, OSError, ValueError):
+        return None
 
 
 class Guard:
@@ -63,7 +78,7 @@ class Guard:
                 pass
 
     # ------------------------------------------------------------- checks
-    def _deny(self, what: str) -> None:
+    def _deny(self, what: str) -> NoReturn:
         raise PermissionError(f"{PREFIX}: {what} is not allowed for generated code")
 
     def writable(self, path: Any) -> bool:
@@ -78,7 +93,12 @@ class Guard:
         real = os.path.realpath(os.fspath(path))
         return any(real == r or real.startswith(r.rstrip(os.sep) + os.sep) for r in self.roots)
 
-    def check_write(self, path: Any, event: str) -> None:
+    def check_write(self, path: Any, event: str, dir_fd: Any = None) -> None:
+        if isinstance(dir_fd, int) and dir_fd >= 0 and not isinstance(path, int):   # -100 (AT_FDCWD) = none given
+            base = fd_path(dir_fd)        # a path relative to an open directory: check where it really points
+            if base is None:
+                self._deny(f"{event} relative to a directory descriptor")
+            path = os.path.join(base, os.fsdecode(path) if isinstance(path, bytes) else os.fspath(path))
         if not self.writable(path):
             self._deny(f"{event} {path!r} (outside {os.pathsep.join(self.roots)})")
 
@@ -109,10 +129,15 @@ class Guard:
             writes = (isinstance(mode, str) and any(c in mode for c in "wax+")) or bool((flags or 0) & WRITE_FLAGS)
             if writes:
                 self.check_write(path, "writing")
+            elif mode is None and isinstance(path, (str, bytes, os.PathLike)) and os.path.isdir(path) \
+                    and not self.writable(path):
+                # os.open() of a directory gives a dir_fd, and the "open" audit event doesn't show dir_fd:
+                # without this, open("x", dir_fd=...) could write anywhere
+                self._deny(f"opening the directory {path!r} (outside {os.pathsep.join(self.roots)})")
         elif event in PATH_EVENTS:
-            for i in PATH_EVENTS[event]:
+            for i, fd in PATH_EVENTS[event]:
                 if i < len(args):
-                    self.check_write(args[i], event)
+                    self.check_write(args[i], event, args[fd] if fd is not None and fd < len(args) else None)
         elif event == "sqlite3.connect":
             db = args[0] if args else ":memory:"
             db = os.fsdecode(db) if isinstance(db, bytes) else str(db)

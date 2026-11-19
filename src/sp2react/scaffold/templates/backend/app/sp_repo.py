@@ -32,6 +32,15 @@ class SharePointRepo:
         if mode == "ntlm":
             from requests_ntlm import HttpNtlmAuth  # type: ignore
             self.s.auth = HttpNtlmAuth(os.environ["SP_USERNAME"], os.environ["SP_PASSWORD"])
+            if os.environ.get("SP_ALLOW_NTLM_OVER_HTTP") != "1":
+                send = self.s.send
+
+                def tls_only(request, **kw):        # every request and redirect hop: no NTLM over plain HTTP
+                    if not request.url.lower().startswith("https://"):
+                        raise RuntimeError(f"refusing NTLM sign-in over plain HTTP: {request.url}")
+                    return send(request, **kw)
+
+                self.s.send = tls_only
         elif mode == "cookie":
             self.s.headers["Cookie"] = os.environ["SP_COOKIE"]
         elif mode == "bearer":
