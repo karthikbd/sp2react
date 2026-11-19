@@ -66,8 +66,10 @@ What this means and how to reduce the risk:
 
 - Anyone who records an NTLM exchange can try to guess the password offline, and an attacker in the
   middle could relay it. Use an `https://` site URL with certificate verification (the default):
-  the exchange is then inside TLS, and sp2react adds **channel binding** (the server's certificate hash),
-  so the exchange cannot be relayed to another server. Keep `verify_ssl` on, or point it at your CA bundle.
+  the exchange is then inside TLS, and sp2react adds **channel binding** (the server's certificate hash).
+  Channel binding stops a relay only if the server checks it: turn on **Extended Protection for
+  Authentication** (IIS, `tokenChecking="Require"`) on the SharePoint web applications. Keep `verify_ssl` on,
+  or point it at your CA bundle.
 - Use a service account with read access to the site only, and a long random password.
 - If the farm supports another sign-in, prefer it: `auth: cookie` (a session from a signed-in browser) or
   `auth: bearer` (an Entra ID / SharePoint Online token). They use no MD4 or MD5 in sp2react.
