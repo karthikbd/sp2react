@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import ValidationError
+from ..model import ValidationError
 
 from ..analysis.aspx import load_page
 from ..analysis.inventory import Legacy

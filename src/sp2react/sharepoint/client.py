@@ -10,7 +10,7 @@ from email.utils import parsedate_to_datetime
 from typing import Any, Callable, Optional
 from urllib.parse import quote, urlsplit
 
-import requests
+from .. import transport
 
 from ..config import SharePointConfig, secret
 
@@ -45,14 +45,14 @@ class SharePointClient:
     """`policy` limits which hosts may be contacted; `item_reads=False` forbids reading list items, attachments,
     user profiles and rendered pages (anything that carries business data), leaving only code and schema."""
 
-    def __init__(self, cfg: SharePointConfig, session: Optional[requests.Session] = None, policy=None, item_reads: bool = True):
+    def __init__(self, cfg: SharePointConfig, session: Optional[transport.Session] = None, policy=None, item_reads: bool = True):
         self.cfg = cfg
         self.item_reads = item_reads
         self.site_url = cfg.site_url
         parts = urlsplit(cfg.site_url)
         self.origin = f"{parts.scheme}://{parts.netloc}"
         self.server_relative = parts.path.rstrip("/") or "/"
-        self.session = session or requests.Session()
+        self.session = session or transport.Session()
         self.session.verify = cfg.verify_ssl
         self.session.headers.update({"Accept": "application/json;odata=verbose", "User-Agent": "sp2react/0.1 (read-only)"})
         self.session.headers.update(cfg.extra_headers)
@@ -72,11 +72,7 @@ class SharePointClient:
     def _configure_auth(self) -> None:
         mode = self.cfg.auth
         if mode == "ntlm":
-            try:
-                from requests_ntlm import HttpNtlmAuth  # type: ignore
-            except ImportError as e:  # pragma: no cover - depends on optional extra
-                raise SharePointError("NTLM auth needs the extra: pip install 'sp2react[ntlm]'") from e
-            self.session.auth = HttpNtlmAuth(
+            self.session.auth = transport.NtlmAuth(
                 secret(self.cfg.username_env, "SharePoint user name (DOMAIN\\user)"),
                 secret(self.cfg.password_env, "SharePoint password"),
             )
@@ -114,7 +110,7 @@ class SharePointClient:
     RETRY_STATUS = (429, 503)
     sleep: Callable[[float], None] = staticmethod(time.sleep)
 
-    def _wait(self, attempt: int, r: Optional[requests.Response]) -> float:
+    def _wait(self, attempt: int, r: Optional[transport.Response]) -> float:
         """Seconds to wait before the next try: SharePoint's Retry-After when it sends one, else 1, 2, 4, 8 ..."""
         ra = r.headers.get("Retry-After") if r is not None else None
         wait = float(2 ** attempt)
@@ -128,17 +124,17 @@ class SharePointClient:
                     pass
         return max(0.0, min(wait, float(self.cfg.max_retry_wait)))
 
-    def _get(self, url: str, accept: Optional[str] = None, params: Optional[dict] = None) -> requests.Response:
+    def _get(self, url: str, accept: Optional[str] = None, params: Optional[dict] = None) -> transport.Response:
         headers = {"Accept": accept} if accept else None
         attempt = 0
         while True:
             try:
                 r = self.session.get(self.absolute(url), headers=headers, params=params, timeout=self.cfg.timeout)
-            except (requests.ConnectionError, requests.Timeout) as e:
+            except (transport.ConnectionError, transport.Timeout) as e:
                 if attempt >= self.cfg.retries:
                     raise SharePointError(f"GET {url} failed after {attempt + 1} tries: {e}") from e
                 r, err = None, e
-            except requests.RequestException as e:
+            except transport.RequestException as e:
                 raise SharePointError(f"GET {url} failed: {e}") from e
             else:
                 if r.status_code not in self.RETRY_STATUS or attempt >= self.cfg.retries:

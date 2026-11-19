@@ -54,10 +54,14 @@ Plain code does everything mechanical. AI agents (Claude through your GitHub Cop
 ## Installation
 
 ```bash
-pip install "sp2react[mysql]"     # MySQL / MariaDB tables
-pip install "sp2react[mssql]"     # SQL Server tables (also needs Microsoft ODBC Driver 18)
-pip install "sp2react[ntlm]"      # add for on-premises Windows authentication
+pip install sp2react               # the tool itself: no other packages are downloaded
+pip install "sp2react[mysql]"     # plus SQLAlchemy + PyMySQL, for MySQL / MariaDB tables
+pip install "sp2react[mssql]"     # plus SQLAlchemy + pyodbc, for SQL Server tables (also needs Microsoft ODBC Driver 18)
 ```
+
+**No runtime dependencies.** The HTTP client, Windows (NTLM) sign-in, the YAML reader and the spec validation are
+part of the package and use only the Python standard library, so `pip install sp2react` pulls in nothing else and
+an air-gapped install is one wheel. The database extras are needed only for `data_source: database`.
 
 Python 3.10+. Node.js 20+ is needed to build the generated React app.
 

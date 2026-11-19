@@ -80,5 +80,5 @@ All credentials come from environment variables named in the config: SharePoint 
 - CodeQL code scanning (Python and TypeScript) on every push to `main`, and weekly.
 - Dependabot watches GitHub Actions, the Python dependencies and the generated app's npm and pip templates.
 - The generated app's front-end template reports 0 known vulnerabilities (`npm audit`).
-- Runtime dependencies: `pydantic`, `PyYAML`, `requests`; optional `SQLAlchemy`, `pyodbc` or `PyMySQL`, `requests-ntlm`.
+- No runtime dependencies: HTTP, NTLM (NTLMv2, with channel binding on HTTPS), YAML and validation are implemented on the standard library. Optional: `SQLAlchemy` with `pyodbc` or `PyMySQL` for `data_source: database`.
 - Licence: MIT.

@@ -15,7 +15,7 @@ Start with `sp2react status` and `sp2react-work/report.md`: a failed stage alway
 
 | Message / symptom | Fix |
 |---|---|
-| `NTLM auth needs the extra` | `pip install "sp2react[ntlm]"` |
+| `TLS error` / `CERTIFICATE_VERIFY_FAILED` | Point `sharepoint.verify_ssl` at your corporate root CA (`.pem`) |
 | `HTTP 401` | Wrong credentials, or the site does not use NTLM. Use `CORP\user` (domain, backslash, user). For ADFS or forms sign-in use `auth: cookie` |
 | `HTTP 403` | Your account cannot read that page, list or library. You need at least read access to every page and script being converted |
 | `SSLError` / `CERTIFICATE_VERIFY_FAILED` | Point `sharepoint.verify_ssl` at your corporate root CA (`.pem`). Export it from the browser's certificate viewer, or ask your desktop team |

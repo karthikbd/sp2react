@@ -11,17 +11,16 @@
 
 ## Choose the extras
 
-sp2react has a small core (`pydantic`, `pyyaml`, `requests`). Add extras for what you use:
+sp2react itself has **no runtime dependencies**: its HTTP client, Windows (NTLM) sign-in, YAML reader and spec validation use only the Python standard library. Add extras only for the database you use:
 
 | Extra | Installs | Use when |
 |---|---|---|
 | `mssql` | SQLAlchemy, pyodbc | your data is in **SQL Server** |
 | `mysql` | SQLAlchemy, PyMySQL | your data is in **MySQL / MariaDB** |
 | `db` | SQLAlchemy only | another database (add its driver yourself, e.g. `psycopg` for PostgreSQL) |
-| `ntlm` | requests-ntlm | SharePoint on-premises with **Windows authentication** (`auth: ntlm`) |
-| `dev` | pytest, FastAPI, httpx, uvicorn, SQLAlchemy | running sp2react's own test suite |
+| `dev` | pytest, FastAPI, httpx, uvicorn, SQLAlchemy, requests | running sp2react's own test suite (the generated app's packages) |
 
-Combine them: `pip install "sp2react[mssql,ntlm]"`.
+Windows authentication (`auth: ntlm`) needs no extra any more; `sp2react[ntlm]` still installs, as an empty extra.
 
 ## Windows (PowerShell)
 

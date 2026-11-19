@@ -5,8 +5,8 @@ import os
 from pathlib import Path
 from typing import Literal, Optional, Union
 
-import yaml
-from pydantic import BaseModel, Field, field_validator
+from .model import BaseModel, Field, field_validator
+from .yamlish import YAMLError, safe_load
 
 
 class ConfigError(RuntimeError):
@@ -114,10 +114,13 @@ def load_config(path: Union[str, Path]) -> Config:
     p = Path(path)
     if not p.exists():
         raise ConfigError(f"Config file not found: {p}. Run `sp2react init` to create one.")
-    data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    try:
+        data = safe_load(p.read_text(encoding="utf-8")) or {}
+    except YAMLError as e:
+        raise ConfigError(f"Invalid config {p}: {e}") from e
     try:
         cfg = Config.model_validate(data)
-    except Exception as e:  # pydantic ValidationError -> readable message
+    except Exception as e:  # ValidationError -> readable message
         raise ConfigError(f"Invalid config {p}:\n{e}") from e
     # Relative workspace/output paths are relative to the config file, not the cwd
     base = p.resolve().parent

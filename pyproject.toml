@@ -27,18 +27,14 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = [
-    "pydantic>=2.5",
-    "pyyaml>=6.0",
-    "requests>=2.33.0",
-]
+dependencies = []          # standard library only: HTTP + NTLM, YAML and validation are part of the package
 
 [project.optional-dependencies]
-ntlm = ["requests-ntlm>=1.2"]
+ntlm = []                  # kept so `pip install sp2react[ntlm]` still works; NTLM is built in
 db = ["sqlalchemy>=2.0"]
 mysql = ["sqlalchemy>=2.0", "pymysql>=1.1.1"]
 mssql = ["sqlalchemy>=2.0", "pyodbc>=5.0"]
-dev = ["pytest>=9.0.3", "fastapi>=0.110", "httpx>=0.27", "uvicorn>=0.27", "sqlalchemy>=2.0"]
+dev = ["pytest>=9.0.3", "fastapi>=0.110", "httpx>=0.27", "uvicorn>=0.27", "sqlalchemy>=2.0", "requests>=2.33.0"]   # sp2react itself needs none; these run the generated app in tests
 
 [project.scripts]
 sp2react = "sp2react.cli:main"

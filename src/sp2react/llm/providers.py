@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
-import requests
+from .. import transport
 
 from ..config import ConfigError, LLMConfig, secret
 
@@ -44,10 +44,10 @@ class LLM:
         self._local = threading.local()
 
     @property
-    def session(self) -> requests.Session:
+    def session(self) -> transport.Session:
         s = getattr(self._local, "session", None)
         if s is None:
-            s = requests.Session()
+            s = transport.Session()
             s.verify = self.cfg.verify_ssl
             if self.policy is not None:
                 self.policy.guard(s)
@@ -59,7 +59,7 @@ class LLM:
         for attempt in range(5):
             try:
                 r = self.session.post(url, headers=headers, json=body, timeout=timeout or self.cfg.timeout)
-            except requests.RequestException as e:
+            except transport.RequestException as e:
                 if attempt == 4:
                     raise LLMError(f"{self.name}: request failed: {e}") from e
                 log.warning("%s: %s, retrying in %.0fs", self.name, e, delay)
