@@ -49,13 +49,16 @@ class Scan:
 
     def lit(self, placeholder: str) -> Optional[Literal]:
         m = re.fullmatch(r"__S(\d+)__", placeholder.strip())
-        return self.literals[int(m.group(1))] if m else None
+        return self.literals[int(m.group(1))] if m and int(m.group(1)) < len(self.literals) else None
 
     def literals_in(self, code_fragment: str) -> list[Literal]:
-        return [self.literals[int(i)] for i in re.findall(r"__S(\d+)__", code_fragment)]
+        return [self.literals[int(i)] for i in re.findall(r"__S(\d+)__", code_fragment) if int(i) < len(self.literals)]
 
     def restore(self, code_fragment: str) -> str:
-        return re.sub(r"__S(\d+)__", lambda m: _quote(self.literals[int(m.group(1))].value), code_fragment)
+        def put(m: re.Match[str]) -> str:
+            k = int(m.group(1))
+            return _quote(self.literals[k].value) if k < len(self.literals) else m.group(0)
+        return re.sub(r"__S(\d+)__", put, code_fragment)
 
     def enclosing(self, code_offset: int) -> list[FuncRange]:
         """Functions containing the offset, innermost last."""
@@ -154,7 +157,7 @@ def tokenize(src: str) -> tuple[str, list[Literal]]:
             if c.isalnum() or c in "_$":
                 m = re.match(r"[\w$]+", src[i:])
                 word = m.group(0) if m else c
-                code.append(word[1:])
+                code.append(word.replace("__S", "__s")[1:])   # source text must never look like a placeholder
                 i += len(word)
                 prev_sig, prev_word = "w", word
                 continue

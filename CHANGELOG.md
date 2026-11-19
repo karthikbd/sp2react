@@ -2,6 +2,11 @@
 
 All notable changes to `sp2react` are documented here.
 
+## [Unreleased]
+
+### Fixed
+- JavaScript analysis: a script whose own code contained text shaped like the scanner's internal string placeholders (`__S7__`) stopped the inventory with an `IndexError` (found by ClusterFuzzLite). Such text is now kept apart from the placeholders
+
 ## [0.1.4] - 2026-11-19
 
 OpenSSF Best Practices silver and baseline groundwork, and the fixes found by a threat model of sp2react. Each fix has a test in `tests/test_threat_model.py` that fails on 0.1.3.
