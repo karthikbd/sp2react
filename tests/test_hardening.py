@@ -344,12 +344,47 @@ def test_node_version_gate():
         assert not node_too_old(v), v
 
 
-def test_old_node_is_reported_before_npm_install(tmp_path, monkeypatch):
+def test_old_node_fails_the_test_stage_as_infrastructure(tmp_path, monkeypatch):
     from sp2react import checks
     (tmp_path / "frontend").mkdir()
     calls = []
     monkeypatch.setattr(checks.shutil, "which", lambda name: f"/usr/bin/{name}")
-    monkeypatch.setattr(checks, "_run", lambda cmd, cwd, timeout, env=None: (calls.append(cmd), (0, "v20.11.1\n"))[1])
+    monkeypatch.setattr(checks, "_run", lambda cmd, cwd, timeout, env=None: (calls.append(cmd), (0, "v22.11.0\n"))[1])
     c = checks.frontend_install(tmp_path)
-    assert not c.ok and c.skipped and "v20.11.1" in c.output and "20.19" in c.output
+    assert not c.ok and not c.skipped and "v22.11.0" in c.output and "20.19" in c.output
     assert calls == [["/usr/bin/node", "--version"]]  # npm install never ran
+    # not skipped, so the test stage fails instead of passing on the rule vectors alone
+    assert checks.failures_by_screen([c], ["Dashboard"], {}) == {"": f"## npm install\n{c.output}"}
+
+
+def test_missing_npm_fails_the_test_stage(tmp_path, monkeypatch):
+    from sp2react import checks
+    (tmp_path / "frontend").mkdir()
+    monkeypatch.setattr(checks.shutil, "which", lambda name: None)
+    c = checks.frontend_install(tmp_path)
+    assert not c.ok and not c.skipped and "npm not found" in c.output
+    assert "" in checks.failures_by_screen([c], ["Dashboard"], {})
+
+
+def test_changed_package_json_installs_again(tmp_path, monkeypatch):
+    """A regenerated app with new dependency versions must not keep the old node_modules."""
+    from sp2react import checks
+    fe = tmp_path / "frontend"
+    (fe / "node_modules" / ".bin").mkdir(parents=True)
+    (fe / "node_modules" / ".bin" / "tsc").write_text("")
+    (fe / "package.json").write_text('{"dependencies": {"react": "^18.3.1"}}')
+    installs = []
+
+    def run(cmd, cwd, timeout, env=None):
+        if cmd[-1] == "--version":
+            return 0, "v22.12.0\n"
+        installs.append(cmd)
+        return 0, "installed"
+    monkeypatch.setattr(checks.shutil, "which", lambda name: f"/usr/bin/{name}")
+    monkeypatch.setattr(checks, "_run", run)
+    assert checks.frontend_install(tmp_path).ok and len(installs) == 1  # no stamp yet (built by an older sp2react)
+    second = checks.frontend_install(tmp_path)
+    assert second.ok and second.skipped and len(installs) == 1  # unchanged: no reinstall
+    (fe / "package.json").write_text('{"dependencies": {"react": "^19.3.1"}}')
+    assert checks.frontend_install(tmp_path).ok and len(installs) == 2  # changed: installs again
+    assert checks.frontend_install(tmp_path).skipped and len(installs) == 2

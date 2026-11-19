@@ -1,6 +1,7 @@
 """Stage 8 (test against the original): build and test the generated app. Plain processes, no model."""
 from __future__ import annotations
 
+import hashlib
 import re
 import shutil
 from dataclasses import dataclass
@@ -52,20 +53,36 @@ def node_too_old(version: str) -> bool:
     return major < 20 or major == 21 or (major == 20 and minor < 19) or (major == 22 and minor < 12)
 
 
+INSTALL_STAMP = ".sp2react-package.sha256"  # in node_modules: the package.json the installed packages match
+
+
+def _manifest_digest(fe: Path) -> str:
+    return hashlib.sha256((fe / "package.json").read_bytes()).hexdigest() if (fe / "package.json").is_file() else ""
+
+
 def frontend_install(out: Path, timeout: int = 1200) -> Check:
+    """`npm install`, unless node_modules already matches package.json.
+
+    Failures here are real failures (not skipped): a requested build that cannot run must stop the
+    test stage, and no screen's files are named in them, so they are routed as infrastructure.
+    """
     fe = out / "frontend"
     node = shutil.which("node")
     if node:
         code, version = _run([node, "--version"], fe if fe.is_dir() else out, 60)
         if code == 0 and node_too_old(version):
             return Check("npm install", False, f"Node.js {version.strip()} is too old for the generated front end "
-                         f"(Vite needs {NODE_MIN} or later); upgrade Node.js or set pipeline.run_builds: false", skipped=True)
-    if (fe / "node_modules" / ".bin" / "tsc").exists():
-        return Check("npm install", True, "node_modules present", skipped=True)
+                         f"(Vite needs {NODE_MIN} or later); upgrade Node.js or set pipeline.run_builds: false")
+    stamp = fe / "node_modules" / INSTALL_STAMP
+    digest = _manifest_digest(fe)
+    if (fe / "node_modules" / ".bin" / "tsc").exists() and stamp.is_file() and stamp.read_text(encoding="utf-8").strip() == digest:
+        return Check("npm install", True, "node_modules matches package.json", skipped=True)
     npm = shutil.which("npm")
     if not npm:
-        return Check("npm install", False, "npm not found on PATH; install Node.js 22.12+ (or 20.19+) or set pipeline.run_builds: false", skipped=True)
+        return Check("npm install", False, "npm not found on PATH; install Node.js 22.12+ (or 20.19+) or set pipeline.run_builds: false")
     code, txt = _run([npm, "install", "--no-audit", "--no-fund", "--loglevel=error"], fe, timeout)
+    if code == 0 and digest and (fe / "node_modules").is_dir():
+        stamp.write_text(digest + "\n", encoding="utf-8")  # a changed package.json (a regenerated app) installs again
     return Check("npm install", code == 0, txt)
 
 
