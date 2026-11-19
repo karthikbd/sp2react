@@ -19,7 +19,7 @@ def create_app() -> FastAPI:
     app.state.specs = Specs()
     source = os.environ.get("DATA_SOURCE", "__DEFAULT_SOURCE__")
     if source == "database":
-        from .sql_repo import SqlRepo  # your existing tables, through mapping.json
+        from .sql_repo import SqlRepo          # your existing tables, through mapping.json
         app.state.repo = SqlRepo(app.state.specs)
     elif source == "sharepoint":
         from .sp_repo import SharePointRepo
