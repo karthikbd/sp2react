@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sp2react"
-version = "0.1.4"
+version = "0.1.5"
 authors = [{name = "Karthikeyan Balasundaram"}]
 description = "AI-agent pipeline that converts classic SharePoint ASPX/jQuery list forms and pages into a React + FastAPI app on your existing database. Zero runtime dependencies."
 readme = "README.md"

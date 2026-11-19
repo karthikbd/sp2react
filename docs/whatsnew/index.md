@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.1.5 (November 2026)
+
+- **Fix**: a SharePoint script whose code contained text shaped like the JavaScript analyser's internal
+  placeholders (for example `__S7__`) stopped the inventory step with an error. Found by fuzzing.
+
 ## 0.1.4 (November 2026)
 
 - **Security fixes found by a threat model** (see the {doc}`security assurance case </development/security-assurance>`):
