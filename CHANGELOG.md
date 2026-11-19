@@ -11,7 +11,6 @@ OpenSSF Best Practices silver and baseline groundwork, as in lodestream and mssq
 - `migrate`: attachment names and item ids from the server are checked the same way before the attachment is downloaded and written to the export folder
 - The generated app's builds and tests (which run agent-written handlers) no longer receive sp2react's own credentials: the variables named in `sharepoint.*_env`, `llm.api_key_env` and `database.url_env` are removed from their environment
 - Spec screen ids must be plain names (letters, digits, `_`, `-`, `.`, at most 128 characters), since they become folder and file names; generated ids longer than 100 characters are shortened and keep a hash of the full name
-
 - **The generated app's back-end tests and loader run in a sandbox** (`pipeline.sandbox`, default `auto`). They import custom handlers written by agents, which until now ran as ordinary processes with the user's file and network access. `container` runs them in a throwaway Docker or Podman container with no network (or only the database host), a read-only file system except the folder the step writes, no capabilities, a non-root user and none of the host's environment; `guard` (used by `auto` when no container runtime answers) runs them under an audit hook that refuses writes outside that folder, new processes, other network hosts and `ctypes`; `off` keeps plain processes. Set `pipeline.sandbox_image` to use a check image from your registry
 - **NTLM is an explicit, TLS-only choice.** `sharepoint.auth` has no default any more (NTLMv2 needs MD4 and HMAC-MD5 by protocol), and NTLM is never answered over plain HTTP (the site URL or any later request, so a redirect cannot downgrade it) unless `sharepoint.allow_ntlm_over_http: true`. The generated app's SharePoint data source does the same (`SP_AUTH` required, `SP_ALLOW_NTLM_OVER_HTTP=1`). **Upgrade note:** a config without `sharepoint.auth` now fails with "Field required"; add `auth: ntlm` (or `cookie`, `bearer`, `none`). Configs written by `sp2react init` already have it
 
@@ -21,7 +20,7 @@ OpenSSF Best Practices silver and baseline groundwork, as in lodestream and mssq
 ### Added
 - `GOVERNANCE.md`, `CODE_OF_CONDUCT.md`, `ROADMAP.md`, a VEX document (`vex.openvex.json`), and in the documentation a security assurance case (threat model), a dependency and scanning policy, testing and releasing pages
 - Pull requests: a DCO check (every commit signed off) and GitHub dependency review
-- CI: statement coverage must stay at 80% or more (85% now); a job builds the package twice and checks the files are identical, and releases are built the same way (`SOURCE_DATE_EPOCH`, `ci/reproducible_sdist.py`); the vulnerability audit also checks versions pinned only for other Python versions (`ci/all_pins.py`); Dependabot watches the fuzzing image
+- CI: statement coverage must stay at 80% or more (about 86% now); a job builds the package twice and checks the files are identical, and releases are built the same way (`SOURCE_DATE_EPOCH`, `ci/reproducible_sdist.py`); the vulnerability audit also checks versions pinned only for other Python versions (`ci/all_pins.py`); Dependabot watches the fuzzing image
 
 ### Changed
 - `mypy --strict` and `ruff` with the Bandit security rules (`S`), comprehensions, `PIE` and `RUF` are clean and required
