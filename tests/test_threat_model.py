@@ -222,3 +222,18 @@ def test_the_generated_sharepoint_source_needs_an_explicit_sign_in(monkeypatch):
     monkeypatch.setenv("SP_AUTH", "cookie")
     monkeypatch.setenv("SP_COOKIE", "FedAuth=x")
     assert mod.SharePointRepo(specs).s.headers["Cookie"] == "FedAuth=x"
+
+
+@pytest.mark.parametrize("src", [
+    "var __S7__ = 1; $('#x').on(__S9__, f)",               # source that looks like the scanner's own placeholders
+    "x = /a/g_S3__; $(y).text(__S4__)",
+    "a = '__S5__' + __S0__",
+    __import__("base64").b64decode("//+KinX/B3WKdXWK//8AAAAu+/tfX1MwX190").decode("latin-1"),   # ClusterFuzzLite find
+])
+def test_scripts_that_mimic_placeholders_are_analysed(src):
+    from sp2react.analysis.behaviors import FieldIndex, analyze_script
+    from sp2react.analysis.jsscan import scan
+
+    analyze_script("fuzz.js", src, FieldIndex())
+    s = scan(src)
+    assert all(lit.index < len(s.literals) for lit in s.literals_in(s.code))

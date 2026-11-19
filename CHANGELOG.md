@@ -2,9 +2,14 @@
 
 All notable changes to `sp2react` are documented here.
 
+## [Unreleased]
+
+### Fixed
+- JavaScript analysis: a script whose own code contained text shaped like the scanner's internal string placeholders (`__S7__`) stopped the inventory with an `IndexError` (found by ClusterFuzzLite). Such text is now kept apart from the placeholders
+
 ## [0.1.4] - 2026-11-19
 
-OpenSSF Best Practices silver and baseline groundwork, as in lodestream and mssql-ocp-migrate, and the fixes its threat model found. Each fix has a test in `tests/test_threat_model.py` that fails on 0.1.3.
+OpenSSF Best Practices silver and baseline groundwork, and the fixes found by a threat model of sp2react. Each fix has a test in `tests/test_threat_model.py` that fails on 0.1.3.
 
 ### Security
 - `extract`: a page or asset URL from the site with `..` segments (for example `<script src="/sites/x/../../../y.js">` in a page) was written relative to the workspace, so a page editor could make sp2react write files outside it. Every file the extract writes (page source, web part, wiki and rendered sidecars, assets, list folders) is now checked (`..`, absolute and drive paths, symlinks) and a refused one is listed as an extraction error, before it is downloaded
@@ -29,7 +34,7 @@ OpenSSF Best Practices silver and baseline groundwork, as in lodestream and mssq
 
 ## [0.1.3] - 2026-11-19
 
-Fixes found in a review of 0.1.2, no runtime dependencies, and the release standards of mssql-ocp-migrate and lodestream. Each fix has a test (`tests/test_hardening.py`, `tests/test_fidelity.py`, `tests/test_stdlib.py`) that fails on 0.1.2.
+Fixes found in a review of 0.1.2, no runtime dependencies, and signed, verifiable releases. Each fix has a test (`tests/test_hardening.py`, `tests/test_fidelity.py`, `tests/test_stdlib.py`) that fails on 0.1.2.
 
 ### Security
 - Generated app: the catch-all route that serves the front end could return any file on the server (`/..%2fbackend%2f.env`, `/%2Fetc%2Fhostname`). It now serves only files inside `FRONTEND_DIST`
@@ -55,7 +60,7 @@ Fixes found in a review of 0.1.2, no runtime dependencies, and the release stand
 - A list whose URL name contains a space failed the spec gate (`endpoint path ... must contain only path characters`); the API client now also encodes list names in URLs
 
 ### Added
-- Supply chain, as in mssql-ocp-migrate and lodestream: hash-locked CI tool sets (`ci/requirements-*.txt`), a `zero-deps` job that installs and runs the package with nothing else installed, weekly `pip-audit` of every tool set and of the generated app's back end plus `npm audit` of its front end, ClusterFuzzLite fuzzing (`tests/fuzz`: config YAML, spec validation, ASPX/JavaScript analysis, NTLM challenges, the generated API's `$filter` parser), and an end-to-end workflow that runs `data_source: database` against real MySQL 8.4 and SQL Server 2022 containers
+- Supply chain: hash-locked CI tool sets (`ci/requirements-*.txt`), a `zero-deps` job that installs and runs the package with nothing else installed, weekly `pip-audit` of every tool set and of the generated app's back end plus `npm audit` of its front end, ClusterFuzzLite fuzzing (`tests/fuzz`: config YAML, spec validation, ASPX/JavaScript analysis, NTLM challenges, the generated API's `$filter` parser), and an end-to-end workflow that runs `data_source: database` against real MySQL 8.4 and SQL Server 2022 containers
 - Releases: published from GitHub releases only, with a check that the wheel declares no runtime dependencies, a CycloneDX SBOM, PyPI attestations, and Sigstore-signed wheel, sdist and SBOM on the GitHub release; `verify-release.yml` checks the signatures and that PyPI serves the same files
 - Documentation site configuration for Read the Docs (Sphinx + MyST, warnings are errors), `CONTRIBUTING.md`, `THIRD_PARTY_NOTICES.md`; `ruff` and `mypy` clean
 
