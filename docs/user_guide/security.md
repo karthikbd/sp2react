@@ -54,6 +54,29 @@ The account in `SP2REACT_DB_URL` needs read access to the schema for `map-db`. T
 
 All credentials come from environment variables named in the config: SharePoint username and password, cookie or token, the model token, the database URL. They are never written to the workspace, the generated app, the report or agent transcripts.
 
+## Windows sign-in (NTLM) and its cryptography
+
+`auth: ntlm` (the default, for on-premises SharePoint with Windows authentication) uses NTLMv2, which
+the protocol defines with MD4 (the password hash) and HMAC-MD5. Both are weak by today's standards; they
+are used only because the SharePoint server requires this protocol, and only toward the configured
+SharePoint host. Python's `hashlib` no longer offers MD4 with OpenSSL 3, so `ntlm.py` contains a small
+MD4 implementation checked against the RFC 1320 test vectors; HMAC-MD5 comes from `hmac` and `hashlib`.
+
+What this means and how to reduce the risk:
+
+- Anyone who records an NTLM exchange can try to guess the password offline, and an attacker in the
+  middle could relay it. Use an `https://` site URL with certificate verification (the default):
+  the exchange is then inside TLS, and sp2react adds **channel binding** (the server's certificate hash).
+  Channel binding stops a relay only if the server checks it: turn on **Extended Protection for
+  Authentication** (IIS, `tokenChecking="Require"`) on the SharePoint web applications. Keep `verify_ssl` on,
+  or point it at your CA bundle.
+- Use a service account with read access to the site only, and a long random password.
+- If the farm supports another sign-in, prefer it: `auth: cookie` (a session from a signed-in browser) or
+  `auth: bearer` (an Entra ID / SharePoint Online token). They use no MD4 or MD5 in sp2react.
+
+Everything else that needs cryptography uses Python's `ssl` (TLS 1.2 or later, OpenSSL) and `hashlib`
+(SHA-256 for checksums and fingerprints; SHA-1 only to shorten identifiers, never for security).
+
 ## Writes
 
 - **SharePoint:** none. sp2react never writes to SharePoint.

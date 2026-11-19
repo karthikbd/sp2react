@@ -66,6 +66,7 @@ See {doc}`architecture` for the components. Actors and what they can do:
 | Reading files through the static route, or writing them through attachment names (6) | The SPA route serves only files listed from `FRONTEND_DIST`; attachment names are checked | `tests/test_hardening.py` |
 | Access without identity, or past roles and locks (6) | `AUTH_MODE=header` by default, failing closed; `dev` is local-only; role, lock and delete rules enforced in the API | `tests/test_hardening.py` |
 | Eavesdropping or tampering in transit (network) | TLS verification on by default (`verify_ssl` may name a CA bundle); NTLMv2 with channel binding on HTTPS | `transport.py`, `ntlm.py` |
+| Weak, protocol-mandated cryptography in Windows sign-in: NTLMv2 needs MD4 and HMAC-MD5 (network) | Used only for `auth: ntlm` toward the SharePoint host; inside TLS with channel binding on HTTPS, which prevents relay when the server enforces it (IIS Extended Protection, which the docs recommend); risks and alternatives (`cookie`, `bearer`) documented | `ntlm.py` (RFC 1320 and MS-NLMP test vectors in `tests/test_stdlib.py`); user guide *Security* |
 | Malformed configuration or pages crashing or hanging a run (1, 2) | Strict validation; linear-time tokenizer; fuzzed | fuzz targets `fuzz_config_yaml`, `fuzz_legacy_code` |
 | Malicious or vulnerable dependency (7) | No runtime dependencies; generated app's dependencies audited (`pip-audit`, `npm audit`); CI tooling hash-locked; actions pinned by SHA; dependency review; Dependabot | `ci/`, `vulnerability-audit.yml`, `dependency-review.yml` |
 | Tampered release (7) | PyPI Trusted Publishing with provenance; Sigstore-signed assets re-verified by `verify-release.yml`; reproducible builds checked in CI | `python-publish.yml`, `tests.yml` |
@@ -107,7 +108,7 @@ See {doc}`architecture` for the components. Actors and what they can do:
 
 CWE-22 (path traversal), CWE-89 (SQL injection), CWE-79 (cross-site scripting), CWE-78 and CWE-94
 (command and code injection: no shell, no `eval`, model output never executed by sp2react itself),
-CWE-918 (SSRF: network policy), CWE-295 (certificate validation), CWE-306 and CWE-862 (missing
+CWE-918 (SSRF: network policy), CWE-295 (certificate validation), CWE-327 (broken cryptography: only where NTLM requires it, see above), CWE-306 and CWE-862 (missing
 authentication or authorization in the generated app), CWE-312 and CWE-532 (cleartext or logged
 secrets), CWE-400 and CWE-1333 (resource and regex DoS), CWE-494 and CWE-829 (unverified or untrusted
 code), CWE-20 (input validation), CWE-1427 (prompt injection). CodeQL and `ruff`'s `S` rules scan for
