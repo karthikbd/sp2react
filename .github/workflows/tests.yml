@@ -106,8 +106,8 @@ jobs:
         env:
           SP2REACT_TEST_CONTAINER: "1"
         run: python -m pytest tests/test_sandbox.py -q --tb=short -k container
-      - name: Base image digest (for pinning container/Dockerfile)
-        run: docker image ls --digests | head -5
+      - name: Check image base is pinned by digest
+        run: grep -E '^FROM [^ ]+@sha256:[0-9a-f]{64}' src/sp2react/container/Dockerfile || { docker pull -q python:3.12-slim && docker inspect --format '{{index .RepoDigests 0}}' python:3.12-slim; exit 1; }
 
   docs:
     runs-on: ubuntu-latest
