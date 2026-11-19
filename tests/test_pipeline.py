@@ -15,6 +15,7 @@ from sp2react.pipeline import Pipeline, StageBlocked
 
 def make(tmp_path, url, **pipeline):
     pipeline.setdefault("data_source", "sqlite")
+    pipeline.setdefault("sandbox", "guard")         # the container path: tests.yml sandbox-container and e2e.yml
     return Config(sharepoint=SharePointConfig(site_url=url, auth="cookie"), llm=LLMConfig(provider="scripted"),
                   pipeline=PipelineConfig(workspace=str(tmp_path / "ws"), output=str(tmp_path / "app"), **pipeline))
 

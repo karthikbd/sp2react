@@ -198,8 +198,13 @@ class Sandbox:
         cmd += ["-v", f"{GUARD}:/sp2react/guard.py:ro"]
         guard_env = {"SP2REACT_GUARD_WRITE": ":".join(inside(str(p.resolve())) for p in write),
                      "SP2REACT_GUARD_HOSTS": ",".join(self.hosts), "PYTHONDONTWRITEBYTECODE": "1", "HOME": "/tmp"}  # noqa: S108
+        def url_inside(url: str) -> str:     # sqlite:////host/path/db -> sqlite:////work/..; server URLs unchanged
+            if url.startswith("sqlite:///") and len(url) > len("sqlite:///"):
+                return "sqlite:///" + inside(url[len("sqlite:///"):])
+            return url
+
         for k, v in {**{k: str(v) for k, v in env.items()}, **guard_env}.items():
-            cmd += ["-e", f"{k}={inside(v) if k != 'DB_URL' else v}"]
+            cmd += ["-e", f"{k}={url_inside(v) if k == 'DB_URL' else inside(v)}"]
         cmd += ["-w", inside(str(cwd.resolve())), image, "python", "/sp2react/guard.py",
                 *[inside(a) for a in args]]
 

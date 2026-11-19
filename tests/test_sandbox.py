@@ -172,6 +172,13 @@ def test_the_container_gets_no_network_no_host_files_and_no_secrets(tmp_path, mo
     assert "--network host" in s and "SP2REACT_GUARD_HOSTS=db.example" in s and "registry.example/checks:1" in run
     assert not any(c[1] == "build" for c in calls)
 
+    calls.clear()
+    (tmp_path / "db").mkdir()
+    Sandbox("container", image="img", data=[tmp_path / "db"]).python(
+        ["-m", "pytest"], app / "backend", {"DB_URL": f"sqlite:///{tmp_path / 'db' / 'sea.db'}"}, write=[app / "backend"], read=[app])
+    s = " ".join(calls[-1])
+    assert "DB_URL=sqlite:////work/w1/sea.db" in s and f"{(tmp_path / 'db').resolve()}:/work/w1:rw" in s
+
 
 def test_a_malicious_handler_cannot_escape_the_backend_tests(tmp_path):
     """End to end: a custom handler that tries to read secrets, write outside and call home runs under the guard."""
