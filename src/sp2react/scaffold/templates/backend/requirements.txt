@@ -1,6 +1,8 @@
-fastapi>=0.110
+fastapi>=0.133.0
+starlette>=1.3.1     # FastAPI's web layer: older versions have known advisories
 uvicorn[standard]>=0.27
-pydantic>=2.5
+h11>=0.16.0          # uvicorn's HTTP parser: older versions have a known advisory
+pydantic>=2.7.0
 requests>=2.33.0
 # requests-ntlm>=1.2   # only for DATA_SOURCE=sharepoint with SP_AUTH=ntlm
 sqlalchemy>=2.0

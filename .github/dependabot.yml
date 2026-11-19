@@ -24,9 +24,13 @@ updates:
     labels:
       - "dependencies"
 
-  # Keep the generated app's back-end template up to date
+  # The generated app's back-end template. Its requirements are minimums (>=), so a fresh
+  # install already gets the newest release; raise a minimum only when the range allows a
+  # version with a known advisory (Dependabot security updates do that) or one that breaks.
+  # Raising them for every release would cut off Python versions the app still supports.
   - package-ecosystem: "pip"
     directory: "/src/sp2react/scaffold/templates/backend"
+    versioning-strategy: increase-if-necessary
     schedule:
       interval: "weekly"
     labels:

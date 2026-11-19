@@ -2,6 +2,11 @@
 
 All notable changes to `sp2react` are documented here.
 
+## [Unreleased]
+
+### Security
+- Generated app: `requirements.txt` now requires `starlette>=1.3.1` (FastAPI's web layer) and `h11>=0.16.0` (uvicorn's HTTP parser). The old minimums let an existing environment keep versions with known advisories; a fresh install already got fixed versions. `fastapi` moves to `>=0.133.0`, the first release that accepts starlette 1.x, and `pydantic` to `>=2.7.0`, which that fastapi needs anyway. Python 3.10 is still supported. Regenerating an existing app picks this up (files you changed are kept)
+
 ## [0.1.5] - 2026-11-19
 
 ### Fixed
