@@ -59,7 +59,11 @@ def _attachment_path(out: Path, key: str, item_id: Any, name: Any) -> Path:
     for s in segs:
         if s in ("", ".", "..") or "/" in s or "\\" in s or ":" in s or "\x00" in s:
             raise ValueError(f"refused attachment path segment {s!r} (list {key}, item {item_id})")
-    return out / "attachments" / segs[0] / segs[1] / segs[2]
+    base = (out / "attachments").resolve()
+    target = (out / "attachments" / segs[0] / segs[1] / segs[2]).resolve()
+    if base not in target.parents:          # a symlink inside the export folder must not redirect the write
+        raise ValueError(f"refused attachment path {target}: outside {base}")
+    return target
 
 
 def read_export(out: Path, key: str) -> list[dict[str, Any]]:

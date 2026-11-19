@@ -78,9 +78,17 @@ class Legacy:
         return None
 
 
+SCREEN_ID_MAX = 100     # leaves room for a collision suffix within spec.model's 128-character limit
+
+
 def safe_id(text: str) -> str:
-    """A screen id that is also a folder name: letters, digits, '_', '-' and '.' (never leading)."""
-    return re.sub(r"[^A-Za-z0-9_.\-]+", "_", text).strip("._-") or "screen"
+    """A screen id that is also a folder name: letters, digits, '_', '-' and '.' (never leading), at most
+    SCREEN_ID_MAX characters (a longer name is cut and keeps a hash of the full name, so ids stay distinct)."""
+    sid = re.sub(r"[^A-Za-z0-9_.\-]+", "_", text).strip("._-") or "screen"
+    if len(sid) > SCREEN_ID_MAX:
+        digest = hashlib.sha1(sid.encode("utf-8"), usedforsecurity=False).hexdigest()[:6]
+        sid = f"{sid[:SCREEN_ID_MAX - 7].rstrip('._-')}-{digest}"
+    return sid
 
 
 def _page_stem(page: str) -> str:

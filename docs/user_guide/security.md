@@ -69,7 +69,8 @@ that runs sp2react. Those include files written by agents (screens and custom ha
   and `database.url_env` are removed from their environment (in `data_source: database` the app gets the
   database URL as `DB_URL`, because its tests need it);
 - they still run with your user's file and network access. Run sp2react in a container or a VM used only
-  for the conversion, or use `--no-builds` and test the app elsewhere. Review custom handlers
+  for the conversion. (`--no-builds` skips only the front-end build and checks; the back-end tests and
+  the reconciliation still run the generated Python.) Review custom handlers
   (`custom/*.ts`, `custom/*.py`) like any other code change before approving a screen.
 
 Page text can try to steer an agent (prompt injection). Validation limits where agent output can go and

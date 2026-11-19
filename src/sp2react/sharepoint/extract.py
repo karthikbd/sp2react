@@ -45,12 +45,18 @@ def inside(root: Path, rel: str) -> Path:
     return target
 
 
-def _write(path: Path, content: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+def _write(path: Path, content: Any, root: Path) -> None:
+    """Write a file of the extract; `path` must resolve inside `root` (see inside())."""
+    try:
+        rel = path.relative_to(root).as_posix()
+    except ValueError:
+        raise SharePointError(f"refused path {path}: outside {root}") from None
+    target = inside(root, rel)
+    target.parent.mkdir(parents=True, exist_ok=True)
     if isinstance(content, (dict, list)):
-        path.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
+        target.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
     else:
-        path.write_text(content, encoding="utf-8")
+        target.write_text(content, encoding="utf-8")
 
 
 def _list_folder(list_entry: dict[str, Any]) -> str:
@@ -108,15 +114,15 @@ class Extractor:
             folder = self.root / "lists" / _list_folder(entry)
             self.progress(f"list {entry['title']}: fields and sample items")
             try:
-                _write(folder / "fields.json", {"d": {"results": self.sp.fields(entry["id"])}})
+                _write(folder / "fields.json", {"d": {"results": self.sp.fields(entry["id"])}}, self.root)
             except SharePointError as e:
                 self._err(f"fields of {entry['title']}", e)
                 continue
             if not self.sp.item_reads:
-                _write(folder / "items.json", {"d": {"results": []}, "note": "list items are not read: data_source=database"})
+                _write(folder / "items.json", {"d": {"results": []}, "note": "list items are not read: data_source=database"}, self.root)
             else:
                 try:
-                    _write(folder / "items.json", {"d": {"results": self.sp.items(entry["id"], sample_items)}})
+                    _write(folder / "items.json", {"d": {"results": self.sp.items(entry["id"], sample_items)}}, self.root)
                 except SharePointError as e:
                     self._err(f"items of {entry['title']}", e)
             self.manifest["lists"].append(entry["title"])
@@ -126,7 +132,7 @@ class Extractor:
             site["users"] = []
         try:
             users = self.sp.site_users() if self.sp.item_reads else []
-            _write(self.root / "siteusers.json", {"d": {"results": users}})
+            _write(self.root / "siteusers.json", {"d": {"results": users}}, self.root)
             site["users"] = [{"login": re.sub(r"^i:0#\.\w\|", "", u.get("LoginName", "")), "title": u.get("Title"), "email": u.get("Email")}
                              for u in users if u.get("PrincipalType", 1) == 1]
         except SharePointError as e:
@@ -154,9 +160,11 @@ class Extractor:
     def page(self, page: str) -> Optional[str]:
         rel = self.sp.site_relative(self.sp.server_relative_url(page))
         self.progress(f"page {rel}")
-        try:
-            inside(self.root / "pages", rel)
-        except SharePointError as e:
+        rendered = self.root / "rendered" / (re.sub(r"\.aspx$", "", rel, flags=re.I) + ".html")
+        try:     # every file this page produces must land inside the workspace, checked before anything is read
+            for out in (f"pages/{rel}", f"pages/{rel}.webparts.json", f"pages/{rel}.wiki.html", rendered.relative_to(self.root).as_posix()):
+                inside(self.root, out)
+        except (SharePointError, ValueError) as e:
             self._err(f"page {rel}", e)
             return None
         try:
@@ -164,23 +172,23 @@ class Extractor:
         except SharePointError as e:
             self._err(f"source of {rel}", e)
             return None
-        _write(self.root / "pages" / rel, source)
+        _write(self.root / "pages" / rel, source, self.root)
         wps = None
         try:
             wps = self.sp.web_parts(rel)
-            _write(self.root / "pages" / (rel + ".webparts.json"), {"d": {"results": wps}})
+            _write(self.root / "pages" / (rel + ".webparts.json"), {"d": {"results": wps}}, self.root)
         except SharePointError as e:
             self._err(f"web parts of {rel}", e)
         if WIKI_MARKER.search(source):         # wiki page: its text lives in the WikiField column
             try:
                 wiki = self.sp.wiki_content(rel)
                 if wiki:
-                    _write(self.root / "pages" / (rel + ".wiki.html"), wiki)
+                    _write(self.root / "pages" / (rel + ".wiki.html"), wiki, self.root)
             except SharePointError as e:
                 self._err(f"wiki content of {rel}", e)
         try:
             if self.sp.item_reads:
-                _write(self.root / "rendered" / (re.sub(r"\.aspx$", "", rel, flags=re.I) + ".html"), self.sp.rendered(rel))
+                _write(rendered, self.sp.rendered(rel), self.root)
         except SharePointError as e:
             self._err(f"rendered {rel}", e)
         self.manifest["pages"].append(rel)
@@ -221,7 +229,7 @@ class Extractor:
             except SharePointError as e:
                 self._err(f"asset {rel}", e)
                 continue
-            _write(self.root / "files" / rel, text)
+            _write(self.root / "files" / rel, text, self.root)
             self.manifest["files"].append(rel)
             if rel.lower().endswith((".html", ".htm", ".txt")):  # CEWP content links can pull in more scripts
                 from ..analysis.aspx import scan_html
@@ -239,11 +247,11 @@ class Extractor:
         except SharePointError as e:
             self._err("quick launch navigation", e)
         self.list_data(site, sample_items)
-        _write(self.root / "site.json", site)
+        _write(self.root / "site.json", site, self.root)
         targets = pages or self.discover_pages(site)
         fetched = [p for p in (self.page(t) for t in targets) if p]
         self.assets(fetched)
         self.manifest["summary"] = {"lists": len(self.manifest["lists"]), "pages": len(fetched),
                                     "files": len(self.manifest["files"]), "errors": len(self.manifest["errors"])}
-        _write(self.root / "manifest.json", self.manifest)
+        _write(self.root / "manifest.json", self.manifest, self.root)
         return self.manifest

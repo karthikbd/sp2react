@@ -80,8 +80,10 @@ See {doc}`architecture` for the components. Actors and what they can do:
 - **Generated code runs on the conversion machine.** The `test` stage runs the generated back end's tests
   (which import agent-written Python handlers) and builds the front end. Credentials for SharePoint, the
   model and the database-URL variable are removed from their environment, but they run with the user's
-  file and network access. Run sp2react in a container or a VM dedicated to the conversion, or use
-  `--no-builds` and test the app elsewhere. Running these steps in a sandbox by default is on the roadmap.
+  file and network access. Run sp2react in a container or a VM dedicated to the conversion.
+  `--no-builds` is not an alternative: it skips only the front-end checks; the back-end tests and the
+  reconciliation still import the generated Python. Running these steps in a sandbox by default is on
+  the roadmap.
 - **Secrets inside page scripts.** Page source is sent to the model and kept in agent transcripts
   (`sp2react-work/agents/`). Remove secrets embedded in scripts before extraction, or treat the
   workspace as secret.

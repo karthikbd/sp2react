@@ -24,6 +24,8 @@ requests that move these forward are welcome, and each item will get its own iss
 - **Branding**: capture of master-page branding into the generated app's theme.
 - **Document libraries** as screens.
 - **Compare view**: SharePoint and the generated screen side by side.
+- **Sandboxed checks**: run the generated app's builds and tests in a container by default, since they
+  include agent-written code.
 
 ## Generated application
 

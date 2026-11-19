@@ -85,7 +85,7 @@ def test_export_refuses_an_attachment_that_would_escape(tmp_path):
     with pytest.raises(ValueError, match="refused attachment"):
         export_lists(Lists(), site, ["Vendors"], tmp_path / "export")
     assert not list(tmp_path.rglob("escape.txt"))
-    assert _attachment_path(tmp_path, "Vendors", 1, "quote v2.pdf") == tmp_path / "attachments" / "Vendors" / "1" / "quote v2.pdf"
+    assert _attachment_path(tmp_path, "Vendors", 1, "quote v2.pdf") == (tmp_path / "attachments" / "Vendors" / "1" / "quote v2.pdf").resolve()
 
 
 @pytest.mark.parametrize("sid", ["../x", "a/b", ".hidden", "-x", "", "x" * 200])
@@ -149,3 +149,33 @@ def test_text_functions_in_filters_need_a_quoted_value():
             odata.apply_query(items, bad)
     assert odata.apply_query(items, "startswith(Title,'50%')") == items
     assert odata.apply_query(items, "substringof('f_s',Title)") == items
+
+
+def test_a_symlinked_sidecar_cannot_redirect_a_page_write(tmp_path):
+    ws = tmp_path / "ws"
+    (ws / "legacy" / "pages" / "SitePages").mkdir(parents=True)
+    (tmp_path / "outside").mkdir()
+    (ws / "legacy" / "pages" / "SitePages" / "Home.aspx.webparts.json").symlink_to(tmp_path / "outside" / "x.json")
+    ex = Extractor(StubClient(), ws, progress=lambda s: None)
+    assert ex.page("/sites/SEA/SitePages/Home.aspx") is None
+    assert not (tmp_path / "outside" / "x.json").exists()
+    assert ex.manifest["errors"] and not ex.manifest["pages"]
+
+
+def test_a_symlinked_attachment_folder_cannot_redirect_the_export(tmp_path):
+    (tmp_path / "outside").mkdir()
+    (tmp_path / "export" / "attachments" / "Vendors").mkdir(parents=True)
+    (tmp_path / "export" / "attachments" / "Vendors" / "7").symlink_to(tmp_path / "outside")
+    with pytest.raises(ValueError, match="outside"):
+        _attachment_path(tmp_path / "export", "Vendors", 7, "report.txt")
+
+
+def test_generated_screen_ids_always_pass_the_spec_limit():
+    from sp2react.analysis.inventory import safe_id
+
+    long_a, long_b = "A" * 124 + "-form", "A" * 123 + "B-form"
+    a, b = safe_id(long_a), safe_id(long_b)
+    assert a != b and len(a) <= 100 and len(f"{a}-abcdef") <= 128
+    for sid in (a, b, f"{a}-abcdef"):
+        assert Screen.model_validate({"id": sid, "kind": "page", "title": "t", "route": "/t"}).id == sid
+    assert safe_id("VendorRequests-form") == "VendorRequests-form"

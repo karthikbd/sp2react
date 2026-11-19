@@ -7,10 +7,10 @@ All notable changes to `sp2react` are documented here.
 OpenSSF Best Practices silver and baseline groundwork, as in lodestream and mssql-ocp-migrate, and the fixes its threat model found. Each fix has a test in `tests/test_threat_model.py` that fails on 0.1.3.
 
 ### Security
-- `extract`: a page or asset URL from the site with `..` segments (for example `<script src="/sites/x/../../../y.js">` in a page) was written relative to the workspace, so a page editor could make sp2react write files outside it. Paths are now checked (`..`, absolute and drive paths, symlinks) and a refused one is listed as an extraction error, before it is downloaded
+- `extract`: a page or asset URL from the site with `..` segments (for example `<script src="/sites/x/../../../y.js">` in a page) was written relative to the workspace, so a page editor could make sp2react write files outside it. Every file the extract writes (page source, web part, wiki and rendered sidecars, assets, list folders) is now checked (`..`, absolute and drive paths, symlinks) and a refused one is listed as an extraction error, before it is downloaded
 - `migrate`: attachment names and item ids from the server are checked the same way before the attachment is downloaded and written to the export folder
 - The generated app's builds and tests (which run agent-written handlers) no longer receive sp2react's own credentials: the variables named in `sharepoint.*_env`, `llm.api_key_env` and `database.url_env` are removed from their environment
-- Spec screen ids must be plain names (letters, digits, `_`, `-`, `.`), since they become folder and file names
+- Spec screen ids must be plain names (letters, digits, `_`, `-`, `.`, at most 128 characters), since they become folder and file names; generated ids longer than 100 characters are shortened and keep a hash of the full name
 
 ### Fixed
 - Generated app: `startswith`, `endswith` and `substringof` in `$filter` with a number instead of quoted text (`endswith(Title,0)`) failed with a server error; they now answer 400 like any other bad filter (found by ClusterFuzzLite). With `DATA_SOURCE=database`, `%` and `_` in their text are matched literally, as SharePoint and the other data sources do, instead of acting as SQL wildcards. Regenerating an existing app picks this up (`odata.py`, `sql_repo.py`; files you changed are kept)
