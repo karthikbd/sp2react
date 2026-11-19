@@ -131,3 +131,21 @@ def test_the_pipeline_hides_the_configured_secret_variables(tmp_path):
     cfg = make(tmp_path, SITE, run_builds=False)
     Pipeline(cfg, llm=scripted(), progress=lambda s: None)._app_env()
     assert {cfg.sharepoint.password_env, cfg.sharepoint.cookie_env, cfg.database.url_env} <= checks.HIDDEN_ENV
+
+
+def test_text_functions_in_filters_need_a_quoted_value():
+    """ClusterFuzzLite find: endswith(Title,0) raised TypeError (a 500) instead of a filter error."""
+    import importlib.util
+
+    import sp2react
+
+    spec = importlib.util.spec_from_file_location(
+        "generated_odata_t", Path(sp2react.__file__).parent / "scaffold" / "templates" / "backend" / "app" / "odata.py")
+    odata = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(odata)
+    items = [{"ID": 1, "Title": "50% off_sale"}]
+    for bad in ("endswith(Title,0)", "startswith(Title,1.5)", "substringof(3,Title)", "[endswith(Ñ,00) "):
+        with pytest.raises(odata.ODataError):
+            odata.apply_query(items, bad)
+    assert odata.apply_query(items, "startswith(Title,'50%')") == items
+    assert odata.apply_query(items, "substringof('f_s',Title)") == items

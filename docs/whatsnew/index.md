@@ -11,6 +11,9 @@
     sp2react's own credentials: the configured SharePoint, model and database-URL variables are removed
     from their environment.
   - Screen ids in specs must be plain names.
+- **Generated app**: text functions in `$filter` with a number (`endswith(Title,0)`) now answer 400
+  instead of a server error (a fuzzing find), and on your database `%` and `_` in their text are matched
+  literally. Regenerate existing apps to pick this up.
 - **Project standards** (OpenSSF Best Practices silver and baseline): governance, code of conduct,
   roadmap, security assurance case, dependency and scanning policy, a VEX document; `mypy --strict` and
   Bandit security lint; a coverage floor of 80% of statements; reproducible builds checked in CI and used

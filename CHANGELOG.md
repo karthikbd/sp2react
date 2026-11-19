@@ -12,6 +12,9 @@ OpenSSF Best Practices silver and baseline groundwork, as in lodestream and mssq
 - The generated app's builds and tests (which run agent-written handlers) no longer receive sp2react's own credentials: the variables named in `sharepoint.*_env`, `llm.api_key_env` and `database.url_env` are removed from their environment
 - Spec screen ids must be plain names (letters, digits, `_`, `-`, `.`), since they become folder and file names
 
+### Fixed
+- Generated app: `startswith`, `endswith` and `substringof` in `$filter` with a number instead of quoted text (`endswith(Title,0)`) failed with a server error; they now answer 400 like any other bad filter (found by ClusterFuzzLite). With `DATA_SOURCE=database`, `%` and `_` in their text are matched literally, as SharePoint and the other data sources do, instead of acting as SQL wildcards. Regenerating an existing app picks this up (`odata.py`, `sql_repo.py`; files you changed are kept)
+
 ### Added
 - `GOVERNANCE.md`, `CODE_OF_CONDUCT.md`, `ROADMAP.md`, a VEX document (`vex.openvex.json`), and in the documentation a security assurance case (threat model), a dependency and scanning policy, testing and releasing pages
 - Pull requests: a DCO check (every commit signed off) and GitHub dependency review

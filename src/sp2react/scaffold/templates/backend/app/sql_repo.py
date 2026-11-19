@@ -37,7 +37,7 @@ from typing import Any, Optional
 from sqlalchemy import MetaData, Table, and_, create_engine, func, not_, or_, select
 from sqlalchemy.engine import Engine
 
-from .odata import ODataError, tokenize
+from .odata import ODataError, _text, tokenize
 from .store import DATA_DIR, ROOT, Conflict, Specs
 
 
@@ -52,6 +52,10 @@ def _iso(v: Any) -> Any:
         return v.isoformat()
     return v
 
+
+def _like_literal(text: str) -> str:
+    """The text matched literally inside a LIKE pattern: % and _ in a value are not wildcards."""
+    return text.replace("!", "!!").replace("%", "!%").replace("_", "!_")
 
 class SqlRepo:
     def __init__(self, specs: Specs, url: Optional[str] = None, mapping_file: Optional[Path] = None, engine: Optional[Engine] = None):
@@ -313,7 +317,7 @@ class SqlRepo:
                 take()
                 take("(")
                 if v == "substringof":
-                    needle = value()
+                    needle = _like_literal(_text(v, value()))
                     take(",")
                     path = take("id")[1]
                     take(")")
@@ -322,13 +326,13 @@ class SqlRepo:
                 else:
                     path = take("id")[1]
                     take(",")
-                    needle = value()
+                    needle = _like_literal(_text(v, value()))
                     take(")")
                     ref = column_for(path)
                     pat = f"{needle}%" if v == "startswith" else f"%{needle}"
                 if ref[0] == "sub":
-                    return ref[1].in_(select(ref[2]).where(ref[3].like(pat)))
-                return ref[1].like(pat)
+                    return ref[1].in_(select(ref[2]).where(ref[3].like(pat, escape="!")))
+                return ref[1].like(pat, escape="!")
             path = take("id")[1]
             op = take("id")[1]
             if op not in ("eq", "ne", "gt", "ge", "lt", "le"):

@@ -178,6 +178,11 @@ def test_existing_database_mode_reads_no_list_items(tmp_path, mock, monkeypatch)
     assert upd.status_code == 200 and upd.json()["_etag"] == '"2"'
     locked = c.patch("/api/lists/VendorRequests/items/1", json={"values": {"Title": "nope"}})
     assert locked.status_code == 423 and locked.json()["message"] == "This request has been approved and can no longer be edited."
+    # startswith / substringof match text literally (% and _ are not wildcards) and need a quoted value
+    items = lambda f: [i["Title"] for i in c.get("/api/lists/VendorRequests/items", params={"$filter": f}).json()["value"]]
+    assert items("startswith(Title,'Kestrel')") == ["Kestrel 2"]
+    assert items("startswith(Title,'%')") == [] and items("substringof('_',Title)") == []
+    assert c.get("/api/lists/VendorRequests/items", params={"$filter": "endswith(Title,0)"}).status_code == 400
     reviewer = TestClient(app, headers={"X-User": "corp\\bob"})
     assert reviewer.get("/api/me").json()["groups"] == ["Compliance Reviewers"]
     sys.path.remove(str(be))
