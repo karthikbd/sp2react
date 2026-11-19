@@ -1,5 +1,6 @@
 // SharePoint (en-US) display formats, so read-only values look the same as before.
 import type { Field } from "./spec";
+import { termLabel, urlValue } from "./values";
 
 export function formatDate(v: unknown, withTime = false): string {
   if (!v) return "";
@@ -22,6 +23,8 @@ export function formatCurrency(v: unknown): string {
 
 export function formatValue(f: Field | undefined, v: any): string {
   if (v === null || v === undefined || v === "") return "";
+  if (f?.type === "url") { const u = urlValue(v); return u ? (u.description || u.url) : ""; }
+  if (f?.type === "taxonomy") return termLabel(v);
   if (Array.isArray(v)) return v.map((x) => formatValue(f, x)).join("; ");
   if (typeof v === "object") return v.title ?? String(v.id ?? "");
   if (!f) return String(v);

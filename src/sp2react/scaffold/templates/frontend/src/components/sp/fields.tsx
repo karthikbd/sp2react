@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../../api";
 import { formatValue } from "../../runtime/format";
 import type { Field } from "../../runtime/spec";
+import { fromLocalInput, lookupValue, selectedIds, termLabel, toLocalInput, urlValue } from "../../runtime/values";
 
 export interface Option {
   id: number;
@@ -96,6 +97,16 @@ export function FieldControl(props: Props) {
       );
     }
     case "lookup": {
+      if (field.multi) {
+        // SharePoint shows two lists with Add/Remove; a multi-select list keeps every chosen value the same way
+        const ids = selectedIds(value);
+        return (
+          <select {...common} multiple size={Math.min(8, Math.max(4, (options ?? []).length))} value={ids}
+                  onChange={(e) => onChange(lookupValue(options ?? [], Array.from(e.target.selectedOptions).map((o) => o.value), true))}>
+            {(options ?? []).map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}
+          </select>
+        );
+      }
       const id = value && typeof value === "object" ? value.id : value ?? "";
       return (
         <select {...common} value={id ?? ""} onChange={(e) => {
@@ -113,7 +124,22 @@ export function FieldControl(props: Props) {
     case "date":
       return <input {...common} type="date" className="ms-input" value={value ?? ""} onChange={(e) => onChange(e.target.value || null)} />;
     case "datetime":
-      return <input {...common} type="datetime-local" className="ms-input" value={value ? String(value).slice(0, 16) : ""} onChange={(e) => onChange(e.target.value || null)} />;
+      // stored in UTC as SharePoint returns it; edited in the browser's own time zone
+      return <input {...common} type="datetime-local" className="ms-input" value={toLocalInput(value)} onChange={(e) => onChange(fromLocalInput(e.target.value))} />;
+    case "url": {
+      const u = urlValue(value);
+      return (
+        <span className="sp-url" title={title}>
+          <span className="sp-muted">Type the Web address:</span><br />
+          <input {...common} type="text" className="ms-long" value={u?.url ?? ""} onChange={(e) => onChange(e.target.value ? { url: e.target.value, description: u?.description ?? null } : null)} /><br />
+          <span className="sp-muted">Type the description:</span><br />
+          <input type="text" className="ms-long" disabled={disabled} id={`fld-${field.name}-desc`} value={u?.description ?? ""}
+                 onChange={(e) => onChange(u ? { url: u.url, description: e.target.value || null } : null)} />
+        </span>
+      );
+    }
+    case "taxonomy":
+      return <span>{termLabel(value)}</span>;
     case "number":
     case "currency":
       return (

@@ -4,6 +4,7 @@ export interface ViewDef {
   fields: string[];
   orderby?: string;
   top?: number;
+  where?: string | null;        // the view's CAML (its <Where> becomes the API filter)
 }
 
 // SharePoint's "Title (linked to item)" columns are the Title field; the list page links it to the item
@@ -37,5 +38,6 @@ export function listPageView(views: Record<string, SpecView> | undefined, fieldN
     fields: fields.filter((f, i) => fields.indexOf(f) === i),
     orderby: orderbyFromCaml(v?.query) ?? "ID",   // a view without <OrderBy> lists items by ID, oldest first
     top: v?.rowLimit ?? 30,
+    where: v?.query ?? null,
   };
 }

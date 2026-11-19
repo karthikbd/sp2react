@@ -77,6 +77,28 @@ def source_value(f: dict, it: dict, suffix: str = ""):
     return None
 
 
+def url_value(v):
+    """SharePoint hyperlink {Url, Description} -> {url, description}."""
+    if isinstance(v, dict):
+        return {"url": v.get("Url"), "description": v.get("Description")} if v.get("Url") else None
+    return {"url": v, "description": None} if v else None
+
+
+def term_value(f: dict, it: dict):
+    """Managed metadata -> {label, term_id} (a list for multi-value fields). REST's own Label is the WssId, so the
+    label comes from the field's hidden note column ("Label|TermGuid;Label2|Guid2") when the schema names it."""
+    raw = source_value(f, it)
+    terms = raw.get("results", []) if isinstance(raw, dict) and "results" in raw else ([raw] if isinstance(raw, dict) else [])
+    labels = {}
+    note = it.get(f["label_field"]) if f.get("label_field") else None
+    for part in (note or "").split(";"):
+        if "|" in part:
+            label, guid = part.rsplit("|", 1)
+            labels[guid.strip().lower()] = label.strip()
+    out = [{"label": labels.get(str(t.get("TermGuid", "")).lower()), "term_id": t.get("TermGuid")} for t in terms if t and t.get("TermGuid")]
+    return out if f.get("multi") else (out[0] if out else None)
+
+
 def has_source_key(f: dict, it: dict) -> bool:
     """REST returns every column of an item, null or not: a field that is in no exported item was read by the wrong name."""
     names = {f.get("rest_name") or "", f["name"], ("OData_" + f["name"]) if re.match(r"[_0-9]", f["name"]) else ""} - {""}
@@ -98,8 +120,9 @@ def transform(items: list[dict], fields: list[dict]) -> list[dict]:
             elif t == "date":
                 row[n] = date_only(source_value(f, it))
             elif t == "url":
-                v = source_value(f, it)
-                row[n] = v.get("Url") if isinstance(v, dict) else v
+                row[n] = url_value(source_value(f, it))
+            elif t == "taxonomy":
+                row[n] = term_value(f, it)
             elif t in ("number", "currency"):
                 v = source_value(f, it)
                 row[n] = float(v) if v not in (None, "") else None
@@ -171,7 +194,9 @@ def _norm_source(f: dict, it: dict):
     if t == "date":
         return date_only(v)
     if t == "url":
-        return v.get("Url") if isinstance(v, dict) else v
+        return url_value(v)
+    if t == "taxonomy":
+        return term_value(f, it)
     if t in ("number", "currency"):
         return float(v) if v not in (None, "") else None
     if t == "boolean":
@@ -181,6 +206,12 @@ def _norm_source(f: dict, it: dict):
 
 def _norm_app(f: dict, v):
     t = f["type"]
+    if t == "url":
+        if isinstance(v, dict) and "url" in v:
+            return {"url": v["url"], "description": v.get("description")} if v["url"] else None
+        return url_value(v)
+    if t == "taxonomy":
+        return v
     if t in ("lookup", "user"):
         if isinstance(v, list):
             return sorted(x.get("id") for x in v if x)

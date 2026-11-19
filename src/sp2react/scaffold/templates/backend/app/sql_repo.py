@@ -174,6 +174,9 @@ class SqlRepo:
                 item[name] = None if v is None else bool(v)
             elif f["type"] in ("number", "currency") and v is not None:
                 item[name] = float(v)
+            elif f["type"] == "url":           # {url, description}; description from its own column when mapped
+                desc = row.get(fs["description_column"]) if fs.get("description_column") else None
+                item[name] = {"url": v, "description": desc} if v else None
             else:
                 item[name] = _iso(v)
         sysmap = m.get("system", {})
@@ -201,6 +204,10 @@ class SqlRepo:
                 v = [conv(x) for x in v] if isinstance(v, list) else conv(v)
             if isinstance(v, list):
                 v = fs.get("delimiter", ";").join(str(x) for x in v)
+            if f["type"] == "url":
+                if fs.get("description_column"):
+                    out[fs["description_column"]] = v.get("description") if isinstance(v, dict) else None
+                v = v.get("url") if isinstance(v, dict) else v
             if f["type"] == "date" and isinstance(v, str) and v:
                 v = date.fromisoformat(v[:10])
             out[fs["column"]] = v

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import re
+from datetime import datetime, timezone
 from typing import Any, Optional
 from urllib.parse import quote
 
@@ -18,6 +19,7 @@ from .store import Conflict
 router = APIRouter(prefix="/api")
 # SharePoint's own rule: no " * : < > ? / \\ | and no leading or trailing dot or space
 ATTACHMENT_NAME = re.compile(r'^[^"*:<>?/\\|\x00-\x1f]{1,128}$')
+DEFAULT_TOP, MAX_TOP = 100, 5000
 SAVE_CONFLICT = "Save Conflict. Your changes conflict with those made concurrently by another user. Refresh the page and resubmit your changes."
 
 
@@ -97,6 +99,8 @@ def query_items(request: Request, list_name: str, user: dict = Depends(current_u
                 select: Optional[str] = Query(None, alias="$select")):
     _list(request, list_name)
     _authorize(request, user, "GET", f"/api/lists/{list_name}/items")
+    # SharePoint REST answers 100 items when $top is not given, and 5000 at most
+    top = DEFAULT_TOP if top is None else max(0, min(top, MAX_TOP))
     repo = _repo(request)
     try:
         if hasattr(repo, "query"):                 # database: filter/sort/page run as SQL
@@ -141,9 +145,29 @@ def _find_duplicate(repo, list_name: str, field: str, value: Any, exclude: Any) 
     return next((it for it in repo.all(list_name) if str(it.get(field) or "") == str(value) and it["ID"] != exclude), None)
 
 
+def _utc(v: str) -> str:
+    """A date-time with a zone as UTC 'YYYY-MM-DDTHH:MM:SSZ' (how SharePoint returns them); without a zone, as given."""
+    try:
+        d = datetime.fromisoformat(v.replace("Z", "+00:00"))
+    except ValueError:
+        return v
+    if d.tzinfo is None:
+        return v
+    return d.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def _coerce(field: Optional[dict], v: Any) -> Any:
-    if field and field["type"] in ("lookup", "user") and isinstance(v, str) and v.isdigit():
-        return int(v)
+    if field and field["type"] in ("lookup", "user"):
+        if isinstance(v, str) and v.isdigit():
+            return int(v)
+        if isinstance(v, list):                  # multi-value lookups and people keep every value
+            return [int(x) if isinstance(x, str) and x.isdigit() else x for x in v]
+    if field and field["type"] == "datetime" and isinstance(v, str) and v:
+        return _utc(v)
+    if field and field["type"] == "url" and isinstance(v, str):
+        return {"url": v, "description": None} if v else None
+    if field and field["type"] == "url" and isinstance(v, dict):
+        return {"url": v.get("url") or v.get("Url"), "description": v.get("description", v.get("Description"))} if (v.get("url") or v.get("Url")) else None
     if field and field["type"] in ("number", "currency") and isinstance(v, str) and re.fullmatch(r"\s*\$?-?[\d,]+(\.\d+)?\s*", v):
         return float(v.replace(",", "").replace("$", ""))
     return v

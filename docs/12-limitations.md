@@ -12,7 +12,7 @@ Run `sp2react run --until inventory` on your site first. The inventory shows exa
 | Role checks (`GetGroupCollectionFromUser`, current-user checks) | role conditions on SharePoint group names |
 | Web part pages in `SitePages` with Script Editor / Content Editor JavaScript (dashboards, tiles, tables built from REST calls) | React page components written by agents, using the generated API |
 | REST (`_api/...`) and SPServices data calls | calls to the generated FastAPI endpoints |
-| Basic list views: columns, sort, row limit (first page only; see below) | list view screens |
+| List views: columns, sort, row limit, filter (`<Where>`: comparisons, And/Or, In, Contains, BeginsWith, IsNull, `[Me]`, `[Today]`) and page-by-page navigation | list view screens; a filter it cannot translate is reported on the page and all items are shown |
 | Attachments | attachment upload, download and delete |
 | SharePoint groups | roles |
 | Site CSS | carried over as `legacy.css` |
@@ -28,7 +28,8 @@ sp2react does not look for the items below yet: check Site Contents and the site
 | Event receivers, timer jobs, farm solutions (compiled .NET) | compiled code is not reachable over REST | provide the source, or reimplement |
 | InfoPath forms, Power Apps forms | different technology; InfoPath list forms live under `Item/` and are not extracted | rebuild separately |
 | Calculated columns | the formula is shown, but not recomputed | compute in the database (computed column or view) or add a `derive` rule |
-| Managed metadata, item-level permissions, alerts and alert emails | no equivalent generated yet | handle in your platform |
+| Managed metadata | terms are migrated and shown with their labels, read-only; choosing terms needs the term store | edit terms in your platform, or add a lookup list |
+| Item-level permissions, alerts and alert emails | no equivalent generated yet | handle in your platform |
 
 ## Planned (not yet in 0.1.x)
 
@@ -42,11 +43,9 @@ sp2react does not look for the items below yet: check Site Contents and the site
 ## Known constraints
 
 - Pages are found in `SitePages` and in each list's forms; the `Pages` library, master pages and page layouts are not extracted.
-- List views: the view's columns, sort and row limit are used; its filter (`<Where>`) and paging beyond the first page are not.
-- Multi-value lookup columns are shown as a single choice on the edit form, and an edit keeps one value.
-- Date-and-time columns are shown in UTC on the edit form; check them before going live.
-- Hyperlink columns keep the URL but not the description; managed metadata is not converted.
-- Wiki page bodies (`WikiField`) are not read.
+- Date-and-time values are stored in UTC, as SharePoint returns them, and edited in the browser's time zone. SharePoint shows them in the site's regional time zone; if users work in another zone than the site, check the display.
+- In `data_source: database`, a hyperlink's description is kept only if the mapping names a `description_column` for it.
+- Views grouped by a column (`<GroupBy>`) are shown ungrouped; `<Membership>` filters are reported, not applied.
 - Only SharePoint on-premises classic pages have been targeted (2013 / 2016 / 2019 / Subscription Edition). Modern pages and SharePoint Online are not targeted.
 - `map-db` maps lists to **tables**, not views.
 - One model is used for all agents.

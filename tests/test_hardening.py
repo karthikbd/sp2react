@@ -199,9 +199,9 @@ def test_d6_list_page_uses_the_legacy_view(tmp_path):
               "console.log(JSON.stringify({main: listPageView(views, ['Title']), other: listPageView({MyOpen: views.MyOpen}, []),"
               " none: listPageView({}, ['Title', 'Status']), caml: orderbyFromCaml('<View><Query><OrderBy><FieldRef Name=\"LinkTitle\" Ascending=\"FALSE\"/><FieldRef Name=\"ID\"/></OrderBy></Query></View>')}));\n")
     out = run_ts(tmp_path, script)
-    assert out["main"] == {"fields": ["Title", "Category", "DueDate"], "orderby": "Title", "top": 30}
-    assert out["other"] == {"fields": ["Title", "DueDate"], "orderby": "DueDate desc", "top": 10}
-    assert out["none"] == {"fields": ["Title", "Status"], "orderby": "ID", "top": 30}
+    assert out["main"] == {"fields": ["Title", "Category", "DueDate"], "orderby": "Title", "top": 30, "where": views["AllItems"]["query"]}
+    assert out["other"] == {"fields": ["Title", "DueDate"], "orderby": "DueDate desc", "top": 10, "where": views["MyOpen"]["query"]}
+    assert out["none"] == {"fields": ["Title", "Status"], "orderby": "ID", "top": 30, "where": None}
     assert out["caml"] == "Title desc,ID"
 
 

@@ -82,6 +82,16 @@ class SharePointRepo:
                 item[name] = [self._user(x) for x in v.get("results", [])] if isinstance(v, dict) and "results" in v else self._user(v)
             elif f["type"] == "date" and v:
                 item[name] = v[:10]
+            elif f["type"] == "url":
+                item[name] = {"url": v.get("Url"), "description": v.get("Description")} if isinstance(v, dict) and v.get("Url") else None
+            elif f["type"] == "taxonomy":
+                terms = v.get("results", []) if isinstance(v, dict) and "results" in v else ([v] if isinstance(v, dict) else [])
+                labels = {}
+                for part in (d.get(f["label_field"]) or "").split(";") if f.get("label_field") else []:
+                    if "|" in part:
+                        labels[part.rsplit("|", 1)[1].strip().lower()] = part.rsplit("|", 1)[0].strip()
+                out = [{"label": labels.get(str(t.get("TermGuid", "")).lower()), "term_id": t.get("TermGuid")} for t in terms if t.get("TermGuid")]
+                item[name] = out if f.get("multi") else (out[0] if out else None)
             else:
                 item[name] = v
         etag = d.get("__metadata", {}).get("etag", '"1"')
@@ -102,6 +112,11 @@ class SharePointRepo:
                     out[f"{r}Id"] = {"results": [x.get("id") if isinstance(x, dict) else x for x in v]}
                 else:
                     out[f"{r}Id"] = v.get("id") if isinstance(v, dict) else v
+            elif f["type"] == "url":
+                u = v if isinstance(v, dict) else ({"url": v} if v else None)
+                out[r] = {"__metadata": {"type": "SP.FieldUrlValue"}, "Url": u["url"], "Description": u.get("description") or u["url"]} if u else None
+            elif f["type"] in ("taxonomy", "calculated") or f.get("read_only"):
+                continue                           # not writable through this API
             else:
                 out[r] = v
         return out

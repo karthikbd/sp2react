@@ -232,6 +232,13 @@ class SharePointClient:
         url = self.server_relative_url(server_relative_folder)
         return self.api(f"web/getfolderbyserverrelativeurl('{odata_quote(url)}')/files", {"$select": "Name,ServerRelativeUrl,TimeLastModified"})
 
+    def wiki_content(self, server_relative_url: str) -> Optional[str]:
+        """The body of a wiki page. It is stored in the page's WikiField column, not in the .aspx file, so the
+        page source alone shows an empty page. Authored page content, not list data."""
+        url = self.server_relative_url(server_relative_url)
+        data = self.api(f"web/getfilebyserverrelativeurl('{odata_quote(url)}')/ListItemAllFields", {"$select": "WikiField"})
+        return (data or {}).get("WikiField") if isinstance(data, dict) else None
+
     def rendered(self, server_relative_url: str) -> str:
         """The page as a browser receives it (shows runtime-injected scripts). Can contain list data, so it is
         only fetched when item reads are allowed."""
