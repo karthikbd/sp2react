@@ -1,4 +1,4 @@
-# 3. Configuration reference
+# Configuration reference
 
 sp2react reads one YAML file, `sp2react.yaml` by default (`-c other.yaml` to use another). Create a starter file with:
 
@@ -94,7 +94,7 @@ $env:SP_PASSWORD = Read-Host "SharePoint password"    # typed, not stored in his
 | `extra_headers` | `{}` | Extra headers sent to the model endpoint |
 | `verify_ssl` | `true` | As for SharePoint |
 
-Details and examples for each provider: [4. Model provider and Bridger](04-model-provider.md).
+Details and examples for each provider: [Model provider and Bridger](model-provider.md).
 
 ## `pipeline`
 
@@ -102,7 +102,7 @@ Details and examples for each provider: [4. Model provider and Bridger](04-model
 |---|---|---|
 | `workspace` | `./sp2react-work` | Where extraction, inventory, specs, transcripts, test output and state are kept |
 | `output` | `./converted-app` | Where the generated app is written |
-| `data_source` | `database` | `database` (your existing tables), `sqlite` (sp2react migrates the items into SQLite) or `sharepoint` (the app uses the live lists). See [1. How it works](01-how-it-works.md#where-the-data-comes-from) |
+| `data_source` | `database` | `database` (your existing tables), `sqlite` (sp2react migrates the items into SQLite) or `sharepoint` (the app uses the live lists). See [How it works](../getting_started/how-it-works.md#where-the-data-comes-from) |
 | `max_concurrency` | `4` | Agent tasks run in parallel. Lower it if Bridger rate-limits you |
 | `agent_retries` | `2` | How many times an agent is asked again when its output fails validation |
 | `agent_timeout` | `900` | Seconds per agent task attempt |
@@ -120,7 +120,7 @@ Used when `pipeline.data_source` is `database`.
 | `schema_name` | *(database default)* | Schema holding the migrated tables, e.g. `dbo` |
 | `mapping` | `./db-mapping.json` | The list-to-table mapping file. `sp2react map-db` writes it; you review it |
 
-Connection URL formats and the mapping file: [5. Your database](05-database.md).
+Connection URL formats and the mapping file: [Your database](database.md).
 
 ## `security`
 
@@ -138,6 +138,6 @@ Connection URL formats and the mapping file: [5. Your database](05-database.md).
 | `SP_TOKEN` | sp2react | `auth: bearer` |
 | `BRIDGER_TOKEN` (or what `llm.api_key_env` names) | sp2react | if the model endpoint needs a key |
 | `SP2REACT_DB_URL` (or what `database.url_env` names) | sp2react | `map-db`, database-mode tests |
-| `DB_URL`, `DATA_SOURCE`, `MAPPING_FILE`, `AUTH_MODE`, ... | the **generated app** | at runtime; see [8. The generated app](08-generated-app.md#settings) |
+| `DB_URL`, `DATA_SOURCE`, `MAPPING_FILE`, `AUTH_MODE`, ... | the **generated app** | at runtime; see [The generated app](generated-app.md#settings) |
 
 To keep them for every new PowerShell window, use `[Environment]::SetEnvironmentVariable("SP2REACT_DB_URL", "...", "User")`. Do not store passwords that way on shared machines.

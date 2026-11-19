@@ -1,4 +1,4 @@
-# 8. The generated app
+# The generated app
 
 `converted-app/` is a normal React + FastAPI project. Nothing in it depends on sp2react at runtime.
 

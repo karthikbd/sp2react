@@ -64,11 +64,28 @@ target-version = "py310"
 src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "B", "SIM"]
-ignore = ["B008", "B023", "B027", "B905", "E501", "E731", "E741", "SIM105", "SIM115"]
+select = ["E", "F", "W", "B", "SIM", "S", "C4", "PIE", "RUF"]
+ignore = ["B008", "B023", "B027", "B905", "E501", "E731", "E741", "SIM105", "SIM115", "RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+# the generated app's tests and the package's tests: asserts, fixed test secrets, temp paths, subprocesses
+"tests/**" = ["S101", "S105", "S106", "S108", "S110", "S310", "S311", "S603", "S607", "S608", "RUF012", "RUF015", "RUF059"]
+"src/sp2react/scaffold/templates/backend/tests/**" = ["S101", "S105", "S106"]
+# "@me" / "@today" are rule tokens, not passwords
+"src/sp2react/scaffold/templates/backend/app/rules.py" = ["S105"]
 
 [tool.mypy]
 python_version = "3.10"
-strict = false
+strict = true
+warn_unreachable = true
 ignore_missing_imports = true
-exclude = ["src/sp2react/scaffold/templates/"]
+exclude = ["src/sp2react/scaffold/templates/"]     # the generated app's source, type-checked when the app is built
+
+[tool.coverage.run]
+source = ["sp2react"]
+omit = ["*/scaffold/templates/*"]
+branch = true
+
+[tool.coverage.report]
+show_missing = false
+skip_covered = true

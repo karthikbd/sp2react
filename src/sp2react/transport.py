@@ -14,7 +14,7 @@ import os
 import socket
 import ssl
 import threading
-from typing import Any, Dict, Iterable, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Optional, Tuple, Union, cast
 from urllib.parse import urlencode, urljoin, urlsplit
 
 from . import ntlm
@@ -26,7 +26,7 @@ class RequestException(OSError):
     pass
 
 
-class ConnectionError(RequestException):  # noqa: A001 - same name as requests' class on purpose
+class ConnectionError(RequestException):
     pass
 
 
@@ -40,10 +40,10 @@ class HTTPError(RequestException):
         self.response = response
 
 
-class Headers(dict):
+class Headers(dict[str, Any]):
     """Case-insensitive header mapping (keys kept as first written)."""
 
-    def __init__(self, data: Optional[Iterable] = None):
+    def __init__(self, data: Optional[Iterable[Any]] = None):
         super().__init__()
         self._lower: Dict[str, str] = {}
         if data:
@@ -57,7 +57,7 @@ class Headers(dict):
         super().__setitem__(key, value)
 
     def __getitem__(self, key: str) -> str:
-        return super().__getitem__(self._lower[key.lower()])
+        return cast("str", super().__getitem__(self._lower[key.lower()]))
 
     def __delitem__(self, key: str) -> None:
         real = self._lower.pop(key.lower())
@@ -101,7 +101,7 @@ class Response:
             k, _, v = part.strip().partition("=")
             if k.lower() == "charset" and v:
                 self.encoding = v.strip('"')
-        self.history: list = []
+        self.history: list[Any] = []
 
     @property
     def ok(self) -> bool:
@@ -174,7 +174,7 @@ class Session:
         if scheme not in ("http", "https"):
             raise RequestException(f"unsupported URL scheme in {url}")
         host, port = parts.hostname or "", parts.port or (443 if scheme == "https" else 80)
-        pool: Dict[Tuple, http.client.HTTPConnection] = getattr(self._local, "pool", None) or {}
+        pool: Dict[Tuple[Any, ...], http.client.HTTPConnection] = getattr(self._local, "pool", None) or {}
         self._local.pool = pool
         key = (scheme, host, port, str(self.verify))
         conn = pool.get(key)
@@ -248,7 +248,7 @@ class Session:
             r = self.auth.handle_401(self, request, r)
         return r
 
-    def request(self, method: str, url: str, params: Optional[dict] = None, headers: Optional[dict] = None,
+    def request(self, method: str, url: str, params: Optional[dict[str, Any]] = None, headers: Optional[dict[str, Any]] = None,
                 json: Any = None, data: Union[bytes, str, None] = None, timeout: float = 60,
                 allow_redirects: bool = True) -> Response:
         if params:

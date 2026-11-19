@@ -11,10 +11,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from mock_sharepoint import MockSharePoint  # noqa: E402
-from scripted_agents import scripted  # noqa: E402
-from sp2react.config import Config, LLMConfig, PipelineConfig, SharePointConfig  # noqa: E402
-from sp2react.pipeline import Pipeline  # noqa: E402
+from mock_sharepoint import MockSharePoint
+from scripted_agents import scripted
+from sp2react.config import Config, LLMConfig, PipelineConfig, SharePointConfig
+from sp2react.pipeline import Pipeline
 
 TEMPLATES = Path(__file__).resolve().parents[1] / "src" / "sp2react" / "scaffold" / "templates"
 

@@ -8,6 +8,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Iterable
 
 
 @dataclass
@@ -21,9 +22,22 @@ class Check:
         return self.output[-n:]
 
 
-def _run(cmd: list[str], cwd: Path, timeout: int, env: dict | None = None) -> tuple[int, str]:
+HIDDEN_ENV: set[str] = set()   # names of sp2react's own secrets; set by the pipeline from the config
+
+
+def app_env(extra: dict[str, Any] | None = None, hide: Iterable[str] = ()) -> dict[str, str]:
+    """The environment for the generated app's builds and tests: this process's environment without
+    sp2react's own credentials (SharePoint, model, database URL variable), plus `extra`.
+
+    The generated code includes agent-written files, so it gets only what it needs to run.
+    """
+    drop = {n for n in (*HIDDEN_ENV, *hide) if n}
+    return {**{k: v for k, v in os.environ.items() if k not in drop}, **{k: str(v) for k, v in (extra or {}).items()}}
+
+
+def _run(cmd: list[str], cwd: Path, timeout: int, env: dict[str, Any] | None = None) -> tuple[int, str]:
     try:
-        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout, env={**os.environ, **(env or {})})
+        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout, env=app_env(env))  # noqa: S603
         return r.returncode, (r.stdout or "") + (r.stderr or "")
     except subprocess.TimeoutExpired as e:
         out = e.stdout.decode("utf-8", "replace") if isinstance(e.stdout, bytes) else (e.stdout or "")   # bytes even with text=True
@@ -32,7 +46,7 @@ def _run(cmd: list[str], cwd: Path, timeout: int, env: dict | None = None) -> tu
         return 127, str(e)
 
 
-def backend_tests(out: Path, timeout: int = 900, env: dict | None = None) -> Check:
+def backend_tests(out: Path, timeout: int = 900, env: dict[str, Any] | None = None) -> Check:
     be = out / "backend"
     db = be / "data" / "test.db"
     if db.exists():
@@ -75,7 +89,7 @@ def frontend_rule_vectors(out: Path, timeout: int = 120) -> Check:
     return Check("rule vectors (TypeScript engine)", code == 0, txt)
 
 
-def run_all(out: Path, run_builds: bool = True, env: dict | None = None) -> list[Check]:
+def run_all(out: Path, run_builds: bool = True, env: dict[str, Any] | None = None) -> list[Check]:
     checks = [backend_tests(out, env=env)]
     if run_builds:
         inst = frontend_install(out)

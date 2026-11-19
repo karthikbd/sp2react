@@ -1,55 +1,124 @@
-# sp2react
+---
+html_theme.sidebar_secondary.remove: true
+---
 
-sp2react converts a classic SharePoint site (ASPX pages, list forms, jQuery and SPServices scripts) into a React + FastAPI application that reads and writes your existing database. AI agents (Claude, through GitHub Copilot Bridger by default) handle the parts that need judgement; plain code does the rest, and nothing an agent writes is accepted until it passes automatic checks.
+# sp2react documentation
 
-## Start here
+**Version**: {{ version }}
 
-| If you want to... | Read |
-|---|---|
-| Understand what sp2react does and how | [1. How it works](01-how-it-works.md) |
-| Install it (Windows, PNC/JFrog, Linux) | [2. Installation](02-installation.md) |
-| Write `sp2react.yaml` | [3. Configuration reference](03-configuration.md) |
-| Connect Claude through Bridger (or another provider) | [4. Model provider and Bridger](04-model-provider.md) |
-| Use your existing SQL Server or MySQL database | [5. Your database](05-database.md) |
-| Convert a site from start to finish | [6. End-to-end walkthrough](06-walkthrough.md) |
-| Look up a command or flag | [7. Command reference](07-commands.md) |
-| Run, change and deploy the generated app | [8. The generated app](08-generated-app.md) |
-| Answer security / approval questions | [9. Security and network behaviour](09-security.md) |
-| Fix an error | [10. Troubleshooting](10-troubleshooting.md) |
-| Drive sp2react from your own Python tool | [11. Python API](11-python-api.md) |
-| Know what is and is not converted | [12. Coverage and limitations](12-limitations.md) |
+**Download**: [PyPI package](https://pypi.org/project/sp2react/)
 
-## The short version
+**Useful links**:
+[Installation](getting_started/install.md) |
+[Walkthrough](getting_started/walkthrough.md) |
+[Configuration](user_guide/configuration.md) |
+[Your database](user_guide/database.md) |
+[Troubleshooting](user_guide/troubleshooting.md) |
+[Release notes](whatsnew/index.md)
 
-```powershell
-pip install "sp2react[mssql]"
-sp2react init                       # writes sp2react.yaml; edit site_url and the llm section
-$env:SP_USERNAME = "CORP\me"; $env:SP_PASSWORD = "..."
-$env:SP2REACT_DB_URL = "mssql+pyodbc://@db-host/SEA?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes"
-sp2react doctor                     # checks SharePoint and the model
-sp2react run --until spec           # extract, inventory, spec
-#   review sp2react-work\specs\*.coverage.md, then for each screen:
-sp2react approve <screen-id>
-sp2react map-db                     # review sp2react-work\db-mapping.md
-sp2react run --offline              # convert, review, test, fix
-sp2react status
+**sp2react** is an open source, MIT-licensed Python package that converts a classic SharePoint site
+(ASPX pages, list forms, jQuery and SPServices scripts) into a React + FastAPI application that reads
+and writes your existing database. AI agents (Claude, through GitHub Copilot Bridger by default) handle
+the parts that need judgement; plain code does the rest, and nothing an agent writes is accepted until
+it passes automatic checks. It has no runtime dependencies, reads the site with GET requests only, and
+never sends business data to the model.
+
+::::::{grid} 1 2 2 2
+:gutter: 4
+:padding: 2 2 0 0
+:class-container: sd-text-center
+
+::::{grid-item-card} Getting started
+:img-top: _static/index_getting_started.svg
+:class-card: intro-card
+:shadow: md
+
+New to *sp2react*? How it works, installation (including corporate repositories), and a site
+converted from start to finish.
+
+:::{card-footer}
+```{button-ref} getting_started/index
+:ref-type: doc
+:click-parent:
+:color: secondary
+:expand:
+
+To the getting started guides
 ```
+:::
+::::
+
+::::{grid-item-card} User guide
+:img-top: _static/index_user_guide.svg
+:class-card: intro-card
+:shadow: md
+
+Configuration, the model provider, your database, the generated app, security, troubleshooting and
+what is and is not converted.
+
+:::{card-footer}
+```{button-ref} user_guide/index
+:ref-type: doc
+:click-parent:
+:color: secondary
+:expand:
+
+To the user guide
+```
+:::
+::::
+
+::::{grid-item-card} Reference
+:img-top: _static/index_api.svg
+:class-card: intro-card
+:shadow: md
+
+Every command, option and file written, and the Python API for driving sp2react from your own
+tools.
+
+:::{card-footer}
+```{button-ref} reference/index
+:ref-type: doc
+:click-parent:
+:color: secondary
+:expand:
+
+To the reference
+```
+:::
+::::
+
+::::{grid-item-card} Developer guide
+:img-top: _static/index_contribute.svg
+:class-card: intro-card
+:shadow: md
+
+The architecture, the security assurance case, the dependency policy, the test layers and
+releasing to PyPI.
+
+:::{card-footer}
+```{button-ref} development/index
+:ref-type: doc
+:click-parent:
+:color: secondary
+:expand:
+
+To the development guide
+```
+:::
+::::
+
+::::::
 
 ```{toctree}
+:maxdepth: 3
 :hidden:
-:maxdepth: 2
+:titlesonly:
 
-01-how-it-works
-02-installation
-03-configuration
-04-model-provider
-05-database
-06-walkthrough
-07-commands
-08-generated-app
-09-security
-10-troubleshooting
-11-python-api
-12-limitations
+getting_started/index
+user_guide/index
+reference/index
+development/index
+whatsnew/index
 changelog
 ```

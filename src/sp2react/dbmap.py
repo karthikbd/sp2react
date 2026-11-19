@@ -70,14 +70,14 @@ def compatible(field_type: str, sql_type: str) -> bool:
 
 
 # ------------------------------------------------------------------ reflect
-def reflect(url: str, schema: Optional[str] = None) -> dict:
+def reflect(url: str, schema: Optional[str] = None) -> dict[str, Any]:
     try:
         from sqlalchemy import create_engine, inspect
     except ImportError as e:  # pragma: no cover - optional extra
         raise RuntimeError("map-db needs SQLAlchemy and your driver: pip install 'sp2react[db]' (and pymysql or pyodbc)") from e
     eng = create_engine(url, future=True)
     ins = inspect(eng)
-    out: dict = {"dialect": eng.dialect.name, "schema": schema, "tables": {}}
+    out: dict[str, Any] = {"dialect": eng.dialect.name, "schema": schema, "tables": {}}
     for t in ins.get_table_names(schema=schema):
         pk = ins.get_pk_constraint(t, schema=schema).get("constrained_columns") or []
         fks = {}
@@ -93,9 +93,9 @@ def reflect(url: str, schema: Optional[str] = None) -> dict:
 
 
 # -------------------------------------------------------------------- draft
-def draft(lists: dict[str, dict], db: dict) -> tuple[dict, list[str]]:
+def draft(lists: dict[str, dict[str, Any]], db: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
     """lists: {ListKey: {"title", "fields": [...]}} -> (mapping, unresolved notes)."""
-    mapping: dict = {"version": 1, "schema": db.get("schema"), "lists": {}}
+    mapping: dict[str, Any] = {"version": 1, "schema": db.get("schema"), "lists": {}}
     notes: list[str] = []
     tables = db["tables"]
     chosen_tables: dict[str, str] = {}
@@ -109,7 +109,7 @@ def draft(lists: dict[str, dict], db: dict) -> tuple[dict, list[str]]:
         l, t = lists[key], tables[tname]
         cols = {c["name"]: c for c in t["columns"]}
         used: set[str] = set()
-        m: dict = {"table": tname, "key": (t["pk"][0] if t["pk"] else next((c for c in cols if c.lower() in ("id", "item_id", f"{tname}_id")), None)), "fields": {}, "system": {}}
+        m: dict[str, Any] = {"table": tname, "key": (t["pk"][0] if t["pk"] else next((c for c in cols if c.lower() in ("id", "item_id", f"{tname}_id")), None)), "fields": {}, "system": {}}
         if not m["key"]:
             notes.append(f"{key}: table {tname} has no primary key; set 'key' to the column holding the item id")
         used.add(m["key"])
@@ -150,7 +150,8 @@ def draft(lists: dict[str, dict], db: dict) -> tuple[dict, list[str]]:
     users = next((t for t in tables if re.search(r"(^|_)(app_?)?users?$", t.lower())), None)
     if users:
         user_cols = [c["name"] for c in tables[users]["columns"]]
-        pick = lambda pat: next((c for c in user_cols if re.search(pat, c.lower())), None)
+        def pick(pat: str) -> Optional[str]:
+            return next((c for c in user_cols if re.search(pat, c.lower())), None)
         um = {"table": users, "id": tables[users]["pk"][0] if tables[users]["pk"] else pick(r"^(user_?)?id$"),
               "login": pick(r"(login|user_?name|account|upn|sam)"), "title": pick(r"(display|full_?name|^name$|title)"), "email": pick(r"mail")}
         if um["id"] and um["login"]:
@@ -159,7 +160,7 @@ def draft(lists: dict[str, dict], db: dict) -> tuple[dict, list[str]]:
 
 
 # ----------------------------------------------------------------- validate
-def validate(mapping: dict, lists: dict[str, dict], db: dict) -> tuple[list[str], list[str]]:
+def validate(mapping: dict[str, Any], lists: dict[str, dict[str, Any]], db: dict[str, Any]) -> tuple[list[str], list[str]]:
     """-> (problems that block, warnings)."""
     problems, warnings = [], []
     tables = db["tables"]
@@ -214,7 +215,7 @@ def validate(mapping: dict, lists: dict[str, dict], db: dict) -> tuple[list[str]
     return problems, warnings
 
 
-def report(mapping: dict, lists: dict[str, dict], db: dict, problems: list[str], warnings: list[str]) -> str:
+def report(mapping: dict[str, Any], lists: dict[str, dict[str, Any]], db: dict[str, Any], problems: list[str], warnings: list[str]) -> str:
     lines = ["# Database mapping: SharePoint lists -> existing tables", "",
              f"Database: {db.get('dialect')} {('schema ' + db['schema']) if db.get('schema') else ''}. Only the schema was read; no rows.", "",
              f"**{'Ready' if not problems else 'Needs attention'}**: {len(problems)} problem(s), {len(warnings)} warning(s).", ""]

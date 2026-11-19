@@ -5,10 +5,12 @@ Python API:
     p = Pipeline(load_config("sp2react.yaml"))
     p.run(pages=["SitePages/Dashboard.aspx"])
 """
+from typing import Any
+
 __version__ = "0.1.3"
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     if name == "Pipeline":
         from .pipeline import Pipeline
         return Pipeline

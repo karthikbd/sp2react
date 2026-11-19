@@ -11,11 +11,13 @@ import random
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 from .. import transport
-
 from ..config import ConfigError, LLMConfig, secret
+
+if TYPE_CHECKING:
+    from ..net import NetworkPolicy
 
 log = logging.getLogger(__name__)
 RETRY_STATUS = {408, 409, 425, 429, 500, 502, 503, 504, 529}
@@ -32,7 +34,7 @@ class Completion:
     input_tokens: int = 0
     output_tokens: int = 0
     truncated: bool = False          # stopped because of max_tokens
-    raw: dict = field(default_factory=dict, repr=False)
+    raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
 
 class LLM:
@@ -40,7 +42,7 @@ class LLM:
 
     def __init__(self, cfg: LLMConfig):
         self.cfg = cfg
-        self.policy = None
+        self.policy: Optional[NetworkPolicy] = None
         self._local = threading.local()
 
     @property
@@ -54,7 +56,7 @@ class LLM:
             self._local.session = s
         return s
 
-    def _post(self, url: str, headers: dict, body: dict, timeout: Optional[int]) -> dict:
+    def _post(self, url: str, headers: dict[str, Any], body: dict[str, Any], timeout: Optional[int]) -> dict[str, Any]:
         delay = 2.0
         for attempt in range(5):
             try:
@@ -66,7 +68,7 @@ class LLM:
             else:
                 if r.status_code < 400:
                     try:
-                        return r.json()
+                        return cast("dict[str, Any]", r.json())
                     except ValueError as e:
                         raise LLMError(f"{self.name}: non-JSON response: {r.text[:300]}") from e
                 if r.status_code not in RETRY_STATUS or attempt == 4:
@@ -75,11 +77,11 @@ class LLM:
                 if ra and ra.replace(".", "", 1).isdigit():
                     delay = max(delay, float(ra))
                 log.warning("%s: HTTP %s, retrying in %.0fs", self.name, r.status_code, delay)
-            time.sleep(delay + random.random())
+            time.sleep(delay + random.random())   # noqa: S311  jitter for retries, not security
             delay = min(delay * 2, 60)
         raise LLMError(f"{self.name}: gave up")  # pragma: no cover
 
-    def complete(self, system: str, messages: list[dict], *, max_tokens: Optional[int] = None,
+    def complete(self, system: str, messages: list[dict[str, Any]], *, max_tokens: Optional[int] = None,
                  json_output: bool = False, timeout: Optional[int] = None) -> Completion:
         raise NotImplementedError
 
@@ -103,7 +105,7 @@ class AnthropicMessages(LLM):
         if not cfg.model:
             raise ConfigError(f"{name}: set llm.model (run `sp2react doctor` to list models)")
 
-    def _headers(self) -> dict:
+    def _headers(self) -> dict[str, Any]:
         h = {"content-type": "application/json", "anthropic-version": "2023-06-01", **self.cfg.extra_headers}
         if self.key:
             h["x-api-key"] = self.key
@@ -111,7 +113,8 @@ class AnthropicMessages(LLM):
                 h["authorization"] = f"Bearer {self.key}"
         return h
 
-    def complete(self, system, messages, *, max_tokens=None, json_output=False, timeout=None) -> Completion:
+    def complete(self, system: str, messages: list[dict[str, Any]], *, max_tokens: Optional[int] = None,
+                 json_output: bool = False, timeout: Optional[int] = None) -> Completion:
         body = {"model": self.cfg.model, "max_tokens": max_tokens or self.cfg.max_tokens, "system": system,
                 "messages": [{"role": m["role"], "content": m["content"]} for m in messages],
                 "temperature": self.cfg.temperature}
@@ -147,14 +150,15 @@ class OpenAIChat(LLM):
             root = base if base.endswith("/v1") else base + "/v1"
             self.url, self.models_url = f"{root}/chat/completions", f"{root}/models"
 
-    def _headers(self) -> dict:
+    def _headers(self) -> dict[str, Any]:
         h = {"content-type": "application/json", **self.cfg.extra_headers}
         if self.key:
             h["api-key" if self.azure else "authorization"] = self.key if self.azure else f"Bearer {self.key}"
         return h
 
-    def complete(self, system, messages, *, max_tokens=None, json_output=False, timeout=None) -> Completion:
-        body = {"messages": [{"role": "system", "content": system}] + messages,
+    def complete(self, system: str, messages: list[dict[str, Any]], *, max_tokens: Optional[int] = None,
+                 json_output: bool = False, timeout: Optional[int] = None) -> Completion:
+        body = {"messages": [{"role": "system", "content": system}, *messages],
                 "max_tokens": max_tokens or self.cfg.max_tokens, "temperature": self.cfg.temperature}
         if not self.azure:
             body["model"] = self.cfg.model
@@ -179,13 +183,14 @@ class ScriptedLLM(LLM):
     """Deterministic stand-in for tests and dry runs: responder(agent, system, messages) -> text."""
     name = "scripted"
 
-    def __init__(self, responder: Callable[[str, str, list[dict]], str], cfg: Optional[LLMConfig] = None):
+    def __init__(self, responder: Callable[[str, str, list[dict[str, Any]]], str], cfg: Optional[LLMConfig] = None):
         super().__init__(cfg or LLMConfig(provider="scripted"))
         self.responder = responder
-        self.calls: list[dict] = []
+        self.calls: list[dict[str, Any]] = []
         self.agent = ""
 
-    def complete(self, system, messages, *, max_tokens=None, json_output=False, timeout=None) -> Completion:
+    def complete(self, system: str, messages: list[dict[str, Any]], *, max_tokens: Optional[int] = None,
+                 json_output: bool = False, timeout: Optional[int] = None) -> Completion:
         agent = self.agent
         for line in system.splitlines()[:3]:
             if line.startswith("<agent name=\""):
@@ -194,7 +199,7 @@ class ScriptedLLM(LLM):
         return Completion(text=self.responder(agent, system, messages), model="scripted")
 
 
-def make_llm(cfg: LLMConfig, policy=None) -> LLM:
+def make_llm(cfg: LLMConfig, policy: Optional[NetworkPolicy] = None) -> LLM:
     llm = _make(cfg)
     llm.policy = policy
     return llm

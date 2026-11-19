@@ -55,7 +55,7 @@ with sync_playwright() as p:
     page.select_option("#fld-Department", label="Operations")
     page.wait_for_function("document.querySelectorAll('#fld-CostCenter option').length > 1")
     cc = page.locator("#fld-CostCenter option").all_inner_texts()
-    check("cost centers cascade from department", set(c for c in cc if c) == {"OPS-310 Facilities", "OPS-320 Logistics"}, str(cc))
+    check("cost centers cascade from department", {c for c in cc if c} == {"OPS-310 Facilities", "OPS-320 Logistics"}, str(cc))
     page.select_option("#fld-CostCenter", label="OPS-320 Logistics")
     page.select_option("#fld-Country", label="Iran")
     page.wait_for_function("document.querySelector('#fld-RiskRating') && document.querySelector('#fld-RiskRating').value === 'High'")

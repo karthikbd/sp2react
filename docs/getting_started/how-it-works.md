@@ -1,4 +1,4 @@
-# 1. How it works
+# How it works
 
 ## What goes in, what comes out
 
@@ -52,11 +52,11 @@ Each screen moves through ten stages. A stage starts only when the one before it
 | `sqlite` | a SQLite copy that sp2react fills by exporting every list item and attachment | Yes |
 | `sharepoint` | the live SharePoint lists | Yes, at runtime, by the generated app |
 
-Use `database` when the data has already been migrated. See [5. Your database](05-database.md).
+Use `database` when the data has already been migrated. See [Your database](../user_guide/database.md).
 
 ## What the agents see
 
-Agents receive page source, scripts, list schemas, the inventory, and the draft spec or code they are working on. In database mode they never receive list items; the dbmap agent receives table and column names and types only. See [9. Security](09-security.md).
+Agents receive page source, scripts, list schemas, the inventory, and the draft spec or code they are working on. In database mode they never receive list items; the dbmap agent receives table and column names and types only. See [Security](../user_guide/security.md).
 
 ## Re-running
 
@@ -65,4 +65,4 @@ The workspace remembers everything:
 - `--offline` reuses the extraction instead of reading SharePoint again.
 - The spec stage skips a screen whose inventory has not changed. If the source changed, the spec is regenerated and its approval is withdrawn.
 - `map-db` keeps a mapping file you already reviewed and only adds lists that are missing from it.
-- `convert` rewrites the scaffold files in `converted-app/` every time. Keep your own changes in the places described in [8. The generated app](08-generated-app.md#changing-the-app), and keep `converted-app/` in git.
+- `convert` rewrites the scaffold files in `converted-app/` every time. Keep your own changes in the places described in [The generated app](../user_guide/generated-app.md#changing-the-app), and keep `converted-app/` in git.

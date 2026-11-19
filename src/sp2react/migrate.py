@@ -11,20 +11,24 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, cast
+
+from .checks import app_env
+
+if TYPE_CHECKING:
+    from .sharepoint.client import SharePointClient
 
 SYSTEM = ("Created", "Modified", "Author", "Editor")
 
 
 # ------------------------------------------------------------------ export
-def export_lists(sp, legacy_site: dict, lists: Iterable[str], out: Path, page_size: int = 1000,
-                 progress: Callable[[str], None] = lambda s: None) -> dict:
+def export_lists(sp: "SharePointClient", legacy_site: dict[str, Any], lists: Iterable[str], out: Path, page_size: int = 1000,
+                 progress: Callable[[str], None] = lambda s: None) -> dict[str, Any]:
     """Writes <out>/<List>.jsonl (raw SharePoint items) and <out>/attachments/<List>/<ID>/<file>."""
     out.mkdir(parents=True, exist_ok=True)
     by_key = {l["url"].rstrip("/").split("/")[-1]: l for l in legacy_site["lists"]}
@@ -37,8 +41,8 @@ def export_lists(sp, legacy_site: dict, lists: Iterable[str], out: Path, page_si
                 fh.write(json.dumps(it, ensure_ascii=False) + "\n")
                 n += 1
                 for a in ((it.get("AttachmentFiles") or {}).get("results") or []):
+                    p = _attachment_path(out, key, it.get("ID") or it.get("Id"), a.get("FileName"))
                     data = sp.file_bytes(a["ServerRelativeUrl"])
-                    p = out / "attachments" / key / str(it.get("ID") or it.get("Id")) / a["FileName"]
                     p.parent.mkdir(parents=True, exist_ok=True)
                     p.write_bytes(data)
                     files += 1
@@ -48,7 +52,21 @@ def export_lists(sp, legacy_site: dict, lists: Iterable[str], out: Path, page_si
     return summary
 
 
-def read_export(out: Path, key: str) -> list[dict]:
+def _attachment_path(out: Path, key: str, item_id: Any, name: Any) -> Path:
+    """out/attachments/<list>/<id>/<file>; the list key, id and file name come from the server, so each must be
+    a single plain path segment (a name like '../../x' would otherwise write outside the export folder)."""
+    segs = [str(key), str(item_id), str(name or "")]
+    for s in segs:
+        if s in ("", ".", "..") or "/" in s or "\\" in s or ":" in s or "\x00" in s:
+            raise ValueError(f"refused attachment path segment {s!r} (list {key}, item {item_id})")
+    base = (out / "attachments").resolve()
+    target = (out / "attachments" / segs[0] / segs[1] / segs[2]).resolve()
+    if base not in target.parents:          # a symlink inside the export folder must not redirect the write
+        raise ValueError(f"refused attachment path {target}: outside {base}")
+    return target
+
+
+def read_export(out: Path, key: str) -> list[dict[str, Any]]:
     f = out / f"{key}.jsonl"
     return [json.loads(line) for line in f.read_text(encoding="utf-8").splitlines() if line.strip()] if f.exists() else []
 
@@ -64,11 +82,11 @@ def date_only(v: Optional[str]) -> Optional[str]:
         return v[:10]
 
 
-def _results(v):
+def _results(v: Any) -> list[Any]:
     return v.get("results", []) if isinstance(v, dict) else (v or [])
 
 
-def source_value(f: dict, it: dict, suffix: str = ""):
+def source_value(f: dict[str, Any], it: dict[str, Any], suffix: str = "") -> Any:
     """A field's value in a raw REST item. Items are keyed by the field's REST name (EntityPropertyName), which
     differs from the internal name for columns that start with '_' or a digit; older specs only have the name."""
     for key in dict.fromkeys((f.get("rest_name") or "", f["name"], ("OData_" + f["name"]) if re.match(r"[_0-9]", f["name"]) else "")):
@@ -77,14 +95,14 @@ def source_value(f: dict, it: dict, suffix: str = ""):
     return None
 
 
-def url_value(v):
+def url_value(v: Any) -> Any:
     """SharePoint hyperlink {Url, Description} -> {url, description}."""
     if isinstance(v, dict):
         return {"url": v.get("Url"), "description": v.get("Description")} if v.get("Url") else None
     return {"url": v, "description": None} if v else None
 
 
-def term_value(f: dict, it: dict):
+def term_value(f: dict[str, Any], it: dict[str, Any]) -> Any:
     """Managed metadata -> {label, term_id} (a list for multi-value fields). REST's own Label is the WssId, so the
     label comes from the field's hidden note column ("Label|TermGuid;Label2|Guid2") when the schema names it."""
     raw = source_value(f, it)
@@ -99,16 +117,16 @@ def term_value(f: dict, it: dict):
     return out if f.get("multi") else (out[0] if out else None)
 
 
-def has_source_key(f: dict, it: dict) -> bool:
+def has_source_key(f: dict[str, Any], it: dict[str, Any]) -> bool:
     """REST returns every column of an item, null or not: a field that is in no exported item was read by the wrong name."""
     names = {f.get("rest_name") or "", f["name"], ("OData_" + f["name"]) if re.match(r"[_0-9]", f["name"]) else ""} - {""}
     return any(n in it or n + "Id" in it for n in names)
 
 
-def transform(items: list[dict], fields: list[dict]) -> list[dict]:
+def transform(items: list[dict[str, Any]], fields: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for it in items:
-        row: dict = {"ID": it.get("ID") or it.get("Id")}
+        row: dict[str, Any] = {"ID": it.get("ID") or it.get("Id")}
         for f in fields:
             n, t = f["name"], f["type"]
             if t in ("lookup", "user"):
@@ -136,7 +154,7 @@ def transform(items: list[dict], fields: list[dict]) -> list[dict]:
 
 
 # -------------------------------------------------------------------- load
-def write_seed(app: Path, key: str, rows: list[dict], attachments_dir: Optional[Path]) -> None:
+def write_seed(app: Path, key: str, rows: list[dict[str, Any]], attachments_dir: Optional[Path]) -> None:
     seed = app / "backend" / "data" / "seed"
     seed.mkdir(parents=True, exist_ok=True)
     (seed / f"{key}.json").write_text(json.dumps(rows, indent=1), encoding="utf-8")
@@ -171,18 +189,18 @@ print(json.dumps(out, default=str))
 """
 
 
-def read_through_app(app: Path, db_path: Path, load: bool, env: Optional[dict] = None) -> dict:
+def read_through_app(app: Path, db_path: Path, load: bool, env: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     """Run the generated backend's own repository (same code the API uses) and return every item it serves."""
-    r = subprocess.run([sys.executable, "-c", LOADER, str(db_path), "load" if load else "read"], cwd=app / "backend",
+    r = subprocess.run([sys.executable, "-c", LOADER, str(db_path), "load" if load else "read"], cwd=app / "backend",  # noqa: S603
                        capture_output=True, text=True, timeout=900,
-                       env={**os.environ, "DB_PATH": str(db_path), "DATA_SOURCE": "sqlite", **(env or {})})
+                       env=app_env({"DB_PATH": str(db_path), "DATA_SOURCE": "sqlite", **(env or {})}))
     if r.returncode != 0:
         raise RuntimeError(f"could not read the app database: {r.stderr[-2000:]}")
-    return json.loads(r.stdout)
+    return cast("dict[str, Any]", json.loads(r.stdout))
 
 
 # --------------------------------------------------------------- reconcile
-def _norm_source(f: dict, it: dict):
+def _norm_source(f: dict[str, Any], it: dict[str, Any]) -> Any:
     t = f["type"]
     if t in ("lookup", "user"):
         raw = source_value(f, it, "Id")
@@ -204,7 +222,7 @@ def _norm_source(f: dict, it: dict):
     return None if v == "" else v
 
 
-def _norm_app(f: dict, v):
+def _norm_app(f: dict[str, Any], v: Any) -> Any:
     t = f["type"]
     if t == "url":
         if isinstance(v, dict) and "url" in v:
@@ -229,8 +247,8 @@ def _sec(v: Optional[str]) -> Optional[str]:
     return v[:19] if isinstance(v, str) else v
 
 
-def reconcile(export_dir: Path, app_items: dict, specs_lists: dict, max_rows: int = 200) -> dict:
-    report: dict = {"ok": True, "lists": {}}
+def reconcile(export_dir: Path, app_items: dict[str, Any], specs_lists: dict[str, Any], max_rows: int = 200) -> dict[str, Any]:
+    report: dict[str, Any] = {"ok": True, "lists": {}}
     for key, l in specs_lists.items():
         fields = l["fields"]
         src = {int(it.get("ID") or it.get("Id") or 0): it for it in read_export(export_dir, key)}
@@ -272,7 +290,8 @@ def reconcile(export_dir: Path, app_items: dict, specs_lists: dict, max_rows: in
                     lr["attachment_mismatches"].append({"id": iid, "file": n, "sharepoint_sha256": sha, "app_sha256": got})
             canon_src.append(rs)
             canon_dst.append(rd)
-        fp = lambda rows: hashlib.sha256(json.dumps(rows, sort_keys=True, default=str).encode()).hexdigest()[:16]
+        def fp(rows: list[Any]) -> str:
+            return hashlib.sha256(json.dumps(rows, sort_keys=True, default=str).encode()).hexdigest()[:16]
         lr["fingerprint_sharepoint"], lr["fingerprint_app"] = fp(canon_src), fp(canon_dst)
         lr["ok"] = not (lr["missing_in_app"] or lr["extra_in_app"] or lr["field_mismatches"] or lr["orphan_lookups"]
                         or lr["attachment_mismatches"] or lr["fields_not_in_export"])
@@ -281,7 +300,7 @@ def reconcile(export_dir: Path, app_items: dict, specs_lists: dict, max_rows: in
     return report
 
 
-def report_markdown(rep: dict, export_meta: dict) -> str:
+def report_markdown(rep: dict[str, Any], export_meta: dict[str, Any]) -> str:
     lines = ["# Data reconciliation: SharePoint lists vs the converted app", "",
              f"Export taken {export_meta.get('at', '?')} from {export_meta.get('source', '?')}. Values were read back through the app's own repository.", "",
              f"**Result: {'all lists match' if rep['ok'] else 'MISMATCHES FOUND'}**", "",

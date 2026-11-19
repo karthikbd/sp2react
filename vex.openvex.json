@@ -1,0 +1,10 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/karthikbd/sp2react/blob/main/vex.openvex.json",
+  "author": "Karthikeyan Balasundaram (maintainer)",
+  "role": "Document Creator",
+  "timestamp": "2026-11-19T00:00:00Z",
+  "version": 1,
+  "tooling": "maintained by hand; see SECURITY.md",
+  "statements": []
+}

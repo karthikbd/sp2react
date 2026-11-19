@@ -1,4 +1,4 @@
-# 6. End-to-end walkthrough
+# End-to-end walkthrough
 
 This walks through converting a real site from start to finish: a sanctions dashboard on on-premises SharePoint, whose list data has already been migrated to SQL Server. Replace names and URLs with yours.
 
@@ -21,7 +21,7 @@ git init       # recommended: keep the config, mapping and generated app under v
 
 Add a `.gitignore` with `sp2react-work/legacy/`, `.venv/` and `converted-app/frontend/node_modules/`. The workspace holds the site's page source and scripts; decide with your team whether it may be committed.
 
-Edit `sp2react.yaml` ([full reference](03-configuration.md)):
+Edit `sp2react.yaml` ([full reference](../user_guide/configuration.md)):
 
 ```yaml
 sharepoint:
@@ -54,7 +54,7 @@ $env:SP2REACT_DB_URL = "mssql+pyodbc://@sql-uat-host/SEA?driver=ODBC+Driver+18+f
 sp2react doctor
 ```
 
-Both lines must say OK. Put the exact Claude model id it lists into `llm.model`. If something fails, see [10. Troubleshooting](10-troubleshooting.md).
+Both lines must say OK. Put the exact Claude model id it lists into `llm.model`. If something fails, see [Troubleshooting](../user_guide/troubleshooting.md).
 
 ## Step 2. Extract and inventory: see what the site contains
 
@@ -117,7 +117,7 @@ If a spec is wrong, the cause is usually in the source the agent saw (a script t
 sp2react map-db
 ```
 
-It reads the database **schema** only, drafts the mapping of lists to tables and fields to columns, asks the dbmap agent about anything unresolved, and validates the result. Review `sp2react-work/db-mapping.md` with the [checklist](05-database.md#review-checklist). Edit `db-mapping.json` (next to `sp2react.yaml`) if needed and re-run `sp2react map-db` until it says **Mapping ready**.
+It reads the database **schema** only, drafts the mapping of lists to tables and fields to columns, asks the dbmap agent about anything unresolved, and validates the result. Review `sp2react-work/db-mapping.md` with the [checklist](../user_guide/database.md#review-checklist). Edit `db-mapping.json` (next to `sp2react.yaml`) if needed and re-run `sp2react map-db` until it says **Mapping ready**.
 
 Fill in group members in `converted-app/backend/data/roles.json` later (step 7) unless the mapping has a groups table.
 
@@ -189,8 +189,8 @@ A screen can be approved only after its tests pass.
 
 ## Step 9. Deploy
 
-See [8. The generated app → Deploying](08-generated-app.md#deploying). Before production, switch `AUTH_MODE` to `header` behind your authenticating gateway, or replace `app/auth.py` with Entra ID token validation.
+See [The generated app → Deploying](../user_guide/generated-app.md#deploying). Before production, switch `AUTH_MODE` to `header` behind your authenticating gateway, or replace `app/auth.py` with Entra ID token validation.
 
 ## When the site changes
 
-Re-run from the top. Unchanged screens are skipped by the spec stage; changed ones get a new spec and need approval again. `db-mapping.json` keeps your edits. `convert` rewrites the scaffold, so keep custom changes where [8. The generated app](08-generated-app.md#changing-the-app) says.
+Re-run from the top. Unchanged screens are skipped by the spec stage; changed ones get a new spec and need approval again. `db-mapping.json` keeps your edits. `convert` rewrites the scaffold, so keep custom changes where [The generated app](../user_guide/generated-app.md#changing-the-app) says.

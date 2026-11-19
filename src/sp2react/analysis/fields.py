@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
+from typing import Any, Optional, cast
 
 from ..sharepoint.client import unwrap
 
@@ -27,26 +27,26 @@ TYPE_MAP = {
 }
 
 
-def rest_name(f: dict) -> str:
+def rest_name(f: dict[str, Any]) -> str:
     """The property name list items carry in REST: EntityPropertyName (OData__x0032_nd... for internal names
     that start with '_' or a digit). SharePoint 2010 has no EntityPropertyName, so the same rule is applied here."""
     name = f["InternalName"]
-    return f.get("EntityPropertyName") or (("OData_" + name) if re.match(r"[_0-9]", name) else name)
+    return cast("str", f.get("EntityPropertyName") or (("OData_" + name) if re.match(r"[_0-9]", name) else name))
 
 
-def _choices(f: dict) -> list[str]:
+def _choices(f: dict[str, Any]) -> list[str]:
     c = f.get("Choices")
     return list(unwrap(c) or []) if c else []
 
 
-def map_field(f: dict, list_by_id: dict[str, str]) -> Optional[dict]:
+def map_field(f: dict[str, Any], list_by_id: dict[str, str]) -> Optional[dict[str, Any]]:
     name = f["InternalName"]
     if f.get("Hidden") or name in SYSTEM_FIELDS:
         return None
     if f.get("ReadOnlyField") and f.get("TypeAsString") not in ("Calculated",):
         return None
     t = f.get("TypeAsString", "Text")
-    spec: dict = {"name": name, "label": f.get("Title", name), "type": TYPE_MAP.get(t, "text"), "sp_type": t,
+    spec: dict[str, Any] = {"name": name, "label": f.get("Title", name), "type": TYPE_MAP.get(t, "text"), "sp_type": t,
                   "required": bool(f.get("Required"))}
     if rest_name(f) != name:
         spec["rest_name"] = rest_name(f)
@@ -92,7 +92,7 @@ def map_field(f: dict, list_by_id: dict[str, str]) -> Optional[dict]:
     return spec
 
 
-def _coerce_default(v, typ):
+def _coerce_default(v: Any, typ: str) -> Any:
     if typ == "boolean":
         return str(v) in ("1", "true", "True")
     if typ in ("number", "currency"):
@@ -103,7 +103,7 @@ def _coerce_default(v, typ):
     return v
 
 
-def map_fields(fields_json: dict, list_by_id: dict[str, str]) -> tuple[list[dict], list[dict]]:
+def map_fields(fields_json: dict[str, Any], list_by_id: dict[str, str]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """-> (spec fields in schema order, column validation formulas)."""
     out, formulas = [], []
     by_id = {str(f.get("Id", "")).strip("{}").lower(): f for f in unwrap(fields_json)}
@@ -127,7 +127,7 @@ def map_fields(fields_json: dict, list_by_id: dict[str, str]) -> tuple[list[dict
 FIELD = r"\[([^\]]+)\]"
 
 
-def translate_formula(formula: str, field_names: dict[str, str]) -> Optional[dict]:
+def translate_formula(formula: str, field_names: dict[str, str]) -> Optional[dict[str, Any]]:
     """Port the common SharePoint validation formula shapes to a spec rule body; None when not recognised.
 
     field_names maps display name / internal name -> internal name (formulas use display names).

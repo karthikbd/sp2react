@@ -9,10 +9,9 @@ import tempfile
 from pathlib import Path
 from typing import Any, Optional
 
-from ..model import ValidationError
-
 from ..analysis.aspx import load_page
 from ..analysis.inventory import Legacy
+from ..model import ValidationError
 from ..spec.coverage import check
 from ..spec.model import Spec
 from .core import Agent, AgentResult
@@ -42,7 +41,7 @@ def numbered(text: str, start: int = 1, only: Optional[set[int]] = None) -> str:
     return "\n".join(out)
 
 
-def script_sources(legacy: Legacy, inv: dict, budget: int = MAX_SOURCE_LINES) -> str:
+def script_sources(legacy: Legacy, inv: dict[str, Any], budget: int = MAX_SOURCE_LINES) -> str:
     texts: list[tuple[str, str]] = []
     for s in inv["scripts"]["custom"]:
         name = s["path"]
@@ -79,7 +78,7 @@ def compact_spec(spec: Spec) -> str:
     return json.dumps(d, indent=1)
 
 
-def compact_behaviors(inv: dict) -> str:
+def compact_behaviors(inv: dict[str, Any]) -> str:
     rows = []
     for b in inv["behaviors"]:
         r = {"id": b["id"], "level": b["level"], "kind": b["kind"], "code": b.get("code")}
@@ -99,7 +98,7 @@ def compact_behaviors(inv: dict) -> str:
     return "\n".join(rows)
 
 
-def merge_patch(base: Spec, patch: dict) -> Spec:
+def merge_patch(base: Spec, patch: dict[str, Any]) -> Spec:
     d = json.loads(base.model_dump_json())
     base_ids = {r["id"] for r in d["rules"]}
     for r in patch.get("rules", []):
@@ -127,10 +126,10 @@ def literal_chunks(message: str) -> list[str]:
 
 
 # -------------------------------------------------------------- spec agent
-def run_spec_agent(agent: Agent, legacy: Legacy, inv: dict, base: Spec) -> tuple[Spec, AgentResult]:
+def run_spec_agent(agent: Agent, legacy: Legacy, inv: dict[str, Any], base: Spec) -> tuple[Spec, AgentResult]:
     holder: dict[str, Spec] = {}
 
-    def validate(patch: dict) -> list[str]:
+    def validate(patch: dict[str, Any]) -> list[str]:
         try:
             spec = merge_patch(base, patch)
         except ValidationError as e:
@@ -199,7 +198,7 @@ def ts_problems(out: Path, files: dict[str, str], timeout: int = 120) -> list[st
             backups[p] = p.read_text(encoding="utf-8") if p.exists() else None
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(content, encoding="utf-8")
-        r = subprocess.run([str(tsc), "--noEmit", "-p", str(fe)], cwd=fe, capture_output=True, text=True, timeout=timeout)
+        r = subprocess.run([str(tsc), "--noEmit", "-p", str(fe)], cwd=fe, capture_output=True, text=True, timeout=timeout)  # noqa: S603
         errs = []
         for line in r.stdout.splitlines():
             m = re.match(r"(src/[^(]+)\((\d+),(\d+)\): error (TS\d+): (.*)", line)
@@ -241,7 +240,7 @@ def page_file_problems(files: dict[str, str], prefix: str, must_texts: list[str]
     return problems
 
 
-def run_page_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, routes: list[dict], out: Path) -> AgentResult:
+def run_page_agent(agent: Agent, legacy: Legacy, inv: dict[str, Any], spec: Spec, routes: list[dict[str, Any]], out: Path) -> AgentResult:
     sid = spec.screen.id
     prefix = f"frontend/src/screens/{sid}/"
     dropped = {c for n in spec.not_carried for c in n.covers}
@@ -252,7 +251,7 @@ def run_page_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, routes: 
                 must_texts.append(b["message"])
             must_texts += (b.get("detail") or {}).get("messages", [])
 
-    def validate(parsed: dict) -> list[str]:
+    def validate(parsed: dict[str, Any]) -> list[str]:
         files = parsed["files"]
         probs = page_file_problems(files, prefix, must_texts)
         return probs or ts_problems(out, files)
@@ -277,13 +276,13 @@ def run_page_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, routes: 
 
 
 # ----------------------------------------------------------- handler agent
-def run_handler_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, rule: Any, out: Path) -> AgentResult:
+def run_handler_agent(agent: Agent, legacy: Legacy, inv: dict[str, Any], spec: Spec, rule: Any, out: Path) -> AgentResult:
     handler = rule.params["handler"]
     if not re.match(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$", str(handler)):
         raise ValueError(f"handler name {handler!r} must be a plain identifier")
     allowed = {f"frontend/src/custom/{handler}.ts", f"backend/app/custom/{handler}.py"}
 
-    def validate(parsed: dict) -> list[str]:
+    def validate(parsed: dict[str, Any]) -> list[str]:
         probs = []
         for path, code in parsed["files"].items():
             if path not in allowed:
@@ -313,8 +312,8 @@ def run_handler_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, rule:
 
 
 # ------------------------------------------------------------ review agent
-def run_review_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, out: Path) -> AgentResult:
-    def validate(r: dict) -> list[str]:
+def run_review_agent(agent: Agent, legacy: Legacy, inv: dict[str, Any], spec: Spec, out: Path) -> AgentResult:
+    def validate(r: dict[str, Any]) -> list[str]:
         probs = []
         if r.get("verdict") not in ("pass", "fail"):
             probs.append("verdict must be 'pass' or 'fail'")
@@ -346,15 +345,15 @@ def run_review_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, out: P
 
 
 # --------------------------------------------------------------- fix agent
-def run_fix_agent(agent: Agent, inv: dict, spec: Spec, failures: str, out: Path, task_id: str) -> tuple[AgentResult, Optional[Spec]]:
+def run_fix_agent(agent: Agent, inv: dict[str, Any], spec: Spec, failures: str, out: Path, task_id: str) -> tuple[AgentResult, Optional[Spec]]:
     sid = spec.screen.id
     editable = {p.relative_to(out).as_posix() for p in (out / "frontend" / "src" / "screens" / sid).glob("*.ts*")} if (out / "frontend" / "src" / "screens" / sid).exists() else set()
     for r in spec.rules:
         if r.kind == "custom":
             editable |= {f"frontend/src/custom/{r.params['handler']}.ts", f"backend/app/custom/{r.params['handler']}.py"}
-    holder: dict = {}
+    holder: dict[str, Any] = {}
 
-    def validate(parsed: dict) -> list[str]:
+    def validate(parsed: dict[str, Any]) -> list[str]:
         probs = [f"{p}: not an editable file (editable: {sorted(editable)})" for p in parsed["files"] if p not in editable]
         if parsed.get("spec_patch"):
             patch = parsed["spec_patch"]
@@ -385,11 +384,11 @@ def run_fix_agent(agent: Agent, inv: dict, spec: Spec, failures: str, out: Path,
 
 
 # ------------------------------------------------------------- dbmap agent
-def run_dbmap_agent(agent: Agent, lists: dict, db: dict, draft_mapping: dict, notes: list[str]) -> tuple[dict, list[str], AgentResult]:
+def run_dbmap_agent(agent: Agent, lists: dict[str, Any], db: dict[str, Any], draft_mapping: dict[str, Any], notes: list[str]) -> tuple[dict[str, Any], list[str], AgentResult]:
     from ..dbmap import validate as validate_mapping
-    holder: dict = {}
+    holder: dict[str, Any] = {}
 
-    def validate(out: dict) -> list[str]:
+    def validate(out: dict[str, Any]) -> list[str]:
         m = out.get("mapping")
         if not isinstance(m, dict) or "lists" not in m:
             return ['Return {"mapping": {...}, "notes": [...]} with mapping.lists']

@@ -161,7 +161,7 @@ class _Flow:
                     return out
         if c == "{":
             self.i += 1
-            obj: dict = {}
+            obj: dict[str, Any] = {}
             self.ws()
             if self.s[self.i:self.i + 1] == "}":
                 self.i += 1
@@ -277,7 +277,7 @@ def _block_scalar(lines: _Lines, header: str, parent_indent: int, line: int) -> 
     body: List[str] = []
     indent = int(m.group(3)) + parent_indent if m.group(3) else None
     while lines.pos < len(lines.items):
-        n, ind, content, raw = lines.items[lines.pos]
+        _n, ind, _content, raw = lines.items[lines.pos]
         if raw.strip() == "":
             body.append("")
             lines.pos += 1
@@ -330,12 +330,12 @@ def _continue_plain(lines: _Lines, value: Any, indent: int, content: str, line: 
         nxt = lines.next_content()
         if nxt is None or nxt[1] <= indent:
             break
-        nl, ni, nc, _ = nxt
+        nl, _ni, nc, _ = nxt
         if nc.startswith(("- ", "-\t")) or nc == "-" or _split_key(nc, nl) is not None:
             raise YAMLError("unexpected nested entry under a plain value", nl)
         extra.append(nc)
         lines.pos += 1
-    return " ".join([value] + extra) if extra else value
+    return " ".join([value, *extra]) if extra else value
 
 
 def _value_after(lines: _Lines, rest: str, indent: int, line: int) -> Any:
@@ -363,8 +363,8 @@ def _mapping_key(key: str, content: str) -> Any:
     return key if isinstance(v, bool) or v is None else v
 
 
-def _mapping(lines: _Lines, indent: int) -> dict:
-    out: dict = {}
+def _mapping(lines: _Lines, indent: int) -> dict[str, Any]:
+    out: dict[str, Any] = {}
     while True:
         cur = lines.next_content()
         if cur is None or cur[1] < indent:
@@ -386,13 +386,13 @@ def _mapping(lines: _Lines, indent: int) -> dict:
         out[_mapping_key(key, content)] = _value_after(lines, rest, indent, n)
 
 
-def _sequence(lines: _Lines, indent: int) -> list:
-    out: list = []
+def _sequence(lines: _Lines, indent: int) -> list[Any]:
+    out: list[Any] = []
     while True:
         cur = lines.next_content()
         if cur is None or cur[1] < indent:
             return out
-        n, ind, content, raw = cur
+        n, ind, content, _raw = cur
         if ind > indent:
             raise YAMLError("unexpected indentation", n)
         if not (content == "-" or content.startswith(("- ", "-\t"))):

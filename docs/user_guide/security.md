@@ -1,4 +1,4 @@
-# 9. Security and network behaviour
+# Security and network behaviour
 
 This page answers the questions a security or architecture review usually asks. The policy itself is in [SECURITY.md](https://github.com/karthikbd/sp2react/blob/main/SECURITY.md).
 
@@ -58,7 +58,24 @@ All credentials come from environment variables named in the config: SharePoint 
 
 - **SharePoint:** none. sp2react never writes to SharePoint.
 - **Database:** sp2react never writes to your database. The generated app does, when users save forms. Its generated tests also write test items, so run them against a test database.
-- **Local disk:** only the workspace, the output folder and `db-mapping.json`.
+- **Local disk:** only the workspace, the output folder and `db-mapping.json`. Paths that come from the site (page and asset URLs, attachment names) are checked: one that would land outside these folders (`../`, an absolute or drive path, a symlink) is refused and listed as an extraction error.
+
+## Running the generated app's tests
+
+The `test` stage builds the generated front end and runs the generated back end's tests on the machine
+that runs sp2react. Those include files written by agents (screens and custom handlers), so:
+
+- they run without sp2react's credentials: the variables named in `sharepoint.*_env`, `llm.api_key_env`
+  and `database.url_env` are removed from their environment (in `data_source: database` the app gets the
+  database URL as `DB_URL`, because its tests need it);
+- they still run with your user's file and network access. Run sp2react in a container or a VM used only
+  for the conversion. (`--no-builds` skips only the front-end build and checks; the back-end tests and
+  the reconciliation still run the generated Python.) Review custom handlers
+  (`custom/*.ts`, `custom/*.py`) like any other code change before approving a screen.
+
+Page text can try to steer an agent (prompt injection). Validation limits where agent output can go and
+what shape it has; the approval gates are where a person checks the result. See the
+[security assurance case](../development/security-assurance.md) for every threat considered.
 
 ## The generated app
 
@@ -77,7 +94,9 @@ All credentials come from environment variables named in the config: SharePoint 
 - Published to PyPI from GitHub Actions with **Trusted Publishing** (OIDC, no stored tokens), from the public repository `karthikbd/sp2react`.
 - Every GitHub Action is pinned to a commit SHA, and every CI tool set is installed from hash-locked requirement files (`ci/requirements-*.txt`, `pip install --require-hashes`).
 - Each release carries PyPI provenance attestations; its wheel, sdist and CycloneDX SBOM are signed with Sigstore and attached to the GitHub release, and `verify-release.yml` checks the signatures and that PyPI serves the same files.
-- `pip-audit` (every CI tool set and the generated app's back end) and `npm audit` (the generated app's front end) run on every push and weekly.
+- `pip-audit` (every CI tool set, including versions pinned for other Python versions, and the generated app's back end) and `npm audit` (the generated app's front end) run on every push and weekly. On pull requests, dependency review blocks new dependencies with known vulnerabilities, and every commit must be signed off (DCO).
+- Releases are reproducible: the same commit builds to the same bytes, checked in CI.
+- `ruff` with the Bandit security rules and `mypy --strict` run on every change.
 - ClusterFuzzLite fuzzes the parsers that read untrusted input: the config YAML, agent JSON (spec validation), ASPX pages and legacy JavaScript, NTLM challenges and the generated API's `$filter` parser.
 - End-to-end CI runs `data_source: database` against real MySQL 8.4 and SQL Server 2022 containers.
 - OpenSSF Scorecard runs weekly and on every push to `main`.

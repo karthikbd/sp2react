@@ -12,7 +12,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 TAG_VALUE = r"<(?:\w+:)?{tag}\b[^>]*>(.*?)</(?:\w+:)?{tag}>"
 
@@ -51,7 +51,7 @@ class WebPart:
     view_xml: Optional[str] = None
     hidden: bool = False
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v not in (None, "", False) or k in ("id", "type", "title")}
 
 
@@ -63,8 +63,8 @@ class ParsedPage:
     web_parts: list[WebPart] = field(default_factory=list)
     stylesheets: list[str] = field(default_factory=list)
     scripts: list[str] = field(default_factory=list)      # src URLs in page order
-    inline_scripts: list[dict] = field(default_factory=list)  # {where, code}
-    html_fragments: list[dict] = field(default_factory=list)  # {web_part, html} non-script markup authored in web parts
+    inline_scripts: list[dict[str, Any]] = field(default_factory=list)  # {where, code}
+    html_fragments: list[dict[str, Any]] = field(default_factory=list)  # {web_part, html} non-script markup authored in web parts
 
     @property
     def form_mode(self) -> Optional[str]:
@@ -80,7 +80,7 @@ class ParsedPage:
                 return wp.list_id
         return None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "path": self.path, "master": self.master, "title": self.title, "form_mode": self.form_mode,
             "list_id": self.list_id, "web_parts": [w.to_dict() for w in self.web_parts],
@@ -157,7 +157,7 @@ def web_parts_from_aspx(source: str) -> list[WebPart]:
     return out
 
 
-def web_parts_from_manager(items: list[dict]) -> list[WebPart]:
+def web_parts_from_manager(items: list[dict[str, Any]]) -> list[WebPart]:
     """Classify REST web part manager output (properties only; SharePoint gives no type name)."""
     out = []
     for i, d in enumerate(items):
@@ -166,8 +166,8 @@ def web_parts_from_manager(items: list[dict]) -> list[WebPart]:
         if isinstance(props, dict) and "results" in props:  # some versions wrap it
             props = {p.get("Key"): p.get("Value") for p in props["results"]}
         title = props.get("Title") or wpd.get("Title") or f"Web part {i + 1}"
-        common = dict(id=str(d.get("Id")), title=title, zone=d.get("ZoneId"), order=wpd.get("ZoneIndex", i),
-                      source="webpartmanager", hidden=bool(wpd.get("Hidden") or wpd.get("IsClosed")))
+        common = {"id": str(d.get("Id")), "title": title, "zone": d.get("ZoneId"), "order": wpd.get("ZoneIndex", i),
+                      "source": "webpartmanager", "hidden": bool(wpd.get("Hidden") or wpd.get("IsClosed"))}
         if props.get("XmlDefinition") or props.get("ListUrl") or props.get("ViewGuid"):
             wp = WebPart(type="ListView", list_id=(props.get("ListName") or props.get("ListId") or "").strip("{}").lower() or None,
                          list_url=props.get("ListUrl"), view_xml=props.get("XmlDefinition"), jslink=props.get("JSLink") or None, **common)
@@ -186,7 +186,7 @@ def web_parts_from_manager(items: list[dict]) -> list[WebPart]:
     return out
 
 
-def parse_page(path: str, source: str, webparts_json: Optional[list[dict]] = None) -> ParsedPage:
+def parse_page(path: str, source: str, webparts_json: Optional[list[dict[str, Any]]] = None) -> ParsedPage:
     page = ParsedPage(path=path)
     m = re.search(r'MasterPageFile\s*=\s*"([^"]+)"', source)
     page.master = m.group(1) if m else None

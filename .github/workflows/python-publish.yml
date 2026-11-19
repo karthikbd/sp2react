@@ -46,8 +46,12 @@ jobs:
       - name: Build distribution
         run: |
           pip install --require-hashes -r ci/requirements-build.txt
+          # reproducible: wheel and sdist timestamps come from the commit, so a rebuild is bit-for-bit identical
+          export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
           python -m build
+          python ci/reproducible_sdist.py dist/*.tar.gz
           twine check dist/*
+          sha256sum dist/*
       - name: Check the wheel declares no runtime dependencies
         run: |
           python - <<'PY'

@@ -8,7 +8,7 @@ There is no telemetry, no update check and no third-party call.
 """
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Any, Iterable
 from urllib.parse import urlsplit
 
 from .transport import Session
@@ -38,7 +38,7 @@ class NetworkPolicy:
         send = session.send
         policy = self
 
-        def guarded_send(request, **kwargs):
+        def guarded_send(request: Any, **kwargs: Any) -> Any:
             policy.check(request.url)
             return send(request, **kwargs)
 
@@ -46,7 +46,7 @@ class NetworkPolicy:
         return session
 
 
-def policy_for(cfg) -> NetworkPolicy:
+def policy_for(cfg: Any) -> NetworkPolicy:
     """Allowed hosts = SharePoint site + model endpoint + anything listed in security.allowed_hosts."""
     hosts = [NetworkPolicy.host_of(cfg.sharepoint.site_url)]
     llm = cfg.llm

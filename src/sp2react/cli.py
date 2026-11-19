@@ -9,11 +9,15 @@ from pathlib import Path
 
 from . import __version__
 from .config import TEMPLATE, ConfigError, load_config
+from typing import TYPE_CHECKING, Optional, cast
+
+if TYPE_CHECKING:
+    from .pipeline import Pipeline
 
 DEFAULT_CONFIG = "sp2react.yaml"
 
 
-def _pipeline(args):
+def _pipeline(args: argparse.Namespace) -> "Pipeline":
     from .pipeline import Pipeline
     cfg = load_config(args.config)
     if getattr(args, "auto_approve", False):
@@ -23,7 +27,7 @@ def _pipeline(args):
     return Pipeline(cfg, progress=lambda m: print(m, flush=True))
 
 
-def cmd_init(args) -> int:
+def cmd_init(args: argparse.Namespace) -> int:
     p = Path(args.config)
     if p.exists() and not args.force:
         print(f"{p} already exists (use --force to overwrite)")
@@ -33,7 +37,7 @@ def cmd_init(args) -> int:
     return 0
 
 
-def cmd_doctor(args) -> int:
+def cmd_doctor(args: argparse.Namespace) -> int:
     from .llm.providers import make_llm
     from .sharepoint.client import SharePointClient
     cfg = load_config(args.config)
@@ -62,14 +66,14 @@ def cmd_doctor(args) -> int:
     return 0 if ok else 2
 
 
-def cmd_run(args) -> int:
+def cmd_run(args: argparse.Namespace) -> int:
     p = _pipeline(args)
     p.run(pages=args.page or None, offline=args.offline, until=args.until)
     print(f"\nReport: {p.ws / 'report.md'}\nApp:    {p.out}")
     return 0
 
 
-def cmd_stage(args) -> int:
+def cmd_stage(args: argparse.Namespace) -> int:
     from .pipeline import write_report
     p = _pipeline(args)
     scrs = p.screens(args.page or None)
@@ -103,7 +107,7 @@ def cmd_stage(args) -> int:
     return 0
 
 
-def cmd_approve(args) -> int:
+def cmd_approve(args: argparse.Namespace) -> int:
     from .pipeline import write_report
     p = _pipeline(args)
     gate = "screen" if args.screen_gate else "spec"
@@ -118,7 +122,7 @@ def cmd_approve(args) -> int:
     return 0
 
 
-def cmd_status(args) -> int:
+def cmd_status(args: argparse.Namespace) -> int:
     from .pipeline import STAGES
     p = _pipeline(args)
     if args.json:
@@ -136,7 +140,7 @@ def cmd_status(args) -> int:
     return 0
 
 
-def main(argv=None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="sp2react", description="Convert classic SharePoint ASPX/jQuery forms and pages to React + FastAPI with AI agents.")
     ap.add_argument("--version", action="version", version=__version__)
     ap.add_argument("-c", "--config", default=DEFAULT_CONFIG)
@@ -178,7 +182,7 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
     try:
-        return args.fn(args)
+        return cast("int", args.fn(args))
     except ConfigError as e:
         print(f"Configuration problem: {e}", file=sys.stderr)
         return 2

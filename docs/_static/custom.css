@@ -1,0 +1,5 @@
+/* small touches on top of pydata-sphinx-theme (the pandas theme) */
+.sd-card-title { font-weight: 600; }
+.bd-content table.table td, .bd-content table.table th { vertical-align: top; }
+.bd-content .sd-card { height: 100%; }
+dl.py.class > dt, dl.py.function > dt { background: var(--pst-color-surface); }

@@ -24,7 +24,7 @@ class CoverageReport:
     covered: int = 0
     must: int = 0
     not_carried: int = 0
-    matrix: list[dict] = field(default_factory=list)   # behavior -> what covers it
+    matrix: list[dict[str, Any]] = field(default_factory=list)   # behavior -> what covers it
 
     def summary(self) -> str:
         return f"{self.covered}/{self.must} required behaviours covered ({self.not_carried} not carried, with reasons); {len(self.problems)} problem(s)"
@@ -68,7 +68,7 @@ def _condition_problems(cond: Any, fields: set[str], groups: set[str], where: st
     return [f"{where}: unknown condition shape {sorted(keys)} (use field/role/mode/all/any/not)"]
 
 
-def check(spec: Spec, inv: dict) -> CoverageReport:
+def check(spec: Spec, inv: dict[str, Any]) -> CoverageReport:
     problems: list[str] = []
     behaviors = {b["id"]: b for b in inv["behaviors"]}
     must = {k: b for k, b in behaviors.items() if b["level"] == "must"}
@@ -91,7 +91,7 @@ def check(spec: Spec, inv: dict) -> CoverageReport:
     # 3. messages are carried verbatim by whatever covers the behaviour
     texts: list[str] = []
 
-    def collect(v) -> None:
+    def collect(v: Any) -> None:
         if isinstance(v, str):
             texts.append(_norm(v))
         elif isinstance(v, dict):

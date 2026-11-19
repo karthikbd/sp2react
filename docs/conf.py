@@ -13,8 +13,9 @@ copyright = "2026, Karthikeyan Balasundaram"
 release = sp2react.__version__
 version = ".".join(release.split(".")[:2])
 
-extensions = ["myst_parser", "sphinx_copybutton"]
-myst_enable_extensions = ["colon_fence", "deflist"]
+extensions = ["myst_parser", "sphinx_copybutton", "sphinx_design"]
+myst_enable_extensions = ["colon_fence", "deflist", "fieldlist", "attrs_inline", "substitution"]
+myst_substitutions = {"version": release}
 myst_heading_anchors = 3
 source_suffix = {".md": "markdown"}
 root_doc = "index"
@@ -25,10 +26,13 @@ copybutton_prompt_is_regexp = True
 
 html_theme = "pydata_sphinx_theme"
 html_title = f"sp2react {release}"
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 html_show_sourcelink = False
 html_copy_source = False
 html_theme_options = {
     "logo": {"text": "sp2react"},
+    "header_links_before_dropdown": 6,
     "navbar_align": "left",
     "show_toc_level": 2,
     "navigation_with_keys": False,
@@ -37,3 +41,13 @@ html_theme_options = {
                    {"name": "GitHub", "url": "https://github.com/karthikbd/sp2react", "icon": "fa-brands fa-github"}],
 }
 html_context = {"default_mode": "light"}
+html_sidebars = {"index": [], "whatsnew/index": []}
+
+
+def _version_everywhere(app, docname, source):
+    # MyST substitutions skip code blocks; replace the token before parsing so commands show the version
+    source[0] = source[0].replace("{{ version }}", release)
+
+
+def setup(app):
+    app.connect("source-read", _version_everywhere)

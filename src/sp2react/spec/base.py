@@ -5,6 +5,7 @@ The spec agent receives this base and adds the rules/components that need interp
 """
 from __future__ import annotations
 
+from typing import Any
 import re
 
 from ..analysis.inventory import kebab
@@ -13,11 +14,11 @@ from .model import Component, Endpoint, ListSpec, Rule, Screen, Spec
 MODES_ORDER = ["new", "edit", "display"]
 
 
-def _src(b: dict) -> list[str]:
+def _src(b: dict[str, Any]) -> list[str]:
     return [f"{b['file']}:{b['line']}"] if b.get("line") else [b["file"]]
 
 
-def base_spec(inv: dict) -> Spec:
+def base_spec(inv: dict[str, Any]) -> Spec:
     scr = inv["screen"]
     primary = scr.get("list")
     modes = [m for m in MODES_ORDER if any(p.get("mode") == m for p in inv["pages"])]
@@ -28,7 +29,7 @@ def base_spec(inv: dict) -> Spec:
         stylesheets=inv.get("stylesheets", []),
     )
     rules: list[Rule] = []
-    by_kind: dict[str, list[dict]] = {}
+    by_kind: dict[str, list[dict[str, Any]]] = {}
     for b in inv["behaviors"]:
         by_kind.setdefault(b["kind"], []).append(b)
 
@@ -57,7 +58,7 @@ def base_spec(inv: dict) -> Spec:
                                                covers=[b["id"]], src=_src(b)))
 
     # endpoints proposed from the data calls, merged by method+path
-    endpoints: dict[tuple, Endpoint] = {}
+    endpoints: dict[tuple[Any, ...], Endpoint] = {}
     for c in inv["calls"]:
         p = c.get("proposed") or {}
         if not p.get("path") or p.get("method") not in ("GET", "POST", "PATCH", "DELETE"):

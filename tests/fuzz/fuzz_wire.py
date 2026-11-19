@@ -22,7 +22,7 @@ except ImportError:   # run from a checkout: load it from the package's template
 ITEMS = [{"ID": 1, "Title": "Kestrel", "Status": "Approved", "Country": {"id": 8, "title": "Nigeria"}, "Amount": 5.0}]
 
 
-def TestOneInput(data: bytes) -> None:  # noqa: N802 (atheris naming)
+def TestOneInput(data: bytes) -> None:
     fdp = atheris.FuzzedDataProvider(data)
     which = fdp.ConsumeIntInRange(0, 2)
     if which == 0:

@@ -16,6 +16,13 @@ class ODataError(ValueError):
     pass
 
 
+def _text(fn, value):
+    """startswith / endswith / substringof take a quoted text value, as in SharePoint."""
+    if not isinstance(value, str):
+        raise ODataError(f"{fn} needs a quoted text value, got {value!r}")
+    return value
+
+
 def tokenize(expr: str) -> list[tuple[str, str]]:
     out, pos = [], 0
     expr = expr.strip()
@@ -125,14 +132,14 @@ class Parser:
             self.take()
             self.take("(")
             if v == "substringof":
-                needle = self.value()
+                needle = _text(v, self.value())
                 self.take(",")
                 field = self.take("id")[1]
                 self.take(")")
                 return lambda it: needle.lower() in str(resolve(it, field) or "").lower()
             field = self.take("id")[1]
             self.take(",")
-            needle = self.value()
+            needle = _text(v, self.value())
             self.take(")")
             fn = str.startswith if v == "startswith" else str.endswith
             return lambda it: fn(str(resolve(it, field) or ""), needle)

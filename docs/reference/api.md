@@ -1,4 +1,4 @@
-# 11. Python API
+# Python API
 
 Everything the command line does is available from Python, for example to drive sp2react from your own migration tool (such as a "cockpit" UI) and show stage status there.
 

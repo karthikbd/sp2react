@@ -10,7 +10,7 @@ import json
 import re
 import shutil
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Any, Iterable, Optional
 
 from ..analysis.inventory import Legacy
 from ..spec.model import Spec
@@ -102,7 +102,7 @@ def copy_templates(out: Path, kept: Optional[list[str]] = None) -> list[str]:
 
 
 # ----------------------------------------------------------------- seed data
-def seed_rows(legacy: Legacy, list_key: str, fields: list[dict], export_dir: Optional[Path] = None) -> list[dict]:
+def seed_rows(legacy: Legacy, list_key: str, fields: list[dict[str, Any]], export_dir: Optional[Path] = None) -> list[dict[str, Any]]:
     """Full migrated rows when a data export exists, otherwise the sample captured during extraction."""
     from ..migrate import read_export, transform
     if export_dir and (export_dir / f"{list_key}.jsonl").exists():
@@ -110,7 +110,7 @@ def seed_rows(legacy: Legacy, list_key: str, fields: list[dict], export_dir: Opt
     return transform(legacy.items(list_key), fields)
 
 
-def users_json(legacy: Legacy) -> list[dict]:
+def users_json(legacy: Legacy) -> list[dict[str, Any]]:
     f = legacy.root / "siteusers.json"
     data = json.loads(f.read_text(encoding="utf-8")) if f.exists() else {"d": {"results": []}}
     groups = legacy.site.get("groups", [])
@@ -288,7 +288,7 @@ CORS_ORIGINS=http://localhost:5173
 
 
 def generate(out: Path, specs: list[Spec], legacy: Legacy, export_dir: Optional[Path] = None,
-             data_source: str = "sqlite", mapping_file: Optional[Path] = None) -> dict:
+             data_source: str = "sqlite", mapping_file: Optional[Path] = None) -> dict[str, Any]:
     out.mkdir(parents=True, exist_ok=True)
     previous = read_manifest(out)
     kept: list[str] = []
