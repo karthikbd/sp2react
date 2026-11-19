@@ -36,7 +36,14 @@ from .spec.coverage import check
 from .spec.model import Spec
 
 log = logging.getLogger(__name__)
-CRITICAL_EXTRACT_ERRORS = ("fields of ", "source of ", "views of ", "forms of ")
+CRITICAL_EXTRACT_ERRORS = ("fields of ", "source of ", "views of ", "forms of ", "web parts of ", "SitePages library")
+
+
+def critical_extract_error(e: dict) -> bool:
+    """Errors that leave a screen without its content. A site without a SitePages library answers 404: not an error."""
+    if e["what"] == "SitePages library" and "HTTP 404" in e["error"]:
+        return False
+    return e["what"].startswith(CRITICAL_EXTRACT_ERRORS)
 STAGES = ["inputs", "extract", "inventory", "spec", "approve_spec", "convert", "review", "test", "fix", "approve"]
 
 
@@ -181,7 +188,7 @@ class Pipeline:
         s = man["summary"]
         msg = f"{s['lists']} lists, {s['pages']} pages, {s['files']} custom files, {s['errors']} errors"
         # a list without its fields or a page without its source would become a screen with nothing in it
-        critical = [e for e in man.get("errors", []) if e["what"].startswith(CRITICAL_EXTRACT_ERRORS)]
+        critical = [e for e in man.get("errors", []) if critical_extract_error(e)]
         if critical:
             self.mark(None, "extract", "failed", msg + "; could not read: " + "; ".join(f"{e['what']} ({e['error'][:120]})" for e in critical[:5])
                       + ". Fix access or throttling and run extract again.", summary=s)

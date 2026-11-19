@@ -6,6 +6,7 @@ what the spec agent must account for, and what the coverage gate checks the spec
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -79,8 +80,7 @@ class Legacy:
 
 def safe_id(text: str) -> str:
     """A screen id that is also a folder name: letters, digits, '_', '-' and '.' (never leading)."""
-    s = re.sub(r"[^A-Za-z0-9_.\-]+", "_", text).strip("._") or "screen"
-    return s
+    return re.sub(r"[^A-Za-z0-9_.\-]+", "_", text).strip("._-") or "screen"
 
 
 def _page_stem(page: str) -> str:
@@ -119,6 +119,14 @@ def screens(legacy: Legacy, only: Optional[list[str]] = None) -> list[dict]:
                    "route": f"/pages/{kebab(name)}"}
         if wanted is None or wanted & set(scr["pages"]):
             out.append(scr)
+    # names that differ only in characters an id cannot hold ("Change Requests" / "Change_Requests") stay apart
+    count: dict[str, int] = {}
+    for scr in out:
+        count[scr["id"].lower()] = count.get(scr["id"].lower(), 0) + 1
+    for scr in out:
+        if count[scr["id"].lower()] > 1:
+            origin = scr["list"] or scr["pages"][0]
+            scr["id"] = f"{scr['id']}-{hashlib.sha1(origin.encode('utf-8')).hexdigest()[:6]}"
     return out
 
 

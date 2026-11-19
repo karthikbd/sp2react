@@ -178,6 +178,7 @@ def test_s7_sharepoint_user_lookup_needs_an_exact_login(built, monkeypatch):
     repo = object.__new__(sp_repo.SharePointRepo)
     repo.site, repo.s = "https://sp.example.com/sites/SEA", Session()
     assert repo.user_by_login("corp\\alice")["title"] == "Alice"
+    assert repo.user_by_login("i:0#.w|corp\\alice")["title"] == "Alice"
     assert repo.user_by_login("corp\\al") is None
     assert repo.user_by_login("") is None
 
@@ -302,3 +303,34 @@ def test_d12_list_names_with_spaces_pass_the_gate():
     assert ENDPOINT_PATH.match("/api/lists/Vendor's (EMEA)/items")
     for bad in ("/api/lists/../x", "/api/lists/a?b", "/api/lists/a#b", "/api/lists/a%2e%2e", "/other"):
         assert not ENDPOINT_PATH.match(bad), bad
+
+
+# ------------------------------------------------------------------ review follow-ups
+def test_ids_that_collide_after_cleaning_stay_apart(tmp_path):
+    from sp2react.analysis.inventory import Legacy, safe_id, screens
+    assert safe_id("-Dashboard") == "Dashboard" and safe_id("A B") == "A_B"
+    root = tmp_path / "legacy"
+    shutil.copytree(Path(__file__).parent / "fixtures" / "legacy-site", root)
+    for name in ("A B.aspx", "A_B.aspx"):
+        shutil.copyfile(root / "pages" / "SitePages" / "Dashboard.aspx", root / "pages" / "SitePages" / name)
+    ids = [s["id"] for s in screens(Legacy(root))]
+    assert len(ids) == len({i.lower() for i in ids}) and sum(i.startswith("A_B-") for i in ids) == 2
+
+
+def test_d11_a_recorded_hash_decides_even_for_placeholder_files(tmp_path):
+    from sp2react.scaffold.generate import copy_templates, write_manifest
+    out = tmp_path / "app"
+    write_manifest(out, copy_templates(out), {})
+    html = out / "frontend" / "index.html"
+    html.write_text(html.read_text().replace("__SITE_TITLE__", "Sanctions Dashboard (edited by hand)"))
+    kept: list[str] = []
+    copy_templates(out, kept)
+    assert "frontend/index.html" in kept and "edited by hand" in html.read_text()
+
+
+def test_extract_treats_a_failed_page_listing_as_critical():
+    from sp2react.pipeline import critical_extract_error
+    assert critical_extract_error({"what": "SitePages library", "error": "GET ... -> HTTP 429 after 5 tries"})
+    assert not critical_extract_error({"what": "SitePages library", "error": "GET ... -> HTTP 404: not found"})
+    assert critical_extract_error({"what": "web parts of SitePages/Home.aspx", "error": "HTTP 500"})
+    assert not critical_extract_error({"what": "site groups (needs permission to enumerate groups)", "error": "HTTP 403"})

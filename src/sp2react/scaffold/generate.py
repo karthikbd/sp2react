@@ -66,9 +66,12 @@ def _released() -> dict[str, list[str]]:
 
 
 def unchanged_since_generated(rel: str, current: bytes, new: bytes, manifest: dict[str, str], released: dict[str, list[str]]) -> bool:
-    if _normalized(rel, current) == new or manifest.get(rel) == _sha(current):
-        return True
-    return rel not in manifest and _sha(_normalized(rel, current)) in released.get(rel, [])
+    """True when overwriting loses nothing. The hash recorded at the last generation decides; without one (an app
+    from 0.1.0-0.1.2), the file must equal a published template once its filled-in placeholders are put back."""
+    if rel in manifest:
+        return manifest[rel] == _sha(current)
+    norm = _normalized(rel, current)
+    return norm == new or _sha(norm) in released.get(rel, [])
 
 
 def copy_templates(out: Path, kept: Optional[list[str]] = None) -> list[str]:

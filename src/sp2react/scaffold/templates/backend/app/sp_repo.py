@@ -126,7 +126,7 @@ class SharePointRepo:
         return None
 
     def user_by_login(self, login: str):
-        want = login.strip().lower()
+        want = login.strip().split("|")[-1].lower()      # "i:0#.w|corp\\alice" and "corp\\alice" are the same user
         if not want:
             return None
         r = self.s.get(f"{self.site}/_api/web/siteusers", params={"$filter": f"substringof('{want.replace(chr(39), chr(39) * 2)}',LoginName)"})
