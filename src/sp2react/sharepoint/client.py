@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, cast
 from urllib.parse import quote, urlsplit
 
 from .. import transport
-from ..config import SharePointConfig, required_secret
+from ..config import ConfigError, SharePointConfig, required_secret
 
 if TYPE_CHECKING:
     from ..net import NetworkPolicy
@@ -73,6 +73,9 @@ class SharePointClient:
     # ------------------------------------------------------------------ auth
     def _configure_auth(self) -> None:
         mode = self.cfg.auth
+        if mode == "ntlm" and not self.site_url.lower().startswith("https://") and not self.cfg.allow_ntlm_over_http:
+            raise ConfigError("sharepoint.auth: ntlm on an http:// site URL would send the NTLM exchange (MD4/HMAC-MD5) "
+                              "without TLS. Use https://, or set sharepoint.allow_ntlm_over_http: true for a test system.")
         if mode == "ntlm":
             self.session.auth = transport.NtlmAuth(
                 required_secret(self.cfg.username_env, "SharePoint user name (DOMAIN\\user)"),

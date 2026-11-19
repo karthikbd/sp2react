@@ -60,13 +60,13 @@ See {doc}`architecture` for the components. Actors and what they can do:
 | Agent-proposed file paths escaping the screen's folder, or overwriting build files (3→4) | `safe_target` and `path_problem`: plain relative paths inside the allowed folder only; handler names must be identifiers; screen ids are plain names | `tests/test_hardening.py`, `tests/test_threat_model.py` |
 | Malformed or adversarial agent output (3) | Schema validation, the coverage gate (every behaviour carried or listed as not carried), TypeScript checks, retries with the problems, then failure | `tests/test_agents.py`; fuzz target `fuzz_spec` |
 | Prompt injection: page text steering an agent to write harmful code (2→3) | Agents only write files in their screen's folder and spec rules; a separate review agent; builds and tests; the operator approves each spec before conversion and each screen before use. **Residual risk**, see below | `pipeline.py` gates |
-| Agent-written code reading sp2react's credentials during the `test` stage (5) | Child processes get the environment without the configured SharePoint, model and database-URL variables | `tests/test_threat_model.py` |
+| Agent-written code running on the conversion machine during `test` and `reconcile` (5): reading credentials, changing files, calling out, starting processes | The sandbox (`pipeline.sandbox`): a container with no network (or only the database host), a read-only file system except the step's folder, no capabilities and no host environment; without Docker or Podman, an audit-hook guard that refuses writes outside that folder, new processes, other hosts and `ctypes`; sp2react's credentials removed in every mode | `tests/test_sandbox.py` (escape attempts; a container job in CI) |
 | SQL injection through the generated API's `$filter`, `$orderby`, ids (6) | OData parsed into an expression tree; values bound as parameters; columns only from the mapping | generated app tests; fuzz target `fuzz_wire` |
 | Script injection through legacy Content Editor markup (2→6) | Rebuilt from an allow-list of elements and attributes; `javascript:` and event handlers dropped | `tests/test_hardening.py` |
 | Reading files through the static route, or writing them through attachment names (6) | The SPA route serves only files listed from `FRONTEND_DIST`; attachment names are checked | `tests/test_hardening.py` |
 | Access without identity, or past roles and locks (6) | `AUTH_MODE=header` by default, failing closed; `dev` is local-only; role, lock and delete rules enforced in the API | `tests/test_hardening.py` |
 | Eavesdropping or tampering in transit (network) | TLS verification on by default (`verify_ssl` may name a CA bundle); NTLMv2 with channel binding on HTTPS | `transport.py`, `ntlm.py` |
-| Weak, protocol-mandated cryptography in Windows sign-in: NTLMv2 needs MD4 and HMAC-MD5 (network) | Used only for `auth: ntlm` toward the SharePoint host; inside TLS with channel binding on HTTPS, which prevents relay when the server enforces it (IIS Extended Protection, which the docs recommend); risks and alternatives (`cookie`, `bearer`) documented | `ntlm.py` (RFC 1320 and MS-NLMP test vectors in `tests/test_stdlib.py`); user guide *Security* |
+| Weak, protocol-mandated cryptography in Windows sign-in: NTLMv2 needs MD4 and HMAC-MD5 (network) | No default sign-in, so NTLM is an explicit choice; refused on `http://` site URLs unless allowed for a test system; used only toward the SharePoint host; inside TLS with channel binding on HTTPS, which prevents relay when the server enforces it (IIS Extended Protection, which the docs recommend); risks and alternatives (`cookie`, `bearer`) documented | `ntlm.py` (RFC 1320 and MS-NLMP test vectors in `tests/test_stdlib.py`); user guide *Security* |
 | Malformed configuration or pages crashing or hanging a run (1, 2) | Strict validation; linear-time tokenizer; fuzzed | fuzz targets `fuzz_config_yaml`, `fuzz_legacy_code` |
 | Malicious or vulnerable dependency (7) | No runtime dependencies; generated app's dependencies audited (`pip-audit`, `npm audit`); CI tooling hash-locked; actions pinned by SHA; dependency review; Dependabot | `ci/`, `vulnerability-audit.yml`, `dependency-review.yml` |
 | Tampered release (7) | PyPI Trusted Publishing with provenance; Sigstore-signed assets re-verified by `verify-release.yml`; reproducible builds checked in CI | `python-publish.yml`, `tests.yml` |
@@ -78,13 +78,11 @@ See {doc}`architecture` for the components. Actors and what they can do:
   passes tests does only what it should. The generated app is reviewed and approved screen by screen
   before use; treat its code like any other code change. Custom handlers (`custom/*.ts`, `custom/*.py`)
   are the place to look first.
-- **Generated code runs on the conversion machine.** The `test` stage runs the generated back end's tests
-  (which import agent-written Python handlers) and builds the front end. Credentials for SharePoint, the
-  model and the database-URL variable are removed from their environment, but they run with the user's
-  file and network access. Run sp2react in a container or a VM dedicated to the conversion.
-  `--no-builds` is not an alternative: it skips only the front-end checks; the back-end tests and the
-  reconciliation still import the generated Python. Running these steps in a sandbox by default is on
-  the roadmap.
+- **Generated code under the guard.** Without Docker or Podman, the generated back end's tests and loader
+  run on the conversion machine under an audit-hook guard. It blocks the usual ways out (files outside
+  the step's folder, processes, other hosts, `ctypes`), but CPython's audit hooks are not a security
+  boundary, so a determined attacker could find a way past it. Install Docker or Podman (or set
+  `pipeline.sandbox: container`) for isolation.
 - **Secrets inside page scripts.** Page source is sent to the model and kept in agent transcripts
   (`sp2react-work/agents/`). Remove secrets embedded in scripts before extraction, or treat the
   workspace as secret.
@@ -92,8 +90,9 @@ See {doc}`architecture` for the components. Actors and what they can do:
 ## Secure design principles applied
 
 - **Least privilege:** read-only access to the site (GET and HEAD only); schema-only database access for
-  mapping; child processes without sp2react's credentials; CI tokens read-only unless a job needs more.
-- **Fail-safe defaults:** TLS verification on; `data_source: database` blocks item reads; generated app
+  mapping; generated code in a sandbox with only its own folder, the database host and no credentials; CI tokens read-only unless a job needs more.
+- **Fail-safe defaults:** TLS verification on; no default sign-in and no NTLM without TLS; generated code
+  sandboxed by default; `data_source: database` blocks item reads; generated app
   authentication fails closed; unknown or malformed YAML refused.
 - **Complete mediation:** every request passes the network policy; every agent answer passes validation;
   every API call passes the role and lock rules on the server.
@@ -108,7 +107,8 @@ See {doc}`architecture` for the components. Actors and what they can do:
 
 CWE-22 (path traversal), CWE-89 (SQL injection), CWE-79 (cross-site scripting), CWE-78 and CWE-94
 (command and code injection: no shell, no `eval`, model output never executed by sp2react itself),
-CWE-918 (SSRF: network policy), CWE-295 (certificate validation), CWE-327 (broken cryptography: only where NTLM requires it, see above), CWE-306 and CWE-862 (missing
+CWE-918 (SSRF: network policy), CWE-295 (certificate validation), CWE-327 (broken cryptography: only where NTLM requires it, opt-in, see above), CWE-265 and CWE-250
+(privilege separation for generated code: the sandbox), CWE-306 and CWE-862 (missing
 authentication or authorization in the generated app), CWE-312 and CWE-532 (cleartext or logged
 secrets), CWE-400 and CWE-1333 (resource and regex DoS), CWE-494 and CWE-829 (unverified or untrusted
 code), CWE-20 (input validation), CWE-1427 (prompt injection). CodeQL and `ruff`'s `S` rules scan for
@@ -118,6 +118,7 @@ these on every change; findings must be fixed or justified before merging.
 
 Before each release the maintainer re-reads this page against the changes since the last release (new
 inputs, new connections, new files written, new generated-app endpoints) and updates it; the release
-checklist in {doc}`releasing` includes this step. The last review was for 0.1.4 (November 2026); it found
-and fixed the path traversals from page, asset and attachment names and the credentials passed to the
-generated app's test processes, listed above.
+checklist in {doc}`releasing` includes this step. The last review was for 0.1.4 (November 2026). It found and
+fixed the path traversals from page, asset and attachment names and the credentials passed to the
+generated app's test processes, and led to running generated code in a sandbox and making NTLM an
+explicit, TLS-only choice.

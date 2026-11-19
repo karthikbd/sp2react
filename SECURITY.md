@@ -69,6 +69,9 @@ Credentials are read from environment variables named in the config (`SP_USERNAM
 
 ## Generated application
 
+While sp2react tests it, the generated app's own code (which includes handlers written by AI agents) runs in a sandbox: a Docker or Podman container with no network (or only the database), a read-only file system and no secrets, or, without a container runtime, under a guard that refuses writes outside the app, new processes and other network hosts (`pipeline.sandbox`).
+
+
 The generated FastAPI app defaults to `AUTH_MODE=header`: it trusts the identity header set by an authenticating gateway in front of it and refuses requests without one. `AUTH_MODE=dev` (any user name in an `X-User` header) is for local testing and accepts requests from the same machine only. Before deployment, put the app behind your gateway, or replace `app/auth.py` with Entra ID token validation. The front end shows legacy Content Editor markup only after rebuilding it from an allow-list, and attachment names and the static-file route are checked so no request can read or write outside their folders.
 
 ## Supply chain

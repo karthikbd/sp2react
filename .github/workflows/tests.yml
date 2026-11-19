@@ -86,6 +86,29 @@ jobs:
           from sp2react.config import load_config
           print(load_config('/tmp/sp2react.yaml').sharepoint.site_url)"
 
+  sandbox-container:
+    # pipeline.sandbox: container: generated back-end tests in a Docker container (no network, read-only, no secrets)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install test tooling (hash-locked) and the package (no dependencies)
+        run: |
+          pip install --require-hashes -r ci/requirements-test.txt
+          pip install --no-deps -e .
+      - name: Container sandbox tests
+        env:
+          SP2REACT_TEST_CONTAINER: "1"
+        run: python -m pytest tests/test_sandbox.py -q --tb=short -k container
+      - name: Base image digest (for pinning container/Dockerfile)
+        run: docker image ls --digests | head -5
+
   docs:
     runs-on: ubuntu-latest
     permissions:

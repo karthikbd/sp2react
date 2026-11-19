@@ -1,8 +1,9 @@
 """Optional data source: keep the data in SharePoint and use this API as a backend-for-frontend.
 
 Select with DATA_SOURCE=sharepoint. Same interface as SqliteRepo, so the rules engine and routes
-do not change. Auth for the service account: SP_AUTH=ntlm|cookie|bearer with SP_USERNAME/SP_PASSWORD,
-SP_COOKIE or SP_TOKEN. Writes use the request digest from /_api/contextinfo.
+do not change. Auth for the service account: SP_AUTH=cookie|bearer|ntlm|none (required, no default) with
+SP_COOKIE, SP_TOKEN or SP_USERNAME/SP_PASSWORD. NTLM uses MD4/HMAC-MD5 by protocol, so it is refused over
+http:// unless SP_ALLOW_NTLM_OVER_HTTP=1. Writes use the request digest from /_api/contextinfo.
 """
 from __future__ import annotations
 
@@ -22,7 +23,12 @@ class SharePointRepo:
         self.s = requests.Session()
         self.s.headers.update({"Accept": "application/json;odata=verbose"})
         self.s.verify = os.environ.get("SP_VERIFY_SSL", "true").lower() not in ("0", "false", "no")
-        mode = os.environ.get("SP_AUTH", "ntlm")
+        mode = os.environ.get("SP_AUTH", "")
+        if mode not in ("cookie", "bearer", "ntlm", "none"):
+            raise RuntimeError("DATA_SOURCE=sharepoint needs SP_AUTH: cookie, bearer, ntlm or none")
+        if mode == "ntlm" and not self.site.lower().startswith("https://") and os.environ.get("SP_ALLOW_NTLM_OVER_HTTP") != "1":
+            raise RuntimeError("SP_AUTH=ntlm over http:// would expose the NTLM exchange (MD4/HMAC-MD5); use https://, "
+                               "or set SP_ALLOW_NTLM_OVER_HTTP=1 for a test system")
         if mode == "ntlm":
             from requests_ntlm import HttpNtlmAuth  # type: ignore
             self.s.auth = HttpNtlmAuth(os.environ["SP_USERNAME"], os.environ["SP_PASSWORD"])

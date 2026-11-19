@@ -48,7 +48,8 @@ security:
 | Key | Default | Meaning |
 |---|---|---|
 | `site_url` | *(required)* | Full URL of the site to convert, e.g. `https://sp.example.com/sites/SEA`. A trailing `/` is removed |
-| `auth` | `ntlm` | `ntlm` (Windows authentication, needs the `ntlm` extra), `cookie`, `bearer` or `none` |
+| `auth` | *(required)* | `ntlm` (Windows sign-in; https only), `cookie`, `bearer` or `none`. There is no default because NTLM needs MD4 and HMAC-MD5 by protocol: see [Security](security.md#windows-sign-in-ntlm-and-its-cryptography) |
+| `allow_ntlm_over_http` | `false` | Allow `auth: ntlm` on an `http://` site URL. For test systems only: without TLS the NTLM exchange can be recorded and cracked offline |
 | `username_env` | `SP_USERNAME` | Environment variable holding `DOMAIN\user` (ntlm) |
 | `password_env` | `SP_PASSWORD` | Environment variable holding the password (ntlm) |
 | `cookie_env` | `SP_COOKIE` | Environment variable holding a cookie header copied from a signed-in browser, e.g. `FedAuth=...; rtFa=...` (cookie) |
@@ -108,7 +109,9 @@ Details and examples for each provider: [Model provider and Bridger](model-provi
 | `agent_timeout` | `900` | Seconds per agent task attempt |
 | `max_fix_iterations` | `5` | Rounds of the fix stage before giving up |
 | `auto_approve` | `false` | Skip the two human approvals. For demos and CI only |
-| `run_builds` | `true` | Run `npm install`, `tsc` and `vite build` in the test stage |
+| `run_builds` | `true` | Run `npm install`, `tsc` and `vite build` in the test stage (the back-end tests always run) |
+| `sandbox` | `auto` | Where the generated back end's tests and loader run, since they import agent-written handlers: `container` (Docker or Podman: no network or only the database, read-only, no secrets), `guard` (this machine, under a guard that blocks other writes, processes and hosts), `auto` (`container` when Docker or Podman answers, otherwise `guard`) or `off`. See [Security](security.md#running-the-generated-apps-tests) |
+| `sandbox_image` | *(none)* | A prebuilt check image, e.g. from your registry. If unset, sp2react builds one from its `container/Dockerfile` once per change of the app's `requirements.txt` (needs access to Docker Hub and PyPI, or your mirrors) |
 
 ## `database`
 

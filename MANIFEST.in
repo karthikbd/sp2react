@@ -4,6 +4,7 @@ include CHANGELOG.md
 include SECURITY.md
 include GOVERNANCE.md CODE_OF_CONDUCT.md ROADMAP.md CONTRIBUTING.md THIRD_PARTY_NOTICES.md vex.openvex.json
 recursive-include src/sp2react/agents/prompts *.md
+include src/sp2react/container/Dockerfile
 recursive-include src/sp2react/scaffold *
 recursive-include tests *
 prune examples

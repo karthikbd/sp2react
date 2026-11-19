@@ -21,6 +21,7 @@ TEMPLATES = Path(__file__).resolve().parents[1] / "src" / "sp2react" / "scaffold
 
 def make(tmp, url, **pipeline):
     pipeline.setdefault("data_source", "sqlite")
+    pipeline.setdefault("sandbox", "guard")         # the container path has its own CI job (sandbox-container)
     return Config(sharepoint=SharePointConfig(site_url=url, auth="cookie"), llm=LLMConfig(provider="scripted"),
                   pipeline=PipelineConfig(workspace=str(tmp / "ws"), output=str(tmp / "app"), **pipeline))
 

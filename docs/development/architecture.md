@@ -17,6 +17,7 @@ describes the stages from a user's point of view; this page maps them to the cod
 | `llm/providers.py` | Bridger (Anthropic format), Anthropic, OpenAI, Azure OpenAI, and `ScriptedLLM` for tests |
 | `dbmap.py`, `migrate.py` | Schema-only database reflection and the list-to-table mapping; export and reconciliation |
 | `checks.py` | Builds and tests the generated app (pytest, npm, tsc, vite, rule vectors) |
+| `sandbox.py`, `sandbox_guard.py`, `container/Dockerfile` | Where the generated app's own code runs: a Docker/Podman container, or an audit-hook guard on this machine; credentials never passed |
 | `scaffold/` | The generated app's templates, the regeneration manifest and the hashes of released templates |
 | `config.py`, `model.py`, `yamlish.py` | `sp2react.yaml`: a safe YAML subset reader and validated records |
 
@@ -27,7 +28,7 @@ sp2react.yaml ─► config ─► pipeline ─┬─► SharePoint (GET, policy
                                      ├─► analysis (plain code) ─► inventory, base spec
                                      ├─► model (policy-checked) ─► agent answer ─► validation ─► spec / files
                                      ├─► database (schema only) ─► mapping
-                                     └─► scaffold ─► generated app ─► checks (builds and tests, credentials removed)
+                                     └─► scaffold ─► generated app ─► checks (back-end tests in the sandbox)
 ```
 
 Everything that comes from the site or the model is data until it passes a check; see

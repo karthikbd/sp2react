@@ -7,7 +7,8 @@
 | Python | 3.10 – 3.13 | sp2react itself |
 | Node.js | 20 or later (with npm) | building and type-checking the generated React app (the `test` stage). Without it, run with `--no-builds` |
 | A database driver | see below | `data_source: database` |
-| Network access | to the SharePoint site and to the model endpoint (Bridger) | nothing else |
+| Docker or Podman | any recent version (optional, recommended) | isolating the generated app's tests (`pipeline.sandbox`); without it they run under a guard on this machine |
+| Network access | to the SharePoint site and to the model endpoint (Bridger) | nothing else (and, once, to the registries that build the check container) |
 
 ## Choose the extras
 

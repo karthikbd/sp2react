@@ -1,14 +1,15 @@
 """Stage 8 (test against the original): build and test the generated app. Plain processes, no model."""
 from __future__ import annotations
 
-import os
 import re
 import shutil
-import subprocess
-import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+
+from .sandbox import HIDDEN_ENV, Sandbox, app_env, run_process
+
+__all__ = ["HIDDEN_ENV", "Check", "app_env", "backend_tests", "run_all"]
 
 
 @dataclass
@@ -22,38 +23,21 @@ class Check:
         return self.output[-n:]
 
 
-HIDDEN_ENV: set[str] = set()   # names of sp2react's own secrets; set by the pipeline from the config
-
-
-def app_env(extra: dict[str, Any] | None = None, hide: Iterable[str] = ()) -> dict[str, str]:
-    """The environment for the generated app's builds and tests: this process's environment without
-    sp2react's own credentials (SharePoint, model, database URL variable), plus `extra`.
-
-    The generated code includes agent-written files, so it gets only what it needs to run.
-    """
-    drop = {n for n in (*HIDDEN_ENV, *hide) if n}
-    return {**{k: v for k, v in os.environ.items() if k not in drop}, **{k: str(v) for k, v in (extra or {}).items()}}
-
-
 def _run(cmd: list[str], cwd: Path, timeout: int, env: dict[str, Any] | None = None) -> tuple[int, str]:
-    try:
-        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout, env=app_env(env))  # noqa: S603
-        return r.returncode, (r.stdout or "") + (r.stderr or "")
-    except subprocess.TimeoutExpired as e:
-        out = e.stdout.decode("utf-8", "replace") if isinstance(e.stdout, bytes) else (e.stdout or "")   # bytes even with text=True
-        return 124, f"timed out after {timeout}s: {' '.join(cmd)}\n{out}"
-    except FileNotFoundError as e:
-        return 127, str(e)
+    r = run_process(cmd, cwd, timeout, app_env(env))
+    return r.code, r.output
 
 
-def backend_tests(out: Path, timeout: int = 900, env: dict[str, Any] | None = None) -> Check:
+def backend_tests(out: Path, timeout: int = 900, env: dict[str, Any] | None = None, sandbox: Sandbox | None = None) -> Check:
+    """The generated back end's tests. They import agent-written handlers, so they run in the sandbox."""
     be = out / "backend"
     db = be / "data" / "test.db"
     if db.exists():
         db.unlink()
-    code, txt = _run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests"], be, timeout,
-                     {"PYTHONPATH": str(be), "DB_PATH": str(db), **(env or {})})
-    return Check("backend tests (generated API tests + rule vectors)", code == 0, txt)
+    box = sandbox or Sandbox()
+    r = box.python(["-m", "pytest", "-q", "-p", "no:cacheprovider", "tests"], be,
+                   {"PYTHONPATH": str(be), "DB_PATH": str(db), **(env or {})}, write=[be], read=[out], timeout=timeout)
+    return Check(f"backend tests (generated API tests + rule vectors; {box.describe()})", r.code == 0, r.output)
 
 
 def frontend_install(out: Path, timeout: int = 1200) -> Check:
@@ -89,8 +73,8 @@ def frontend_rule_vectors(out: Path, timeout: int = 120) -> Check:
     return Check("rule vectors (TypeScript engine)", code == 0, txt)
 
 
-def run_all(out: Path, run_builds: bool = True, env: dict[str, Any] | None = None) -> list[Check]:
-    checks = [backend_tests(out, env=env)]
+def run_all(out: Path, run_builds: bool = True, env: dict[str, Any] | None = None, sandbox: Sandbox | None = None) -> list[Check]:
+    checks = [backend_tests(out, env=env, sandbox=sandbox)]
     if run_builds:
         inst = frontend_install(out)
         checks.append(inst)

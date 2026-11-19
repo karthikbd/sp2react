@@ -101,6 +101,7 @@ def test_fix_loop_repairs_a_build_failure(tmp_path, mock):
 
 def test_migration_moves_every_item_and_reconciles(tmp_path, mock):
     from sp2react.migrate import export_lists, read_through_app, reconcile
+    from sp2react.sandbox import Sandbox
     p = Pipeline(make(tmp_path, mock.site_url, auto_approve=True, run_builds=False), llm=scripted(), progress=lambda s: None)
     p.run()
     assert p.state["global"]["migrate"]["status"] == "done"
@@ -117,7 +118,7 @@ def test_migration_moves_every_item_and_reconciles(tmp_path, mock):
 
     # a damaged database is caught field by field
     specs = {n: {"fields": l.fields} for sp in [p.load_spec("VendorRequests-form")] for n, l in sp.lists.items()}
-    items = read_through_app(tmp_path / "app", tmp_path / "check.db", load=True)
+    items = read_through_app(tmp_path / "app", tmp_path / "check.db", load=True, sandbox=Sandbox("guard"))
     items["VendorRequests"][1]["ContractValue"] = 1.0
     items["VendorRequests"][1]["Country"] = {"id": 99, "title": None}
     items["VendorRequests"].pop(0)

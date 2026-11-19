@@ -11,6 +11,12 @@
     sp2react's own credentials: the configured SharePoint, model and database-URL variables are removed
     from their environment.
   - Screen ids in specs must be plain names.
+- **Generated code runs in a sandbox**: the generated back end's tests and loader, which import
+  agent-written handlers, run in a Docker/Podman container (no network or only the database, read-only,
+  no secrets) or, without a container runtime, under a guard that refuses outside writes, processes and
+  other hosts (`pipeline.sandbox`).
+- **No default sign-in**: `sharepoint.auth` must be set, and NTLM (MD4/HMAC-MD5 by protocol) is refused
+  without TLS unless allowed for a test system. Configs from `sp2react init` already set `auth`.
 - **Generated app**: text functions in `$filter` with a number (`endswith(Title,0)`) now answer 400
   instead of a server error (a fuzzing find), and on your database `%` and `_` in their text are matched
   literally. Regenerate existing apps to pick this up.
