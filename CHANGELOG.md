@@ -2,7 +2,7 @@
 
 All notable changes to `sp2react` are documented here.
 
-## [Unreleased]
+## [0.1.5] - 2026-11-19
 
 ### Fixed
 - JavaScript analysis: a script whose own code contained text shaped like the scanner's internal string placeholders (`__S7__`) stopped the inventory with an `IndexError` (found by ClusterFuzzLite). Such text is now kept apart from the placeholders
