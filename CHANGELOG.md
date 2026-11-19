@@ -29,9 +29,14 @@ Fixes found in a review of 0.1.2. Each one has a test in `tests/test_hardening.p
 - Wiki pages: their text lives in the page's `WikiField` column, which was never read, so a wiki page converted to an empty screen. It is now extracted and treated like Content Editor text
 - A list whose URL name contains a space failed the spec gate (`endpoint path ... must contain only path characters`); the API client now also encodes list names in URLs
 
+### Added
+- Supply chain, as in mssql-ocp-migrate and lodestream: hash-locked CI tool sets (`ci/requirements-*.txt`), a `zero-deps` job that installs and runs the package with nothing else installed, weekly `pip-audit` of every tool set and of the generated app's back end plus `npm audit` of its front end, ClusterFuzzLite fuzzing (`tests/fuzz`: config YAML, spec validation, ASPX/JavaScript analysis, NTLM challenges, the generated API's `$filter` parser), and an end-to-end workflow that runs `data_source: database` against real MySQL 8.4 and SQL Server 2022 containers
+- Releases: published from GitHub releases only, with a check that the wheel declares no runtime dependencies, a CycloneDX SBOM, PyPI attestations, and Sigstore-signed wheel, sdist and SBOM on the GitHub release; `verify-release.yml` checks the signatures and that PyPI serves the same files
+- Documentation site configuration for Read the Docs (Sphinx + MyST, warnings are errors), `CONTRIBUTING.md`, `THIRD_PARTY_NOTICES.md`; `ruff` and `mypy` clean
+
 ### Changed
 - **No runtime dependencies.** `requests`, `requests-ntlm`, `pydantic` and `PyYAML` are replaced by standard-library code in the package: an HTTP client (`transport.py`: TLS verification or a CA bundle, proxies from `HTTPS_PROXY`/`NO_PROXY`, redirects checked hop by hop by the network policy), NTLMv2 Windows sign-in with channel binding on HTTPS (`ntlm.py`, checked against the MS-NLMP test vectors), validated records (`model.py`) and a YAML reader for the config file (`yamlish.py`, which refuses anchors, tags, tabs and duplicate keys with a line number). `pip install sp2react` installs one wheel. The `ntlm` extra remains, empty
-- Docs: workflows, event receivers, InfoPath and Power Apps are listed as not detected (they were described as reported); remaining known gaps are listed in [12. Coverage and limitations](docs/12-limitations.md)
+- Docs: workflows, event receivers, InfoPath and Power Apps are listed as not detected (they were described as reported); remaining known gaps are listed in [12. Coverage and limitations](https://sp2react.readthedocs.io/en/latest/12-limitations.html)
 
 ## [0.1.2] - 2026-10-29
 

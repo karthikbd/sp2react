@@ -7,7 +7,6 @@ editing the config) can be told exactly what to fix, and records dump back to JS
 from __future__ import annotations
 
 import json
-import sys
 import typing
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, get_args, get_origin
 
@@ -185,8 +184,9 @@ def _dump(value: Any, exclude_none: bool) -> Any:
 class BaseModel:
     """Declare fields as class annotations, with defaults or Field(...). Unknown input keys are ignored."""
 
-    __fields__ = {}          # name -> (annotation, FieldInfo), filled on first use
-    __validators__ = {}      # name -> [classmethod functions]
+    __fields__: Dict[str, Tuple[Any, "FieldInfo"]] = {}    # name -> (annotation, FieldInfo), filled on first use
+    __validators__: Dict[str, List[Any]] = {}              # name -> [classmethod functions]
+    __resolved__ = False
 
     def __init_subclass__(cls, **kw):
         super().__init_subclass__(**kw)
@@ -207,7 +207,7 @@ class BaseModel:
                 raw = getattr(cls, name, _MISSING)
                 info = raw if isinstance(raw, FieldInfo) else FieldInfo(raw)
                 fields[name] = (hints[name], info)
-        validators: Dict[str, List[Callable]] = {}
+        validators: Dict[str, List[Any]] = {}
         for klass in reversed(cls.__mro__):
             for attr in klass.__dict__.values():
                 func = attr.__func__ if isinstance(attr, classmethod) else None

@@ -1,0 +1,3 @@
+# Database drivers for the end-to-end suite (data_source: database against real MySQL and SQL Server).
+pymysql>=1.1.1
+pyodbc>=5

@@ -35,7 +35,7 @@ def _list(request: Request, list_name: str) -> list[dict]:
     try:
         return _specs(request).fields(list_name)
     except KeyError:
-        raise HTTPException(404, f"List '{list_name}' is not part of the converted screens")
+        raise HTTPException(404, f"List '{list_name}' is not part of the converted screens") from None
 
 
 def _authorize(request: Request, user: dict, method: str, path: str) -> None:
@@ -110,7 +110,7 @@ def query_items(request: Request, list_name: str, user: dict = Depends(current_u
         filtered = apply_query(items, filter_)
         page = apply_query(filtered, None, orderby, top, skip, select)
     except ODataError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
     return {"value": page, "count": len(filtered)}
 
 
@@ -339,7 +339,7 @@ def add_attachment(request: Request, list_name: str, iid: int, body: dict = Body
     try:
         base64.b64decode(body["content_base64"], validate=True)
     except (KeyError, ValueError):
-        raise HTTPException(400, "content_base64 must be base64")
+        raise HTTPException(400, "content_base64 must be base64") from None
     _repo(request).add_attachment(list_name, iid, name, body["content_base64"])
     return {"ok": True}
 

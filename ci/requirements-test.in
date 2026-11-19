@@ -1,0 +1,9 @@
+# Test tooling, and the packages the generated app needs so its own tests run (sp2react itself needs none).
+pytest>=9.0.3
+ruff>=0.6
+mypy>=1.10
+fastapi>=0.110
+httpx>=0.27
+uvicorn>=0.27
+sqlalchemy>=2.0
+requests>=2.33.0

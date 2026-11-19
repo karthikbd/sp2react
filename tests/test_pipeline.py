@@ -2,9 +2,7 @@
 import json
 import os
 import shutil
-import subprocess
 import sys
-from pathlib import Path
 
 import pytest
 
@@ -134,7 +132,7 @@ def test_existing_database_mode_reads_no_list_items(tmp_path, mock, monkeypatch)
     """data_source=database: SharePoint gives code + schema only; the app runs on the team's migrated tables."""
     import migrated_db
     from fastapi.testclient import TestClient
-    url = migrated_db.build(tmp_path / "sea.db")
+    url = migrated_db.build(os.environ.get("SP2REACT_E2E_DB_URL") or tmp_path / "sea.db")
     monkeypatch.setenv("SP2REACT_DB_URL", url)
     cfg = make(tmp_path, mock.site_url, auto_approve=True, run_builds=False, data_source="database")
     cfg.database.mapping = str(tmp_path / "db-mapping.json")
@@ -150,7 +148,7 @@ def test_existing_database_mode_reads_no_list_items(tmp_path, mock, monkeypatch)
         assert p.status(sid, "test") == "done", (p.state["screens"][sid], (tmp_path / "ws" / "tests" / "iteration-0.md").read_text()[-2000:])
 
     # the generated API on the migrated tables: SQL filters, lookups, people, rules, etags, attachments
-    import importlib, sys
+    import importlib
     be = tmp_path / "app" / "backend"
     monkeypatch.setenv("DB_URL", url)
     monkeypatch.setenv("MAPPING_FILE", str(be / "mapping.json"))
@@ -189,7 +187,7 @@ def test_database_mode_reconciles_lists_with_existing_tables_when_allowed(tmp_pa
     """Opt-in check of the team's earlier migration: SharePoint list items vs the mapped tables, field by field."""
     import migrated_db
     from sqlalchemy import create_engine, text
-    url = migrated_db.build(tmp_path / "sea.db")
+    url = migrated_db.build(os.environ.get("SP2REACT_E2E_DB_URL") or tmp_path / "sea.db")
     with create_engine(url).begin() as c:      # simulate a migration defect
         c.execute(text("update tbl_vendor_requests set contract_value = 72.0 where request_id = 3"))
     monkeypatch.setenv("SP2REACT_DB_URL", url)

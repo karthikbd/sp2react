@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import importlib
 import json
-import shutil
-import sys
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from test_hardening import NODE_OK, built, load_app, run_ts  # noqa: F401  (fixture re-used)
+from conftest import NODE_OK, load_app, run_ts
 
 
 def app_module(built: Path, monkeypatch, name: str):
@@ -48,7 +46,7 @@ def test_d3_date_time_is_edited_in_local_time_and_stored_in_utc(tmp_path, built,
 # ------------------------------------------------------------------ D4
 def test_d4_hyperlink_keeps_its_description_and_terms_their_label():
     from sp2react.analysis.fields import map_fields
-    from sp2react.migrate import reconcile, transform
+    from sp2react.migrate import transform
     raw = {"d": {"results": [
         {"InternalName": "Reference", "Title": "Reference", "TypeAsString": "URL", "Id": "a1"},
         {"InternalName": "Classification", "Title": "Classification", "TypeAsString": "TaxonomyFieldType", "Id": "b1", "TextField": "{c1}"},
@@ -119,7 +117,7 @@ def test_d7_view_filters_become_api_filters(tmp_path, built, monkeypatch):
     assert "filter" not in out["userless"] and out["userless"]["unsupported"]
     assert out["none"] == {"unsupported": []}
     odata = app_module(built, monkeypatch, "odata")             # every filter is one the generated API accepts
-    for k, (_, want) in CAML_CASES.items():
+    for _, want in CAML_CASES.values():
         odata.compile_filter(want)
 
 

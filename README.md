@@ -2,7 +2,11 @@
 
 [![PyPI version](https://badge.fury.io/py/sp2react.svg)](https://pypi.org/project/sp2react/)
 [![Python versions](https://img.shields.io/pypi/pyversions/sp2react.svg)](https://pypi.org/project/sp2react/)
+[![Tests](https://github.com/karthikbd/sp2react/actions/workflows/tests.yml/badge.svg)](https://github.com/karthikbd/sp2react/actions/workflows/tests.yml)
+[![End-to-end](https://github.com/karthikbd/sp2react/actions/workflows/e2e.yml/badge.svg)](https://github.com/karthikbd/sp2react/actions/workflows/e2e.yml)
+[![Docs](https://readthedocs.org/projects/sp2react/badge/?version=latest)](https://sp2react.readthedocs.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![ClusterFuzzLite](https://github.com/karthikbd/sp2react/actions/workflows/cflite_batch.yml/badge.svg)](https://github.com/karthikbd/sp2react/actions/workflows/cflite_batch.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/karthikbd/sp2react/badge)](https://securityscorecards.dev/viewer/?uri=github.com/karthikbd/sp2react)
 
 Convert classic SharePoint (2013 / 2016 / 2019 / Subscription Edition) list forms and pages built with **ASPX, jQuery and SPServices** into a **React + FastAPI** app that runs on **your existing database**.
@@ -64,6 +68,14 @@ part of the package and use only the Python standard library, so `pip install sp
 an air-gapped install is one wheel. The database extras are needed only for `data_source: database`.
 
 Python 3.10+. Node.js 20+ is needed to build the generated React app.
+
+## Security and supply chain
+
+No runtime dependencies, no telemetry; connections go only to the SharePoint site and the model endpoint in your
+config. Releases are published with PyPI Trusted Publishing and carry provenance attestations, plus
+Sigstore-signed assets and a CycloneDX SBOM on GitHub. CI is hash-locked, runs a weekly `pip-audit` (and `npm audit`
+of the generated app's front end), CodeQL, OpenSSF Scorecard and ClusterFuzzLite fuzzing of the parsers. See
+[SECURITY.md](SECURITY.md).
 
 ## Quick Start
 

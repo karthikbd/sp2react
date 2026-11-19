@@ -17,7 +17,7 @@ import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional
 
 SYSTEM = ("Created", "Modified", "Author", "Editor")
 
@@ -233,9 +233,9 @@ def reconcile(export_dir: Path, app_items: dict, specs_lists: dict, max_rows: in
     report: dict = {"ok": True, "lists": {}}
     for key, l in specs_lists.items():
         fields = l["fields"]
-        src = {int(it.get("ID") or it.get("Id")): it for it in read_export(export_dir, key)}
+        src = {int(it.get("ID") or it.get("Id") or 0): it for it in read_export(export_dir, key)}
         dst = {int(it["ID"]): it for it in app_items.get(key, [])}
-        lr = {"source_items": len(src), "app_items": len(dst), "missing_in_app": sorted(set(src) - set(dst)),
+        lr: dict[str, Any] = {"source_items": len(src), "app_items": len(dst), "missing_in_app": sorted(set(src) - set(dst)),
               "extra_in_app": sorted(set(dst) - set(src)), "field_mismatches": [], "orphan_lookups": [], "attachment_mismatches": [],
               "fields_checked": len(fields) + len(SYSTEM),
               "fields_not_in_export": [f["name"] for f in fields if src and not f.get("read_only") and f["type"] != "calculated"
@@ -243,7 +243,8 @@ def reconcile(export_dir: Path, app_items: dict, specs_lists: dict, max_rows: in
         canon_src, canon_dst = [], []
         for iid in sorted(set(src) & set(dst)):
             s, d = src[iid], dst[iid]
-            rs, rd = {"ID": iid}, {"ID": iid}
+            rs: dict[str, Any] = {"ID": iid}
+            rd: dict[str, Any] = {"ID": iid}
             for f in fields:
                 a, b = _norm_source(f, s), _norm_app(f, d.get(f["name"]))
                 rs[f["name"]], rd[f["name"]] = a, b

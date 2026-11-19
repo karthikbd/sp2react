@@ -8,9 +8,7 @@ The result is db-mapping.json plus db-mapping.md for you to review before code g
 """
 from __future__ import annotations
 
-import json
 import re
-from pathlib import Path
 from typing import Any, Optional
 
 TYPE_FAMILIES = {
@@ -151,8 +149,8 @@ def draft(lists: dict[str, dict], db: dict) -> tuple[dict, list[str]]:
         mapping["lists"][key] = m
     users = next((t for t in tables if re.search(r"(^|_)(app_?)?users?$", t.lower())), None)
     if users:
-        cols = [c["name"] for c in tables[users]["columns"]]
-        pick = lambda pat: next((c for c in cols if re.search(pat, c.lower())), None)
+        user_cols = [c["name"] for c in tables[users]["columns"]]
+        pick = lambda pat: next((c for c in user_cols if re.search(pat, c.lower())), None)
         um = {"table": users, "id": tables[users]["pk"][0] if tables[users]["pk"] else pick(r"^(user_?)?id$"),
               "login": pick(r"(login|user_?name|account|upn|sam)"), "title": pick(r"(display|full_?name|^name$|title)"), "email": pick(r"mail")}
         if um["id"] and um["login"]:
@@ -209,9 +207,9 @@ def validate(mapping: dict, lists: dict[str, dict], db: dict) -> tuple[list[str]
         if not t:
             problems.append(f"users: table '{um.get('table')}' does not exist")
         else:
-            cols = {c["name"] for c in t["columns"]}
+            user_cols = {c["name"] for c in t["columns"]}
             for k in ("id", "login"):
-                if um.get(k) not in cols:
+                if um.get(k) not in user_cols:
                     problems.append(f"users: {k} column '{um.get(k)}' does not exist")
     return problems, warnings
 

@@ -84,7 +84,7 @@ If npm also goes through Artifactory, set `npm config set registry https://<arti
 pip install --upgrade "sp2react[mssql,ntlm]"
 ```
 
-Read [CHANGELOG.md](../CHANGELOG.md) before upgrading in the middle of a conversion, and keep a copy of `sp2react-work/` and `db-mapping.json`.
+Read [CHANGELOG.md](https://github.com/karthikbd/sp2react/blob/main/CHANGELOG.md) before upgrading in the middle of a conversion, and keep a copy of `sp2react-work/` and `db-mapping.json`.
 
 ## Next
 

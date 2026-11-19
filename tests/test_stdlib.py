@@ -242,7 +242,7 @@ def test_yaml_lists_of_mappings_and_nesting():
     assert safe_load("k:\n- 1\n- 2\nz: 0\n") == {"k": [1, 2], "z": 0}
 
 
-@pytest.mark.parametrize("bad", ["a: 1\na: 2\n", "a: &x 1\nb: *x\n", "a:\n\tb: 1\n", "a: \"open\n", "- a\nb: 1\n", "a: 1\n---\nb: 2\n",
+@pytest.mark.parametrize("bad", ["a: \"\\U00110000\"\n", "a: 1\na: 2\n", "a: &x 1\nb: *x\n", "a:\n\tb: 1\n", "a: \"open\n", "- a\nb: 1\n", "a: 1\n---\nb: 2\n",
                                  "a: [1, 2\n", "a: {b\n"])
 def test_yaml_refuses_what_it_does_not_support(bad):
     with pytest.raises(YAMLError):

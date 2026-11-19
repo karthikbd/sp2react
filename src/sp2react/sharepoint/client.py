@@ -12,7 +12,7 @@ from urllib.parse import quote, urlsplit
 
 from .. import transport
 
-from ..config import SharePointConfig, secret
+from ..config import SharePointConfig, required_secret
 
 log = logging.getLogger(__name__)
 
@@ -73,13 +73,13 @@ class SharePointClient:
         mode = self.cfg.auth
         if mode == "ntlm":
             self.session.auth = transport.NtlmAuth(
-                secret(self.cfg.username_env, "SharePoint user name (DOMAIN\\user)"),
-                secret(self.cfg.password_env, "SharePoint password"),
+                required_secret(self.cfg.username_env, "SharePoint user name (DOMAIN\\user)"),
+                required_secret(self.cfg.password_env, "SharePoint password"),
             )
         elif mode == "cookie":
-            self.session.headers["Cookie"] = secret(self.cfg.cookie_env, "SharePoint session cookie")
+            self.session.headers["Cookie"] = required_secret(self.cfg.cookie_env, "SharePoint session cookie")
         elif mode == "bearer":
-            self.session.headers["Authorization"] = "Bearer " + secret(self.cfg.token_env, "SharePoint bearer token")
+            self.session.headers["Authorization"] = "Bearer " + required_secret(self.cfg.token_env, "SharePoint bearer token")
 
     # --------------------------------------------------------------- helpers
     def absolute(self, url_or_path: str) -> str:
@@ -127,6 +127,7 @@ class SharePointClient:
     def _get(self, url: str, accept: Optional[str] = None, params: Optional[dict] = None) -> transport.Response:
         headers = {"Accept": accept} if accept else None
         attempt = 0
+        r: Optional[transport.Response] = None
         while True:
             try:
                 r = self.session.get(self.absolute(url), headers=headers, params=params, timeout=self.cfg.timeout)
@@ -144,6 +145,7 @@ class SharePointClient:
                         wait, attempt + 1, self.cfg.retries)
             self.sleep(wait)
             attempt += 1
+        assert r is not None                   # the loop only ends with a response
         if r.status_code >= 400:
             raise SharePointError(f"GET {url} -> HTTP {r.status_code}{f' after {attempt + 1} tries' if attempt else ''}: {r.text[:300]}", r.status_code)
         return r

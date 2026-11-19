@@ -265,7 +265,7 @@ class Session:
             body = data.encode("utf-8") if isinstance(data, str) else data
         if body is not None:
             h["Content-Length"] = str(len(body))
-        history = []
+        history: list[Response] = []
         for _ in range(MAX_REDIRECTS + 1):
             r = self.send(Request(method.upper(), url, h, body, timeout))
             if not allow_redirects or r.status_code not in (301, 302, 303, 307, 308) or "Location" not in r.headers:

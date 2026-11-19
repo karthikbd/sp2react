@@ -153,7 +153,7 @@ def tokenize(src: str) -> tuple[str, list[Literal]]:
         if not c.isspace():
             if c.isalnum() or c in "_$":
                 m = re.match(r"[\w$]+", src[i:])
-                word = m.group(0)
+                word = m.group(0) if m else c
                 code.append(word[1:])
                 i += len(word)
                 prev_sig, prev_word = "w", word
@@ -216,7 +216,8 @@ CONCAT = re.compile(rf"{OPERAND}(?:\s*\+\s*{OPERAND})*")
 
 
 def split_plus(expr: str) -> list[str]:
-    parts, depth, cur = [], 0, []
+    parts: list[str] = []
+    depth, cur = 0, []  # type: ignore[var-annotated]
     for ch in expr:
         if ch in "([{":
             depth += 1
@@ -287,8 +288,9 @@ def object_props(scan_: Scan, obj_code: str) -> dict[str, str]:
     body = obj_code.strip()
     if body.startswith("{"):
         body = body[1:body.rfind("}")]
-    props, depth, cur = {}, 0, []
-    chunks = []
+    props: dict = {}
+    depth, cur = 0, []  # type: ignore[var-annotated]
+    chunks: list = []
     for ch in body:
         if ch in "([{":
             depth += 1

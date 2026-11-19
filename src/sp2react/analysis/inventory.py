@@ -191,8 +191,8 @@ def build_inventory(legacy: Legacy, screen: dict) -> dict:
                 if txt is None:
                     inv["unresolved"].append({"kind": "missing_file", "detail": f"Content Editor link {rel} was not exported", "page": page})
                     continue
-                srcs, inline, css, stripped = scan_html(txt)
-                parsed.scripts += srcs
+                link_srcs, inline, _css, stripped = scan_html(txt)
+                parsed.scripts += link_srcs
                 parsed.inline_scripts += [{"where": f"contentlink:{rel}", "code": c} for c in inline]
                 if stripped:
                     inv["html_fragments"].append({"page": page, "mode": mode, "web_part": wp.title, "source": rel, "html": stripped})
@@ -259,8 +259,8 @@ def build_inventory(legacy: Legacy, screen: dict) -> dict:
     for c in calls:
         involve(legacy.list_by_title.get((c.get("list") or c.get("listName") or c.get("relationshipList") or "").lower()))
     for b in behaviors:
-        for f in b.fields:
-            involve(f.list)
+        for ref in b.fields:
+            involve(ref.list)
         if b.kind == "list_view":
             involve(b.detail.get("list"))
     for key in list(involved):

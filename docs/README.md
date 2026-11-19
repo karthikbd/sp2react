@@ -22,7 +22,7 @@ sp2react converts a classic SharePoint site (ASPX pages, list forms, jQuery and 
 ## The short version
 
 ```powershell
-pip install "sp2react[mssql,ntlm]"
+pip install "sp2react[mssql]"
 sp2react init                       # writes sp2react.yaml; edit site_url and the llm section
 $env:SP_USERNAME = "CORP\me"; $env:SP_PASSWORD = "..."
 $env:SP2REACT_DB_URL = "mssql+pyodbc://@db-host/SEA?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes"

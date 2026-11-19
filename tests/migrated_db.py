@@ -1,5 +1,6 @@
 """Builds a database the way a team might have migrated the replica site: renamed tables and columns,
-foreign keys, a users table. Used to test data_source=database without a MySQL server (same SQLAlchemy code)."""
+foreign keys, a users table. Used to test data_source=database on SQLite, and in the end-to-end runs on real
+MySQL and SQL Server (SP2REACT_E2E_DB_URL)."""
 from __future__ import annotations
 
 import json
@@ -25,8 +26,9 @@ def _d(v):
     return date.fromisoformat(date_only(v)) if v else None
 
 
-def build(path: Path) -> str:
-    url = f"sqlite:///{path}"
+def build(target) -> str:
+    """target: a SQLite file path, or a SQLAlchemy URL of a real server (the end-to-end runs use MySQL and SQL Server)."""
+    url = target if isinstance(target, str) and "://" in target else f"sqlite:///{target}"
     eng = create_engine(url)
     md = MetaData()
     users = Table("app_users", md, Column("user_id", Integer, primary_key=True), Column("login", String(100), nullable=False),
@@ -46,9 +48,10 @@ def build(path: Path) -> str:
                Column("sanctions_screened", Boolean), Column("screening_result", String(50)), Column("status", String(30)),
                Column("reviewer_comments", Text), Column("created_at", DateTime), Column("modified_at", DateTime),
                Column("created_by", Integer), Column("modified_by", Integer), Column("row_version", Integer, nullable=False, default=1))
-    alerts = Table("compliance_alerts", md, Column("id", Integer, primary_key=True, autoincrement=True), Column("title", String(255)),
+    Table("compliance_alerts", md, Column("id", Integer, primary_key=True, autoincrement=True), Column("title", String(255)),
                    Column("vendor_request_id", Integer, ForeignKey("tbl_vendor_requests.request_id")), Column("country", String(255)))
     files = Table("vendor_request_files", md, Column("request_id", Integer), Column("file_name", String(255)), Column("content", LargeBinary))
+    md.drop_all(eng)            # a re-run on a real server starts from the same rows
     md.create_all(eng)
     site = json.loads((FX / "site.json").read_text())
     su = json.loads((FX / "siteusers.json").read_text())["d"]["results"]

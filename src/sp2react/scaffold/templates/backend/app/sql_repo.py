@@ -313,11 +313,17 @@ class SqlRepo:
                 take()
                 take("(")
                 if v == "substringof":
-                    needle = value(); take(","); path = take("id")[1]; take(")")
+                    needle = value()
+                    take(",")
+                    path = take("id")[1]
+                    take(")")
                     ref = column_for(path)
                     pat = f"%{needle}%"
                 else:
-                    path = take("id")[1]; take(","); needle = value(); take(")")
+                    path = take("id")[1]
+                    take(",")
+                    needle = value()
+                    take(")")
                     ref = column_for(path)
                     pat = f"{needle}%" if v == "startswith" else f"%{needle}"
                 if ref[0] == "sub":

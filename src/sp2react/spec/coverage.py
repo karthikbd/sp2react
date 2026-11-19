@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from .model import NEEDS_FIELD, NEEDS_MESSAGE, RULE_PARAMS, Spec
 
@@ -145,7 +145,7 @@ def check(spec: Spec, inv: dict) -> CoverageReport:
             if src not in flds:
                 problems.append(f"{where}: params.from_field '{src}' is not in list {lst}")
             else:
-                f = next(x for x in spec.lists[lst].fields if x["name"] == src)
+                f = next(x for x in spec.lists[str(lst)].fields if x["name"] == src)
                 target = (f.get("lookup") or {}).get("list")
                 if not target:
                     problems.append(f"{where}: params.from_field '{src}' must be a lookup field")

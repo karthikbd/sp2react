@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from ..analysis.aspx import asset_refs, parse_page, resolve_tokens
-from .client import ItemReadBlocked, SharePointClient, SharePointError, unwrap
+from .client import SharePointClient, SharePointError, unwrap
 
 log = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ class Extractor:
                      "forms": {}, "views": {}}
             try:
                 for f in self.sp.list_forms(l["Id"]):
-                    mode = FORM_TYPES.get(f.get("FormType"))
+                    mode = FORM_TYPES.get(int(f.get("FormType") or 0))
                     if mode and mode not in entry["forms"]:
                         entry["forms"][mode] = f["ServerRelativeUrl"].split("/")[-1]
             except SharePointError as e:

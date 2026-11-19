@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 from typing import Iterable, Optional
 
-from ..analysis.inventory import Legacy, kebab
+from ..analysis.inventory import Legacy
 from ..spec.model import Spec
 
 TEMPLATES = Path(__file__).parent / "templates"
@@ -244,7 +244,7 @@ def generated_tests(specs: list[Spec], seed_counts: dict[str, int], data_source:
     ]
     done = set()
     for s in specs:
-        for name, l in s.lists.items():
+        for name in s.lists:
             if name in done:
                 continue
             done.add(name)
@@ -287,7 +287,8 @@ CORS_ORIGINS=http://localhost:5173
 def generate(out: Path, specs: list[Spec], legacy: Legacy, export_dir: Optional[Path] = None,
              data_source: str = "sqlite", mapping_file: Optional[Path] = None) -> dict:
     out.mkdir(parents=True, exist_ok=True)
-    previous, kept = read_manifest(out), []
+    previous = read_manifest(out)
+    kept: list[str] = []
     written = copy_templates(out, kept)
     (out / "backend" / "specs").mkdir(parents=True, exist_ok=True)
     (out / "frontend" / "src" / "specs").mkdir(parents=True, exist_ok=True)

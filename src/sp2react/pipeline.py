@@ -21,7 +21,7 @@ import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from .agents.core import Agent, AgentFailed
 from .agents.tasks import run_fix_agent, run_handler_agent, run_page_agent, run_review_agent, run_spec_agent
@@ -212,9 +212,8 @@ class Pipeline:
         prev = self.state["screens"].get(sid, {}).get("spec") or {}
         if prev.get("status") == "done" and prev.get("inventory_hash") == inv_hash and (self.ws / "specs" / f"{sid}.json").exists():
             self.progress(f"[spec] {sid}: unchanged since the last run (legacy source identical), keeping the spec")
-            if self.approvals().get(sid, {}).get("spec") or self.cfg.pipeline.auto_approve:
-                if self.status(sid, "approve_spec") != "done":
-                    self.approve(sid, "spec", "auto_approve" if self.cfg.pipeline.auto_approve else "")
+            if (self.approvals().get(sid, {}).get("spec") or self.cfg.pipeline.auto_approve) and self.status(sid, "approve_spec") != "done":
+                self.approve(sid, "spec", "auto_approve" if self.cfg.pipeline.auto_approve else "")
             return
         if prev.get("inventory_hash") and prev.get("inventory_hash") != inv_hash:
             a = self.approvals()
@@ -290,15 +289,19 @@ class Pipeline:
         routes = [{"screen": sp.screen.id, "kind": sp.screen.kind, "route": sp.screen.route, "list": sp.screen.list,
                    "legacy_urls": sp.screen.legacy_urls} for sp in all_specs]
 
-        tasks = []
+        tasks: list[tuple[str, str, Callable[[], Any]]] = []
         for sid in ready:
             spec = self.load_spec(sid)
             inv = self.load_inventory(sid)
             if spec.screen.kind == "page":
-                tasks.append((sid, "page", lambda spec=spec, inv=inv: run_page_agent(self.agent("page", "files"), self.legacy, inv, spec, routes, self.out)))
+                def page_task(spec: Spec = spec, inv: dict = inv) -> Any:
+                    return run_page_agent(self.agent("page", "files"), self.legacy, inv, spec, routes, self.out)
+                tasks.append((sid, "page", page_task))
             for r in spec.rules:
                 if r.kind == "custom":
-                    tasks.append((sid, f"handler:{r.params['handler']}", lambda spec=spec, inv=inv, r=r: run_handler_agent(self.agent("handler", "files"), self.legacy, inv, spec, r, self.out)))
+                    def handler_task(spec: Spec = spec, inv: dict = inv, r: Any = r) -> Any:
+                        return run_handler_agent(self.agent("handler", "files"), self.legacy, inv, spec, r, self.out)
+                    tasks.append((sid, f"handler:{r.params['handler']}", handler_task))
         failed: dict[str, str] = {}
         if tasks:
             self.progress(f"[convert] {len(tasks)} agent task(s) in parallel (max {self.cfg.pipeline.max_concurrency})")
@@ -375,12 +378,12 @@ class Pipeline:
 
     def stage_map_db(self, specs: list[Spec]) -> bool:
         """data_source=database: map lists onto the existing tables (schema only) -> db-mapping.json + .md."""
-        from .config import secret
+        from .config import required_secret
         from .dbmap import draft, reflect, report, validate
         from .agents.tasks import run_dbmap_agent
         lists = self.mapping_lists(specs)
         self.mark(None, "map_db", "running", f"{len(lists)} list(s)")
-        db = reflect(secret(self.cfg.database.url_env, "database URL"), self.cfg.database.schema_name)
+        db = reflect(required_secret(self.cfg.database.url_env, "database URL"), self.cfg.database.schema_name)
         (self.ws / "db-schema.json").write_text(json.dumps(db, indent=1), encoding="utf-8")
         mapping_file = Path(self.cfg.database.mapping)
         if mapping_file.exists():                      # keep a mapping you already reviewed; only extend it
@@ -423,7 +426,7 @@ class Pipeline:
         if not (self.export_dir / "export.json").exists():
             self.mark(None, "reconcile", "warning", "no full export to reconcile against (seeded from the sample)")
             return {"ok": True, "lists": {}, "skipped": True}
-        lists = {}
+        lists: dict[str, dict] = {}
         for sp in specs:
             for name, l in sp.lists.items():
                 lists.setdefault(name, {"fields": l.fields})

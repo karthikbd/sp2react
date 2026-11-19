@@ -99,6 +99,12 @@ class Config(BaseModel):
         return Path(self.pipeline.output).resolve()
 
 
+def required_secret(env_name: Optional[str], what: str) -> str:
+    value = secret(env_name, what, required=True)
+    assert value is not None          # secret() raises when a required value is missing
+    return value
+
+
 def secret(env_name: Optional[str], what: str, required: bool = True) -> Optional[str]:
     if not env_name:
         if required:

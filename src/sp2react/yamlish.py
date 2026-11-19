@@ -79,7 +79,8 @@ def _strip_comment(s: str) -> str:
 
 def _double(s: str, line: int) -> Tuple[str, int]:
     """Parse a double-quoted scalar starting at s[0] == '"'; return (value, index after the closing quote)."""
-    out, i = [], 1
+    out: List[str] = []
+    i = 1
     while i < len(s):
         c = s[i]
         if c == '"':
@@ -96,7 +97,10 @@ def _double(s: str, line: int) -> Tuple[str, int]:
                 hexs = s[i + 1:i + 1 + n]
                 if len(hexs) != n or not re.fullmatch(r"[0-9a-fA-F]+", hexs):
                     raise YAMLError(f"bad escape \\{e}{hexs}", line)
-                out.append(chr(int(hexs, 16)))
+                code = int(hexs, 16)
+                if code > 0x10FFFF:
+                    raise YAMLError(f"escape \\{e}{hexs} is beyond Unicode", line)
+                out.append(chr(code))
                 i += n
             else:
                 raise YAMLError(f"unknown escape \\{e}", line)

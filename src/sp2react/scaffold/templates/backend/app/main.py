@@ -27,7 +27,7 @@ def create_app() -> FastAPI:
     else:
         app.state.repo = SqliteRepo(app.state.specs)
     app.include_router(router)
-    for name, mod in custom.load().items():
+    for mod in custom.load().values():
         if hasattr(mod, "router"):
             app.include_router(mod.router, prefix="/api/custom")
     origins = [o for o in os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(",") if o]

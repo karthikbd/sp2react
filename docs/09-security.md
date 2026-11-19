@@ -1,6 +1,6 @@
 # 9. Security and network behaviour
 
-This page answers the questions a security or architecture review usually asks. The policy itself is in [SECURITY.md](../SECURITY.md).
+This page answers the questions a security or architecture review usually asks. The policy itself is in [SECURITY.md](https://github.com/karthikbd/sp2react/blob/main/SECURITY.md).
 
 ## Where sp2react connects
 
@@ -75,7 +75,11 @@ All credentials come from environment variables named in the config: SharePoint 
 ## Supply chain
 
 - Published to PyPI from GitHub Actions with **Trusted Publishing** (OIDC, no stored tokens), from the public repository `karthikbd/sp2react`.
-- Every GitHub Action is pinned to a commit SHA.
+- Every GitHub Action is pinned to a commit SHA, and every CI tool set is installed from hash-locked requirement files (`ci/requirements-*.txt`, `pip install --require-hashes`).
+- Each release carries PyPI provenance attestations; its wheel, sdist and CycloneDX SBOM are signed with Sigstore and attached to the GitHub release, and `verify-release.yml` checks the signatures and that PyPI serves the same files.
+- `pip-audit` (every CI tool set and the generated app's back end) and `npm audit` (the generated app's front end) run on every push and weekly.
+- ClusterFuzzLite fuzzes the parsers that read untrusted input: the config YAML, agent JSON (spec validation), ASPX pages and legacy JavaScript, NTLM challenges and the generated API's `$filter` parser.
+- End-to-end CI runs `data_source: database` against real MySQL 8.4 and SQL Server 2022 containers.
 - OpenSSF Scorecard runs weekly and on every push to `main`.
 - CodeQL code scanning (Python and TypeScript) on every push to `main`, and weekly.
 - Dependabot watches GitHub Actions, the Python dependencies and the generated app's npm and pip templates.
