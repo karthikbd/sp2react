@@ -2,9 +2,9 @@
 
 All notable changes to `sp2react` are documented here.
 
-## [0.1.3] - unreleased
+## [0.1.3] - 2026-11-19
 
-Fixes found in a review of 0.1.2. Each one has a test in `tests/test_hardening.py` that failed on 0.1.2.
+Fixes found in a review of 0.1.2, no runtime dependencies, and the release standards of mssql-ocp-migrate and lodestream. Each fix has a test (`tests/test_hardening.py`, `tests/test_fidelity.py`, `tests/test_stdlib.py`) that fails on 0.1.2.
 
 ### Security
 - Generated app: the catch-all route that serves the front end could return any file on the server (`/..%2fbackend%2f.env`, `/%2Fetc%2Fhostname`). It now serves only files inside `FRONTEND_DIST`
