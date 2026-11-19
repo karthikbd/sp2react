@@ -31,7 +31,39 @@ jobs:
           pip install --no-deps -e .
       - run: ruff check src tests
       - run: mypy src
-      - run: python -m pytest tests/ -q --tb=short
+      - name: Tests with coverage
+        run: |
+          python -m coverage run -m pytest tests/ -q --tb=short
+          python -m coverage report
+          python -m coverage json -o coverage.json -q
+          python ci/check_coverage.py coverage.json 80
+
+  reproducible-build:
+    # The same commit must build to the same bytes (wheel and sdist), so anyone can check a release.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Build twice and compare
+        run: |
+          pip install --require-hashes -r ci/requirements-build.txt
+          export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          for i in 1 2; do
+            python -m build -o "out$i" .
+            python ci/reproducible_sdist.py out$i/*.tar.gz
+            rm -rf build src/*.egg-info
+            sleep 2
+          done
+          (cd out1 && sha256sum *) > one.txt
+          (cd out2 && sha256sum *) > two.txt
+          cat one.txt
+          diff one.txt two.txt
 
   zero-deps:
     # sp2react must import and run with nothing but the standard library installed

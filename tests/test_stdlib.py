@@ -103,7 +103,7 @@ def test_ntlm_handshake_against_a_windows_style_server():
 def test_channel_binding_value():
     cert = b"0\x82fake-der-certificate"
     app = b"tls-server-end-point:" + hashlib.sha256(cert).digest()
-    assert ntlm.channel_binding_hash(cert) == hashlib.md5(b"\x00" * 16 + struct.pack("<I", len(app)) + app).digest()
+    assert ntlm.channel_binding_hash(cert) == hashlib.md5(b"\x00" * 16 + struct.pack("<I", len(app)) + app).digest()   # noqa: S324
     msg = ntlm.authenticate_message(
         ntlm.SIGNATURE + struct.pack("<I", 2) + struct.pack("<HHI", 0, 0, 48) + struct.pack("<I", ntlm.FLAGS) + b"\x01" * 8 + b"\x00" * 8
         + struct.pack("<HHI", 4, 4, 48) + b"\x00\x00\x00\x00", "u", "p", "D", server_cert_der=cert, target_name="HTTP/sp")

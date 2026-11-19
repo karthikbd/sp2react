@@ -8,7 +8,7 @@ with atheris.instrument_imports():
     from sp2react.analysis.behaviors import FieldIndex, analyze_script
 
 
-def TestOneInput(data: bytes) -> None:  # noqa: N802 (atheris naming)
+def TestOneInput(data: bytes) -> None:
     fdp = atheris.FuzzedDataProvider(data)
     which = fdp.ConsumeIntInRange(0, 2)
     text = fdp.ConsumeUnicodeNoSurrogates(fdp.remaining_bytes())

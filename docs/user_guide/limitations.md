@@ -1,4 +1,4 @@
-# 12. Coverage and limitations
+# Coverage and limitations
 
 Run `sp2react run --until inventory` on your site first. The inventory shows exactly which pages, scripts and behaviours were found, before you commit to a conversion.
 

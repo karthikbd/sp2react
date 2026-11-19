@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import asdict, dataclass, field
-from typing import Optional
+from typing import Any, Optional
 from urllib.parse import unquote
 
 from .jsscan import Scan, concat_expressions, enclosing_call, if_condition, object_props, scan, template
@@ -56,9 +56,9 @@ class Behavior:
     fields: list[FieldRef] = field(default_factory=list)
     message: Optional[str] = None
     condition: Optional[str] = None
-    detail: dict = field(default_factory=dict)
+    detail: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         return {k: v for k, v in d.items() if v not in (None, [], {}, False) or k in ("id", "kind", "level", "file", "line")}
 
@@ -66,12 +66,12 @@ class Behavior:
 class FieldIndex:
     """Resolve string literals to list fields by display name or internal name."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.by_label: dict[str, list[FieldRef]] = {}
         self.by_name: dict[str, list[FieldRef]] = {}
         self.list_titles: dict[str, str] = {}   # list title -> list key
 
-    def add_list(self, key: str, title: str, fields: list[dict]) -> None:
+    def add_list(self, key: str, title: str, fields: list[dict[str, Any]]) -> None:
         self.list_titles[title.lower()] = key
         for f in fields:
             ref = FieldRef(key, f["name"], f["label"])
@@ -84,7 +84,7 @@ class FieldIndex:
         if prefer and len(refs) > 1:
             pref = [r for r in refs if r.list == prefer]
             refs = pref or refs
-        return refs[:1] if prefer and refs and refs[0].list == prefer else refs[:1]
+        return refs[:1]
 
 
 SELECTOR_FIELD = re.compile(r"""\[\s*title\s*[*^$]?=\s*['"]?([^'"\]]+)['"]?\s*\]|:contains\(\s*['"]?([^'")]+)['"]?\s*\)""", re.I)
@@ -107,13 +107,13 @@ def _labels_in_selectors(scan_: Scan, line_code: str) -> list[str]:
     return out
 
 
-def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optional[str] = None) -> tuple[list[Behavior], list[dict]]:
+def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optional[str] = None) -> tuple[list[Behavior], list[dict[str, Any]]]:
     """-> (behaviors, calls). Calls are REST/SPServices invocations with parsed detail."""
     s = scan(source)
     behaviors: list[Behavior] = []
     ids: dict[str, int] = {}
 
-    def add(kind: str, level: str, line: int, offset: int, **kw) -> Behavior:
+    def add(kind: str, level: str, line: int, offset: int, **kw: Any) -> Behavior:
         base = f"{name}#L{line}:{kind}"
         ids[base] = ids.get(base, 0) + 1
         bid = base if ids[base] == 1 else f"{base}.{ids[base]}"
@@ -231,7 +231,7 @@ def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optio
             add("context", INFO, i, off, detail={"property": c.group(1)})
 
     # ---------------------------------------------------------------- calls
-    calls: list[dict] = []
+    calls: list[dict[str, Any]] = []
     seen_urls = set()
     for st, _en, expr in concat_expressions(s):
         url = template(s, expr)
@@ -247,7 +247,7 @@ def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optio
             continue
         seen_urls.add(seen_key)
         method = "GET"
-        body: dict = {}
+        body: dict[str, Any] = {}
         ajax = enclosing_call(s, st, r"(?:\$|jQuery)\.ajax")
         if ajax:
             props = {k: s.restore(v) for k, v in object_props(s, ajax[2]).items()}
@@ -299,7 +299,7 @@ def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optio
     return behaviors, calls
 
 
-def _fields_from_query(parsed: dict, index: FieldIndex, body_fields: list[str]) -> list[FieldRef]:
+def _fields_from_query(parsed: dict[str, Any], index: FieldIndex, body_fields: list[str]) -> list[FieldRef]:
     lst = index.list_titles.get((parsed.get("list") or "").lower())
     names = set(body_fields)
     q = parsed.get("query", {})
@@ -317,8 +317,8 @@ def _fields_from_query(parsed: dict, index: FieldIndex, body_fields: list[str]) 
     return sorted(out, key=lambda r: r.name)
 
 
-def parse_rest_url(url: str) -> dict:
-    out: dict = {}
+def parse_rest_url(url: str) -> dict[str, Any]:
+    out: dict[str, Any] = {}
     path, _, qs = url.partition("?")
     m = re.search(r"getbytitle\(\s*'((?:[^']|'')+)'\s*\)", path, re.I)
     if m:

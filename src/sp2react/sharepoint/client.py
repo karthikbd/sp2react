@@ -7,12 +7,14 @@ from __future__ import annotations
 import logging
 import time
 from email.utils import parsedate_to_datetime
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, cast
 from urllib.parse import quote, urlsplit
 
 from .. import transport
-
 from ..config import SharePointConfig, required_secret
+
+if TYPE_CHECKING:
+    from ..net import NetworkPolicy
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +47,7 @@ class SharePointClient:
     """`policy` limits which hosts may be contacted; `item_reads=False` forbids reading list items, attachments,
     user profiles and rendered pages (anything that carries business data), leaving only code and schema."""
 
-    def __init__(self, cfg: SharePointConfig, session: Optional[transport.Session] = None, policy=None, item_reads: bool = True):
+    def __init__(self, cfg: SharePointConfig, session: Optional[transport.Session] = None, policy: Optional[NetworkPolicy] = None, item_reads: bool = True) -> None:
         self.cfg = cfg
         self.item_reads = item_reads
         self.site_url = cfg.site_url
@@ -60,7 +62,7 @@ class SharePointClient:
             policy.guard(self.session)
         send = self.session.send
 
-        def get_only(request, **kwargs):          # the extractor must never change the source site
+        def get_only(request: Any, **kwargs: Any) -> Any:          # the extractor must never change the source site
             if request.method not in ("GET", "HEAD"):
                 raise SharePointError(f"sp2react only reads from SharePoint; refused {request.method} {request.url}")
             return send(request, **kwargs)
@@ -124,7 +126,7 @@ class SharePointClient:
                     pass
         return max(0.0, min(wait, float(self.cfg.max_retry_wait)))
 
-    def _get(self, url: str, accept: Optional[str] = None, params: Optional[dict] = None) -> transport.Response:
+    def _get(self, url: str, accept: Optional[str] = None, params: Optional[dict[str, Any]] = None) -> transport.Response:
         headers = {"Accept": accept} if accept else None
         attempt = 0
         r: Optional[transport.Response] = None
@@ -145,14 +147,19 @@ class SharePointClient:
                         wait, attempt + 1, self.cfg.retries)
             self.sleep(wait)
             attempt += 1
-        assert r is not None                   # the loop only ends with a response
+        if r is None:                          # the loop only ends with a response
+            raise SharePointError(f"GET {url}: no response")
         if r.status_code >= 400:
             raise SharePointError(f"GET {url} -> HTTP {r.status_code}{f' after {attempt + 1} tries' if attempt else ''}: {r.text[:300]}", r.status_code)
         return r
 
-    def api(self, path: str, params: Optional[dict] = None) -> Any:
+    def api(self, path: str, params: Optional[dict[str, Any]] = None) -> Any:
         r = self._get(f"{self.site_url}/_api/{path.lstrip('/')}", params=params)
         return unwrap(r.json())
+
+    def rows(self, path: str, params: Optional[dict[str, Any]] = None) -> list[dict[str, Any]]:
+        """An endpoint that returns a collection (lists, fields, views...)."""
+        return cast("list[dict[str, Any]]", self.api(path, params))
 
     def text(self, url: str, accept: str = "*/*") -> str:
         r = self._get(url, accept=accept)
@@ -160,42 +167,42 @@ class SharePointClient:
         return r.text
 
     # ------------------------------------------------------------ endpoints
-    def web(self) -> dict:
-        return self.api("web", {"$select": "Title,Url,ServerRelativeUrl,UIVersion,Language"})
+    def web(self) -> dict[str, Any]:
+        return cast("dict[str, Any]", self.api("web", {"$select": "Title,Url,ServerRelativeUrl,UIVersion,Language"}))
 
-    def lists(self) -> list[dict]:
-        return self.api("web/lists", {
+    def lists(self) -> list[dict[str, Any]]:
+        return self.rows("web/lists", {
             "$select": "Id,Title,EntityTypeName,BaseTemplate,BaseType,Hidden,EnableAttachments,EnableVersioning,ItemCount,"
                        "ValidationFormula,ValidationMessage,RootFolder/ServerRelativeUrl",
             "$expand": "RootFolder",
             "$filter": "Hidden eq false",
         })
 
-    def list_forms(self, list_id: str) -> list[dict]:
-        return self.api(f"web/lists(guid'{list_id.strip('{}')}')/forms", {"$select": "ServerRelativeUrl,FormType"})
+    def list_forms(self, list_id: str) -> list[dict[str, Any]]:
+        return self.rows(f"web/lists(guid'{list_id.strip('{}')}')/forms", {"$select": "ServerRelativeUrl,FormType"})
 
-    def list_views(self, list_id: str) -> list[dict]:
-        return self.api(f"web/lists(guid'{list_id.strip('{}')}')/views", {
+    def list_views(self, list_id: str) -> list[dict[str, Any]]:
+        return self.rows(f"web/lists(guid'{list_id.strip('{}')}')/views", {
             "$select": "Title,ServerRelativeUrl,DefaultView,ViewQuery,RowLimit,Hidden",
             "$expand": "ViewFields",
         })
 
-    def fields(self, list_id: str) -> list[dict]:
-        return self.api(f"web/lists(guid'{list_id.strip('{}')}')/fields")
+    def fields(self, list_id: str) -> list[dict[str, Any]]:
+        return self.rows(f"web/lists(guid'{list_id.strip('{}')}')/fields")
 
-    def items(self, list_id: str, top: int) -> list[dict]:
+    def items(self, list_id: str, top: int) -> list[dict[str, Any]]:
         self._data("list items")
-        return self.api(f"web/lists(guid'{list_id.strip('{}')}')/items", {"$top": str(top)})
+        return self.rows(f"web/lists(guid'{list_id.strip('{}')}')/items", {"$top": str(top)})
 
-    def quick_launch(self) -> list[dict]:
-        return self.api("web/navigation/quicklaunch", {"$select": "Title,Url"})
+    def quick_launch(self) -> list[dict[str, Any]]:
+        return self.rows("web/navigation/quicklaunch", {"$select": "Title,Url"})
 
-    def all_items(self, list_id: str, page_size: int = 1000):
+    def all_items(self, list_id: str, page_size: int = 1000) -> Iterator[dict[str, Any]]:
         """Every item of a list, following SharePoint's __next paging links (works past the 5,000 view threshold
         because it pages by ID). Yields raw odata=verbose items, attachments listed under AttachmentFiles."""
         self._data("list items")
         url = f"{self.site_url}/_api/web/lists(guid'{list_id.strip('{}')}')/items"
-        params: Optional[dict] = {"$top": str(page_size), "$orderby": "ID", "$expand": "AttachmentFiles"}
+        params: Optional[dict[str, Any]] = {"$top": str(page_size), "$orderby": "ID", "$expand": "AttachmentFiles"}
         while url:
             r = self._get(url, params=params)
             data = r.json().get("d", {})
@@ -208,31 +215,31 @@ class SharePointClient:
         url = self.server_relative_url(server_relative_url)
         return self._get(f"{self.site_url}/_api/web/getfilebyserverrelativeurl('{odata_quote(url)}')/$value", accept="*/*").content
 
-    def site_users(self) -> list[dict]:
+    def site_users(self) -> list[dict[str, Any]]:
         self._data("site users")
-        return self.api("web/siteusers", {"$select": "Id,LoginName,Title,Email,PrincipalType"})
+        return self.rows("web/siteusers", {"$select": "Id,LoginName,Title,Email,PrincipalType"})
 
-    def site_groups(self) -> list[dict]:
+    def site_groups(self) -> list[dict[str, Any]]:
         if not self.item_reads:      # group names only; membership (people) stays in SharePoint
-            return self.api("web/sitegroups", {"$select": "Id,Title"})
-        return self.api("web/sitegroups", {"$select": "Id,Title,Users/LoginName,Users/Title", "$expand": "Users"})
+            return self.rows("web/sitegroups", {"$select": "Id,Title"})
+        return self.rows("web/sitegroups", {"$select": "Id,Title,Users/LoginName,Users/Title", "$expand": "Users"})
 
     def file_text(self, server_relative_url: str) -> str:
         """Raw stored content of a file (the .aspx source, not the rendered page)."""
         url = self.server_relative_url(server_relative_url)
         return self.text(f"{self.site_url}/_api/web/getfilebyserverrelativeurl('{odata_quote(url)}')/$value")
 
-    def web_parts(self, server_relative_url: str) -> list[dict]:
+    def web_parts(self, server_relative_url: str) -> list[dict[str, Any]]:
         """Web parts added through the browser live in the content DB, not the .aspx; this is how to see them."""
         url = self.server_relative_url(server_relative_url)
-        return self.api(
+        return self.rows(
             f"web/getfilebyserverrelativeurl('{odata_quote(url)}')/getlimitedwebpartmanager(1)/webparts",
             {"$expand": "WebPart/Properties"},
         )
 
-    def folder_files(self, server_relative_folder: str) -> list[dict]:
+    def folder_files(self, server_relative_folder: str) -> list[dict[str, Any]]:
         url = self.server_relative_url(server_relative_folder)
-        return self.api(f"web/getfolderbyserverrelativeurl('{odata_quote(url)}')/files", {"$select": "Name,ServerRelativeUrl,TimeLastModified"})
+        return self.rows(f"web/getfolderbyserverrelativeurl('{odata_quote(url)}')/files", {"$select": "Name,ServerRelativeUrl,TimeLastModified"})
 
     def wiki_content(self, server_relative_url: str) -> Optional[str]:
         """The body of a wiki page. It is stored in the page's WikiField column, not in the .aspx file, so the

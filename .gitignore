@@ -30,3 +30,6 @@ converted-app/
 node_modules/
 docs/_build/
 tests/fuzz/generated_odata.py
+.coverage
+.coverage.*
+coverage.json

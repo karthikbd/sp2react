@@ -16,7 +16,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Any, Callable, Iterable, Optional, cast
 
 from ..analysis.aspx import asset_refs, parse_page, resolve_tokens
 from .client import SharePointClient, SharePointError, unwrap
@@ -28,7 +28,24 @@ WIKI_MARKER = re.compile(r"\bWikiField\b", re.I)      # wiki pages embed their W
 SKIP_PREFIXES = ("/_layouts/", "/_vti_bin/", "/_catalogs/masterpage/", "/scriptresource.axd", "/webresource.axd")
 
 
-def _write(path: Path, content) -> None:
+def inside(root: Path, rel: str) -> Path:
+    """root/rel, refusing a path from the site (page or asset URL, file name) that would land outside root.
+
+    Page and asset URLs come from page source and from the server's answers, both of which site editors
+    (or a man in the middle on a test system with TLS checks off) control: '/sites/x/../../etc/y.js' must not
+    become a file outside the workspace.
+    """
+    parts = rel.replace("\\", "/").split("/")
+    if not rel.strip("/") or any(p in ("..", ".") for p in parts) or ":" in rel or "\x00" in rel or rel.startswith("/"):
+        raise SharePointError(f"refused path {rel!r}: not a plain path inside the site")
+    base = root.resolve()
+    target = (root / rel).resolve()
+    if base != target and base not in target.parents:
+        raise SharePointError(f"refused path {rel!r}: resolves outside {base}")
+    return target
+
+
+def _write(path: Path, content: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if isinstance(content, (dict, list)):
         path.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -36,23 +53,23 @@ def _write(path: Path, content) -> None:
         path.write_text(content, encoding="utf-8")
 
 
-def _list_folder(list_entry: dict) -> str:
-    return list_entry["url"].rstrip("/").split("/")[-1]
+def _list_folder(list_entry: dict[str, Any]) -> str:
+    return cast("str", list_entry["url"].rstrip("/").split("/")[-1])
 
 
 class Extractor:
-    def __init__(self, client: SharePointClient, workspace: Path, progress=None):
+    def __init__(self, client: SharePointClient, workspace: Path, progress: Optional[Callable[[str], None]] = None) -> None:
         self.sp = client
         self.root = workspace / "legacy"
         self.progress = progress or (lambda msg: log.info(msg))
-        self.manifest: dict = {"site": client.site_url, "pages": [], "lists": [], "files": [], "errors": []}
+        self.manifest: dict[str, Any] = {"site": client.site_url, "pages": [], "lists": [], "files": [], "errors": []}
 
     def _err(self, what: str, e: Exception) -> None:
         self.manifest["errors"].append({"what": what, "error": str(e)[:400]})
         log.warning("%s: %s", what, e)
 
     # ----------------------------------------------------------- site/lists
-    def site(self) -> dict:
+    def site(self) -> dict[str, Any]:
         web = self.sp.web()
         site = {"url": self.sp.site_url, "serverRelativeUrl": web.get("ServerRelativeUrl", self.sp.server_relative),
                 "title": web.get("Title"), "uiVersion": web.get("UIVersion"), "lists": [], "groups": [], "users": []}
@@ -86,7 +103,7 @@ class Extractor:
             site["lists"].append(entry)
         return site
 
-    def list_data(self, site: dict, sample_items: int) -> None:
+    def list_data(self, site: dict[str, Any], sample_items: int) -> None:
         for entry in site["lists"]:
             folder = self.root / "lists" / _list_folder(entry)
             self.progress(f"list {entry['title']}: fields and sample items")
@@ -104,7 +121,7 @@ class Extractor:
                     self._err(f"items of {entry['title']}", e)
             self.manifest["lists"].append(entry["title"])
 
-    def principals(self, site: dict) -> None:
+    def principals(self, site: dict[str, Any]) -> None:
         if not self.sp.item_reads:
             site["users"] = []
         try:
@@ -121,7 +138,7 @@ class Extractor:
             self._err("site groups (needs permission to enumerate groups)", e)
 
     # ---------------------------------------------------------------- pages
-    def discover_pages(self, site: dict) -> list[str]:
+    def discover_pages(self, site: dict[str, Any]) -> list[str]:
         pages = []
         for entry in site["lists"]:
             for form in entry.get("forms", {}).values():
@@ -137,6 +154,11 @@ class Extractor:
     def page(self, page: str) -> Optional[str]:
         rel = self.sp.site_relative(self.sp.server_relative_url(page))
         self.progress(f"page {rel}")
+        try:
+            inside(self.root / "pages", rel)
+        except SharePointError as e:
+            self._err(f"page {rel}", e)
+            return None
         try:
             source = self.sp.file_text(rel)
         except SharePointError as e:
@@ -194,6 +216,7 @@ class Extractor:
             done.add(url)
             rel = self.sp.site_relative(url)
             try:
+                inside(self.root / "files", rel)
                 text = self.sp.file_text(url)
             except SharePointError as e:
                 self._err(f"asset {rel}", e)
@@ -206,7 +229,7 @@ class Extractor:
                 queue += s + css
 
     # ------------------------------------------------------------------ run
-    def run(self, pages: Optional[list[str]] = None, sample_items: int = 200) -> dict:
+    def run(self, pages: Optional[list[str]] = None, sample_items: int = 200) -> dict[str, Any]:
         self.root.mkdir(parents=True, exist_ok=True)
         self.progress("site and lists")
         site = self.site()

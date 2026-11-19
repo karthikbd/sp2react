@@ -6,9 +6,10 @@ written once is enforced in the browser and again on the server.
 from __future__ import annotations
 
 import builtins
+import re
 from typing import Any, Dict, List, Literal, Optional
 
-from ..model import BaseModel, Field
+from ..model import BaseModel, Field, field_validator
 
 Mode = Literal["new", "edit", "display"]
 
@@ -79,7 +80,7 @@ class Component(BaseModel):
 
 
 class Screen(BaseModel):
-    id: str
+    id: str                       # also a folder and file name in the generated app
     kind: Literal["list-form", "page"]
     title: str
     route: str
@@ -89,6 +90,16 @@ class Screen(BaseModel):
     components: List[Component] = Field(default_factory=builtins.list)
     stylesheets: List[str] = Field(default_factory=builtins.list)
     covers: List[str] = Field(default_factory=builtins.list)
+
+    @field_validator("id")
+    @classmethod
+    def _plain_id(cls, v: str) -> str:
+        if not SCREEN_ID.fullmatch(v):
+            raise ValueError("screen id must be letters, digits, '_', '-' or '.', not starting with '.', '_' or '-'")
+        return v
+
+
+SCREEN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.\-]{0,127}")
 
 
 class ListSpec(BaseModel):

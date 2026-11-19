@@ -1,4 +1,4 @@
-# 10. Troubleshooting
+# Troubleshooting
 
 Start with `sp2react status` and `sp2react-work/report.md`: a failed stage always says why and where to look. Add `-v` to any command for debug logging.
 
@@ -49,7 +49,7 @@ Start with `sp2react status` and `sp2react-work/report.md`: a failed stage alway
 | `Mapping needs attention` | Read the problems in `db-mapping.md`, edit `db-mapping.json`, re-run `map-db` |
 | `convert` failed: `data_source=database needs a reviewed list->table mapping` | Run `sp2react map-db` until it says **Mapping ready** |
 | Insert fails: `Cannot insert NULL into column` | A `NOT NULL` column has no mapping and no default. Map it, or give it a default in the database |
-| Insert fails: `cannot have any enabled triggers if the statement contains an OUTPUT clause` | See [SQL Server notes](05-database.md#sql-server-notes) |
+| Insert fails: `cannot have any enabled triggers if the statement contains an OUTPUT clause` | See [SQL Server notes](database.md#sql-server-notes) |
 | Update fails on the version column | It is a `rowversion` column. Remove `version` from `system` in the mapping |
 
 ## Convert, test, fix

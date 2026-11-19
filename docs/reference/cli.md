@@ -1,4 +1,4 @@
-# 7. Command reference
+# Command reference
 
 ```
 sp2react [-c CONFIG] [-v] [--version] <command> [options]

@@ -9,7 +9,7 @@ with atheris.instrument_imports():
     from sp2react.yamlish import YAMLError, safe_load
 
 
-def TestOneInput(data: bytes) -> None:  # noqa: N802 (atheris naming)
+def TestOneInput(data: bytes) -> None:
     text = atheris.FuzzedDataProvider(data).ConsumeUnicodeNoSurrogates(len(data))
     try:
         doc = safe_load(text)

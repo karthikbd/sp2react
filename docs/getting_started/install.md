@@ -1,4 +1,4 @@
-# 2. Installation
+# Installation
 
 ## Requirements
 
@@ -55,7 +55,51 @@ or once, for all installs:
 pip config set global.index-url https://<artifactory-host>/artifactory/api/pypi/<pypi-remote>/simple
 ```
 
-JFrog Curation evaluates new packages before allowing them. sp2react is MIT-licensed, published from GitHub with PyPI Trusted Publishing, and has an OpenSSF Scorecard. A very new version can be held by a "package age" policy for some days; that is a policy wait, not a problem with the package. Its dependencies (pydantic, PyYAML, requests, SQLAlchemy, pyodbc or PyMySQL, requests-ntlm) are common packages that are usually already approved.
+JFrog Curation evaluates new packages before allowing them. sp2react is easy to approve:
+
+- **One package, nothing else.** It has no runtime dependencies, so Curation evaluates exactly one
+  package. The database extras add only SQLAlchemy and one driver (pyodbc or PyMySQL), which are
+  usually approved already.
+- **MIT-licensed**, published from GitHub with **PyPI Trusted Publishing**. Every file on PyPI has a
+  **provenance attestation** linking it to the GitHub workflow run that built it.
+- **Signed, reproducible releases.** GitHub release assets (wheel, sdist and a CycloneDX SBOM) are
+  signed with **Sigstore**, and the same commit always builds to the same bytes.
+- **Continuous checks:** OpenSSF Scorecard and Best Practices, CodeQL, fuzzing, and a weekly
+  `pip-audit` of every build and test tool plus an audit of the generated app's packages.
+
+A very new version can be held by a "package age" policy for some days; that is a policy wait, not a
+problem with the package.
+
+## Offline and air-gapped installs
+
+sp2react has no dependencies, so a single wheel file is a complete installation of the converter:
+
+```console
+$ pip download --no-deps sp2react=={{ version }} -d wheels         # on a machine with access
+$ pip install --no-index --no-deps wheels/sp2react-{{ version }}-py3-none-any.whl
+```
+
+`--no-index` makes pip refuse any network access, which proves nothing else is fetched. Download the
+database extra's packages (`pip download "sp2react[mssql]" -d wheels`) the same way if you need them.
+
+## Verifying a download
+
+To check a downloaded file's signature against the GitHub workflow that produced it:
+
+```console
+$ pip download --no-deps sp2react=={{ version }} -d dl
+$ gh release download v{{ version }} -R karthikbd/sp2react -p "sp2react-{{ version }}-py3-none-any.whl.sigstore.json" -D dl
+$ python -m pip install sigstore
+$ python -m sigstore verify github dl/sp2react-{{ version }}-py3-none-any.whl \
+    --bundle dl/sp2react-{{ version }}-py3-none-any.whl.sigstore.json \
+    --cert-identity https://github.com/karthikbd/sp2react/.github/workflows/python-publish.yml@refs/tags/v{{ version }} \
+    --repository karthikbd/sp2react --ref refs/tags/v{{ version }} --trigger release
+OK: dl/sp2react-{{ version }}-py3-none-any.whl
+```
+
+Behind a proxy that blocks Sigstore's update server (`tuf-repo-cdn.sigstore.dev`), add `--offline`. The
+same check runs on GitHub after every release (`verify-release.yml`), which also confirms PyPI serves
+byte-identical files.
 
 ## Linux / macOS
 
@@ -88,4 +132,4 @@ Read [CHANGELOG.md](https://github.com/karthikbd/sp2react/blob/main/CHANGELOG.md
 
 ## Next
 
-[3. Configuration reference](03-configuration.md)
+[Configuration reference](../user_guide/configuration.md)

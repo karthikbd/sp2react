@@ -13,7 +13,7 @@ import hmac
 import os
 import struct
 import time
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 # negotiate flags
 NEGOTIATE_UNICODE = 0x00000001
@@ -38,16 +38,16 @@ class NTLMError(RuntimeError):
 
 # ------------------------------------------------------------------ MD4 (RFC 1320)
 def md4(data: bytes) -> bytes:
-    def f(x, y, z):
+    def f(x: int, y: int, z: int) -> int:
         return (x & y) | (~x & z)
 
-    def g(x, y, z):
+    def g(x: int, y: int, z: int) -> int:
         return (x & y) | (x & z) | (y & z)
 
-    def h(x, y, z):
+    def h(x: int, y: int, z: int) -> int:
         return x ^ y ^ z
 
-    def rotl(v, s):
+    def rotl(v: int, s: int) -> int:
         v &= 0xFFFFFFFF
         return ((v << s) | (v >> (32 - s))) & 0xFFFFFFFF
 
@@ -103,7 +103,7 @@ def filetime(now: Optional[float] = None) -> bytes:
 
 
 # ------------------------------------------------------------------ AV pairs
-def parse_av_pairs(data: bytes) -> list:
+def parse_av_pairs(data: bytes) -> list[Any]:
     out, i = [], 0
     while i + 4 <= len(data):
         av_id, length = struct.unpack("<HH", data[i:i + 4])
@@ -114,7 +114,7 @@ def parse_av_pairs(data: bytes) -> list:
     return out
 
 
-def build_av_pairs(pairs: list) -> bytes:
+def build_av_pairs(pairs: list[Any]) -> bytes:
     return b"".join(struct.pack("<HH", k, len(v)) + v for k, v in pairs) + struct.pack("<HH", AV_EOL, 0)
 
 
@@ -127,7 +127,8 @@ def channel_binding_hash(server_cert_der: bytes) -> bytes:
         algo = hashlib.sha512
     app = b"tls-server-end-point:" + algo(server_cert_der).digest()
     struct_ = struct.pack("<IIIII", 0, 0, 0, 0, len(app)) + app
-    return hashlib.md5(struct_).digest()
+    # MS-NLMP 2.2.2.1 (MsvAvChannelBindings) fixes the hash: MD5 of the gss_channel_bindings_struct
+    return hashlib.md5(struct_).digest()   # noqa: S324
 
 
 # ------------------------------------------------------------------ messages

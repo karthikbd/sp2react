@@ -47,7 +47,7 @@ def render_sections(sections: dict[str, str]) -> str:
     return "\n\n".join(parts)
 
 
-def parse_json(text: str) -> dict:
+def parse_json(text: str) -> dict[str, Any]:
     t = text.strip()
     t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
     start = t.find("{")
@@ -65,7 +65,7 @@ def parse_json(text: str) -> dict:
 FILE_BLOCK = re.compile(r'<file\s+path="([^"]+)"\s*>\n?(.*?)\n?</file>', re.S)
 
 
-def parse_files(text: str) -> dict:
+def parse_files(text: str) -> dict[str, Any]:
     files = {}
     for path, body in FILE_BLOCK.findall(text):
         body = re.sub(r"^\s*```\w*\n", "", body)
@@ -93,7 +93,7 @@ class Agent:
     def system(self) -> str:
         return f'<agent name="{self.name}">\n{self.prompt}\n</agent>'
 
-    def _complete(self, messages: list[dict]) -> tuple[str, int, int]:
+    def _complete(self, messages: list[dict[str, Any]]) -> tuple[str, int, int]:
         text, tin, tout = "", 0, 0
         msgs = list(messages)
         for _ in range(4):
@@ -103,8 +103,7 @@ class Agent:
             tout += c.output_tokens
             if not c.truncated:
                 break
-            msgs = messages + [{"role": "assistant", "content": text},
-                               {"role": "user", "content": "Your reply was cut off by the length limit. Continue exactly where it stopped. Do not repeat anything."}]
+            msgs = [*messages, {"role": "assistant", "content": text}, {"role": "user", "content": "Your reply was cut off by the length limit. Continue exactly where it stopped. Do not repeat anything."}]
         return text, tin, tout
 
     def run(self, task_id: str, sections: dict[str, str], validate: Callable[[Any], list[str]]) -> AgentResult:
@@ -138,9 +137,5 @@ class Agent:
                 notes = parsed.get("notes") if isinstance(parsed, dict) else None
                 return AgentResult(parsed, attempt, tin, tout, time.time() - t0, notes, tdir)
             (tdir / f"attempt-{attempt}.problems.md").write_text("\n".join(f"- {p}" for p in problems), encoding="utf-8")
-            messages = messages + [
-                {"role": "assistant", "content": text},
-                {"role": "user", "content": "<validation_feedback>\nYour output was rejected by automatic validation. Fix every problem and return the complete output again.\n"
-                                            + "\n".join(f"- {p}" for p in problems[:60]) + "\n</validation_feedback>"},
-            ]
+            messages = [*messages, {"role": "assistant", "content": text}, {"role": "user", "content": "<validation_feedback>\nYour output was rejected by automatic validation. Fix every problem and return the complete output again.\n" + "\n".join(f"- {p}" for p in problems[:60]) + "\n</validation_feedback>"}]
         raise AgentFailed(self.name, task_id, problems, tdir)

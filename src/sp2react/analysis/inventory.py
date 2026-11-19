@@ -10,7 +10,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, cast
 
 from .aspx import ParsedPage, load_page, resolve_tokens, scan_html
 from .behaviors import INFO, MUST, Behavior, FieldIndex, analyze_script, classify_script
@@ -34,24 +34,24 @@ class Legacy:
         self.lists = {l["url"].rstrip("/").split("/")[-1]: l for l in self.site["lists"]}
         self.list_by_id = {l["id"].strip("{}").lower(): k for k, l in self.lists.items()}
         self.list_by_title = {l["title"].lower(): k for k, l in self.lists.items()}
-        self._fields: dict[str, tuple[list[dict], list[dict]]] = {}
+        self._fields: dict[str, tuple[list[dict[str, Any]], list[dict[str, Any]]]] = {}
         self.index = FieldIndex()
         for key, l in self.lists.items():
             flds, _ = self.fields(key)
             self.index.add_list(key, l["title"], flds)
 
-    def fields(self, key: str) -> tuple[list[dict], list[dict]]:
+    def fields(self, key: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         if key not in self._fields:
             f = self.root / "lists" / key / "fields.json"
             self._fields[key] = map_fields(json.loads(f.read_text(encoding="utf-8")), self.list_by_id) if f.exists() else ([], [])
         return self._fields[key]
 
-    def items(self, key: str) -> list[dict]:
+    def items(self, key: str) -> list[dict[str, Any]]:
         f = self.root / "lists" / key / "items.json"
         if not f.exists():
             return []
         data = json.loads(f.read_text(encoding="utf-8"))
-        return data.get("d", {}).get("results", []) if isinstance(data, dict) else data
+        return cast("list[dict[str, Any]]", data.get("d", {}).get("results", []) if isinstance(data, dict) else data)
 
     def site_rel(self, url: str) -> str:
         url = resolve_tokens(url, self.prefix).split("?")[0].split("#")[0]
@@ -70,11 +70,11 @@ class Legacy:
 
     def form_list(self, page_rel: str, parsed: Optional[ParsedPage] = None) -> Optional[str]:
         if parsed and parsed.list_id and parsed.list_id in self.list_by_id:
-            return self.list_by_id[parsed.list_id]
+            return cast("Optional[str]", self.list_by_id[parsed.list_id])
         for key, l in self.lists.items():
             for form in l.get("forms", {}).values():
                 if f"{l['url']}/{form}".lower() == page_rel.lower():
-                    return key
+                    return cast("Optional[str]", key)
         return None
 
 
@@ -87,7 +87,7 @@ def _page_stem(page: str) -> str:
     return page.rsplit("/", 1)[-1].rsplit(".", 1)[0]
 
 
-def screens(legacy: Legacy, only: Optional[list[str]] = None) -> list[dict]:
+def screens(legacy: Legacy, only: Optional[list[str]] = None) -> list[dict[str, Any]]:
     """Group pages into screens: one per list with forms, one per other page.
 
     A page's id is its file name; when two pages share a file name (Home.aspx in SitePages and in Pages)
@@ -126,11 +126,11 @@ def screens(legacy: Legacy, only: Optional[list[str]] = None) -> list[dict]:
     for scr in out:
         if count[scr["id"].lower()] > 1:
             origin = scr["list"] or scr["pages"][0]
-            scr["id"] = f"{scr['id']}-{hashlib.sha1(origin.encode('utf-8')).hexdigest()[:6]}"
+            scr["id"] = f"{scr['id']}-{hashlib.sha1(origin.encode('utf-8'), usedforsecurity=False).hexdigest()[:6]}"
     return out
 
 
-def propose_endpoint(call: dict, legacy: Legacy) -> dict:
+def propose_endpoint(call: dict[str, Any], legacy: Legacy) -> dict[str, Any]:
     """Deterministic mapping of a legacy data call to the generated FastAPI contract."""
     if call["type"] == "spservices":
         op = call.get("operation", "")
@@ -168,15 +168,15 @@ def propose_endpoint(call: dict, legacy: Legacy) -> dict:
     return {"method": m, "path": base, "purpose": "needs an agent decision"}
 
 
-def build_inventory(legacy: Legacy, screen: dict) -> dict:
-    inv: dict = {"screen": screen, "site": {"url": legacy.site.get("url"), "title": legacy.site.get("title")},
+def build_inventory(legacy: Legacy, screen: dict[str, Any]) -> dict[str, Any]:
+    inv: dict[str, Any] = {"screen": screen, "site": {"url": legacy.site.get("url"), "title": legacy.site.get("title")},
                  "pages": [], "scripts": {"custom": [], "library": [], "sharepoint": [], "external": [], "missing": []},
                  "stylesheets": [], "html_fragments": [], "behaviors": [], "calls": [], "lists": {}, "roles": [],
                  "unresolved": [], "stats": {}}
     prefer = screen.get("list")
     analysed: dict[str, list[str]] = {}       # script rel -> modes using it
     behaviors: list[Behavior] = []
-    calls: list[dict] = []
+    calls: list[dict[str, Any]] = []
     rendered_counts = {"sharepoint": 0, "library": 0, "custom": 0, "external": 0}
 
     for page in screen["pages"]:
@@ -335,5 +335,5 @@ def build_inventory(legacy: Legacy, screen: dict) -> dict:
     return inv
 
 
-def must_behaviors(inv: dict) -> list[dict]:
+def must_behaviors(inv: dict[str, Any]) -> list[dict[str, Any]]:
     return [b for b in inv["behaviors"] if b["level"] == MUST]

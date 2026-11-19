@@ -1,4 +1,4 @@
-# 5. Your database
+# Your database
 
 When the SharePoint list data has already been migrated into SQL Server, MySQL or another relational database, use `data_source: database` (the default). The generated FastAPI app then reads and writes those tables directly, and sp2react never reads list items from SharePoint.
 

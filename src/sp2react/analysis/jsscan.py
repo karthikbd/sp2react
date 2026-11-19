@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 REGEX_PRECEDERS = set("(,=:[!&|?{};+-*%<>~^") | {""}
 REGEX_KEYWORDS = {"return", "typeof", "case", "do", "else", "in", "of", "new", "delete", "void", "throw"}
@@ -288,9 +288,9 @@ def object_props(scan_: Scan, obj_code: str) -> dict[str, str]:
     body = obj_code.strip()
     if body.startswith("{"):
         body = body[1:body.rfind("}")]
-    props: dict = {}
+    props: dict[str, Any] = {}
     depth, cur = 0, []  # type: ignore[var-annotated]
-    chunks: list = []
+    chunks: list[Any] = []
     for ch in body:
         if ch in "([{":
             depth += 1

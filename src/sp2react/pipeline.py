@@ -21,12 +21,13 @@ import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
 from .agents.core import Agent, AgentFailed
 from .agents.tasks import run_fix_agent, run_handler_agent, run_page_agent, run_review_agent, run_spec_agent
-from .analysis.inventory import Legacy, build_inventory, screens as find_screens
-from .checks import failures_by_screen, run_all
+from .analysis.inventory import Legacy, build_inventory
+from .analysis.inventory import screens as find_screens
+from .checks import HIDDEN_ENV, failures_by_screen, run_all
 from .config import Config
 from .llm.providers import LLM, make_llm
 from .net import policy_for
@@ -39,11 +40,11 @@ log = logging.getLogger(__name__)
 CRITICAL_EXTRACT_ERRORS = ("fields of ", "source of ", "views of ", "forms of ", "web parts of ", "SitePages library")
 
 
-def critical_extract_error(e: dict) -> bool:
+def critical_extract_error(e: dict[str, Any]) -> bool:
     """Errors that leave a screen without its content. A site without a SitePages library answers 404: not an error."""
     if e["what"] == "SitePages library" and "HTTP 404" in e["error"]:
         return False
-    return e["what"].startswith(CRITICAL_EXTRACT_ERRORS)
+    return cast("bool", e["what"].startswith(CRITICAL_EXTRACT_ERRORS))
 STAGES = ["inputs", "extract", "inventory", "spec", "approve_spec", "convert", "review", "test", "fix", "approve"]
 
 
@@ -56,20 +57,20 @@ class StageBlocked(RuntimeError):
 
 
 class Pipeline:
-    def __init__(self, cfg: Config, llm: Optional[LLM] = None, progress: Callable[[str], None] = print, sp_client=None):
+    def __init__(self, cfg: Config, llm: Optional[LLM] = None, progress: Callable[[str], None] = print, sp_client: Any = None) -> None:
         self.cfg = cfg
         self._print_lock = threading.Lock()
         self._state_lock = threading.RLock()     # stages run screens in parallel threads
         self.ws = cfg.workspace
         self.out = cfg.output
-        self.progress = lambda msg: self._say(progress, msg)
+        self.progress: Callable[[str], None] = lambda msg: self._say(progress, msg)
         self._llm = llm
         self._sp = sp_client
         self.ws.mkdir(parents=True, exist_ok=True)
         self.state_file = self.ws / "state.json"
         self.state = json.loads(self.state_file.read_text()) if self.state_file.exists() else {"global": {}, "screens": {}, "usage": {}}
 
-    def _say(self, sink, msg: str) -> None:
+    def _say(self, sink: Any, msg: str) -> None:
         with self._print_lock:   # agents report from worker threads
             sink(msg)
 
@@ -81,7 +82,7 @@ class Pipeline:
         return self._llm
 
     @property
-    def sp(self):
+    def sp(self) -> Any:
         if self._sp is None:
             from .sharepoint.client import SharePointClient
             self._sp = SharePointClient(self.cfg.sharepoint, policy=policy_for(self.cfg), item_reads=self.cfg.item_reads_allowed)
@@ -97,7 +98,7 @@ class Pipeline:
         with self._state_lock:
             self._write_atomic(self.state_file, json.dumps(self.state, indent=2))
 
-    def mark(self, sid: Optional[str], stage: str, status: str, detail: str = "", **extra) -> None:
+    def mark(self, sid: Optional[str], stage: str, status: str, detail: str = "", **extra: Any) -> None:
         with self._state_lock:
             bucket = self.state["global"] if sid is None else self.state["screens"].setdefault(sid, {})
             bucket[stage] = {"status": status, "at": _now(), "detail": detail, **extra}
@@ -124,11 +125,11 @@ class Pipeline:
     def agent(self, name: str, output: str) -> Agent:
         return Agent(name, self.llm, self.ws, output=output, retries=self.cfg.pipeline.agent_retries, progress=self.progress)
 
-    def _usage(self, sid: str, stage: str, res) -> None:
+    def _usage(self, sid: str, stage: str, res: Any) -> None:
         with self._state_lock:
             self._usage_locked(sid, stage, res)
 
-    def _usage_locked(self, sid: str, stage: str, res) -> None:
+    def _usage_locked(self, sid: str, stage: str, res: Any) -> None:
         u = self.state["usage"].setdefault(sid, {})
         cur = u.setdefault(stage, {"input_tokens": 0, "output_tokens": 0, "attempts": 0, "seconds": 0})
         cur["input_tokens"] += res.input_tokens
@@ -141,19 +142,19 @@ class Pipeline:
     def legacy(self) -> Legacy:
         return Legacy(self.ws / "legacy")
 
-    def screens(self, pages: Optional[list[str]] = None) -> list[dict]:
+    def screens(self, pages: Optional[list[str]] = None) -> list[dict[str, Any]]:
         f = self.ws / "screens.json"
         if pages is None and f.exists():
-            return json.loads(f.read_text())
+            return cast("list[dict[str, Any]]", json.loads(f.read_text()))
         return find_screens(self.legacy, pages)
 
     def load_spec(self, sid: str) -> Spec:
         return Spec.model_validate_json((self.ws / "specs" / f"{sid}.json").read_text(encoding="utf-8"))
 
-    def load_inventory(self, sid: str) -> dict:
-        return json.loads((self.ws / "inventory" / f"{sid}.json").read_text(encoding="utf-8"))
+    def load_inventory(self, sid: str) -> dict[str, Any]:
+        return cast("dict[str, Any]", json.loads((self.ws / "inventory" / f"{sid}.json").read_text(encoding="utf-8")))
 
-    def approvals(self) -> dict:
+    def approvals(self) -> dict[str, Any]:
         f = self.ws / "approvals.json"
         return json.loads(f.read_text()) if f.exists() else {}
 
@@ -196,7 +197,7 @@ class Pipeline:
             return
         self.mark(None, "extract", "done", msg, summary=s)
 
-    def stage_inventory(self, pages: Optional[list[str]]) -> list[dict]:
+    def stage_inventory(self, pages: Optional[list[str]]) -> list[dict[str, Any]]:
         self.require(None, "inventory")
         legacy = self.legacy
         scrs = find_screens(legacy, pages)
@@ -251,7 +252,7 @@ class Pipeline:
     def stage_spec(self, sids: list[str]) -> None:
         self._parallel("spec", sids, self._spec_one)
 
-    def _parallel(self, stage: str, sids: list[str], fn) -> None:
+    def _parallel(self, stage: str, sids: list[str], fn: Callable[[str], Any]) -> None:
         with cf.ThreadPoolExecutor(max_workers=max(1, self.cfg.pipeline.max_concurrency)) as pool:
             futs = {pool.submit(fn, sid): sid for sid in sids}
             for f, sid in futs.items():
@@ -301,12 +302,12 @@ class Pipeline:
             spec = self.load_spec(sid)
             inv = self.load_inventory(sid)
             if spec.screen.kind == "page":
-                def page_task(spec: Spec = spec, inv: dict = inv) -> Any:
+                def page_task(spec: Spec = spec, inv: dict[str, Any] = inv) -> Any:
                     return run_page_agent(self.agent("page", "files"), self.legacy, inv, spec, routes, self.out)
                 tasks.append((sid, "page", page_task))
             for r in spec.rules:
                 if r.kind == "custom":
-                    def handler_task(spec: Spec = spec, inv: dict = inv, r: Any = r) -> Any:
+                    def handler_task(spec: Spec = spec, inv: dict[str, Any] = inv, r: Any = r) -> Any:
                         return run_handler_agent(self.agent("handler", "files"), self.legacy, inv, spec, r, self.out)
                     tasks.append((sid, f"handler:{r.params['handler']}", handler_task))
         failed: dict[str, str] = {}
@@ -374,8 +375,8 @@ class Pipeline:
         self.mark(None, "migrate", "done", f"{total} items and {sum(v['attachments'] for v in summary.values())} attachments from {len(lists)} lists", lists=summary)
         return self.export_dir
 
-    def mapping_lists(self, specs: list[Spec]) -> dict:
-        out: dict = {}
+    def mapping_lists(self, specs: list[Spec]) -> dict[str, Any]:
+        out: dict[str, Any] = {}
         for sp in specs:
             for name, l in sp.lists.items():
                 cur = out.setdefault(name, {"title": l.title, "fields": []})
@@ -385,9 +386,9 @@ class Pipeline:
 
     def stage_map_db(self, specs: list[Spec]) -> bool:
         """data_source=database: map lists onto the existing tables (schema only) -> db-mapping.json + .md."""
+        from .agents.tasks import run_dbmap_agent
         from .config import required_secret
         from .dbmap import draft, reflect, report, validate
-        from .agents.tasks import run_dbmap_agent
         lists = self.mapping_lists(specs)
         self.mark(None, "map_db", "running", f"{len(lists)} list(s)")
         db = reflect(required_secret(self.cfg.database.url_env, "database URL"), self.cfg.database.schema_name)
@@ -417,7 +418,7 @@ class Pipeline:
                   else f"{len(problems)} problem(s); see db-mapping.md")
         return ok
 
-    def stage_reconcile(self, specs: list[Spec]) -> dict:
+    def stage_reconcile(self, specs: list[Spec]) -> dict[str, Any]:
         """Read everything back through the app's repository and compare with the SharePoint export."""
         from .migrate import read_through_app, reconcile, report_markdown
         if self.cfg.pipeline.data_source == "sharepoint":
@@ -428,12 +429,12 @@ class Pipeline:
             return {"ok": True, "lists": {}, "skipped": True}
         database = self.cfg.pipeline.data_source == "database"
         if database and not getattr(self, "_offline", False):
-            from .migrate import export_lists        # read-only comparison copy of the lists, kept in the workspace
+            from .migrate import export_lists  # read-only comparison copy of the lists, kept in the workspace
             export_lists(self.sp, self.legacy.site, sorted({n for sp in specs for n in sp.lists}), self.export_dir, progress=self.progress)
         if not (self.export_dir / "export.json").exists():
             self.mark(None, "reconcile", "warning", "no full export to reconcile against (seeded from the sample)")
             return {"ok": True, "lists": {}, "skipped": True}
-        lists: dict[str, dict] = {}
+        lists: dict[str, dict[str, Any]] = {}
         for sp in specs:
             for name, l in sp.lists.items():
                 lists.setdefault(name, {"fields": l.fields})
@@ -469,7 +470,7 @@ class Pipeline:
             sids = [s for s in sids if not (bad & set(self.load_spec(s).lists))]
             if not sids:
                 return
-        for it in range(0, max_iter + 1):
+        for it in range(max_iter + 1):
             for sid in sids:
                 self.mark(sid, "test", "running", f"iteration {it}")
             checks = run_all(self.out, self.cfg.pipeline.run_builds, self._app_env())
@@ -517,7 +518,10 @@ class Pipeline:
             if self.status(sid, "test") != "done":
                 self.mark(sid, "fix", "failed", f"still failing after {max_iter} iteration(s); see workspace/tests")
 
-    def _app_env(self) -> dict:
+    def _app_env(self) -> dict[str, Any]:
+        sp, llm = self.cfg.sharepoint, self.cfg.llm
+        HIDDEN_ENV.update(n for n in (sp.username_env, sp.password_env, sp.cookie_env, sp.token_env, llm.api_key_env,
+                                      self.cfg.database.url_env) if n)
         if self.cfg.pipeline.data_source != "database":
             return {}
         import os
@@ -533,7 +537,7 @@ class Pipeline:
             self.mark(sid, "approve", "waiting", f"run the app, compare with the original, then: sp2react approve {sid} --screen")
 
     # ----------------------------------------------------------------- run
-    def run(self, pages: Optional[list[str]] = None, offline: bool = False, until: str = "approve") -> dict:
+    def run(self, pages: Optional[list[str]] = None, offline: bool = False, until: str = "approve") -> dict[str, Any]:
         self._offline = offline
         stop = STAGES.index(until)
         self.stage_inputs(offline)
@@ -562,7 +566,7 @@ class Pipeline:
         return self.state
 
 
-def coverage_markdown(spec: Spec, inv: dict, rep) -> str:
+def coverage_markdown(spec: Spec, inv: dict[str, Any], rep: Any) -> str:
     beh = {b["id"]: b for b in inv["behaviors"]}
     lines = [f"# {spec.screen.title} ({spec.screen.id})", "", rep.summary(), "",
              "| Legacy behaviour | Kind | Code | Carried by |", "|---|---|---|---|"]

@@ -17,9 +17,9 @@ class SharePointConfig(BaseModel):
     site_url: str = Field(..., description="Full URL of the site, e.g. https://sp.example.com/sites/SEA")
     auth: Literal["ntlm", "cookie", "bearer", "none"] = "ntlm"
     username_env: str = "SP_USERNAME"          # DOMAIN\\user for NTLM
-    password_env: str = "SP_PASSWORD"
+    password_env: str = "SP_PASSWORD"          # noqa: S105  the variable's name, not a secret
     cookie_env: str = "SP_COOKIE"              # e.g. "FedAuth=...; rtFa=..." copied from a signed-in browser
-    token_env: str = "SP_TOKEN"                # bearer token (SharePoint Online / Entra)
+    token_env: str = "SP_TOKEN"                # noqa: S105  bearer token (SharePoint Online / Entra); the variable's name, not a secret
     verify_ssl: Union[bool, str] = True        # True, False, or path to a corporate CA bundle
     timeout: int = 60
     retries: int = 4                           # re-tries of a GET that was throttled (429/503) or cut off; waits honour Retry-After
@@ -101,7 +101,8 @@ class Config(BaseModel):
 
 def required_secret(env_name: Optional[str], what: str) -> str:
     value = secret(env_name, what, required=True)
-    assert value is not None          # secret() raises when a required value is missing
+    if value is None:                 # secret() raises first; kept so the type is str
+        raise ConfigError(f"{what}: environment variable {env_name} is not set")
     return value
 
 

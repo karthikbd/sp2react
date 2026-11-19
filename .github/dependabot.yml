@@ -39,3 +39,11 @@ updates:
       interval: "weekly"
     labels:
       - "dependencies"
+
+  # The fuzzing base image (pinned by digest)
+  - package-ecosystem: "docker"
+    directory: "/.clusterfuzzlite"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"

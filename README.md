@@ -42,18 +42,18 @@ Plain code does everything mechanical. AI agents (Claude through your GitHub Cop
 
 | Guide | |
 |---|---|
-| [How it works](https://github.com/karthikbd/sp2react/blob/main/docs/01-how-it-works.md) | stages, agents, data sources |
-| [Installation](https://github.com/karthikbd/sp2react/blob/main/docs/02-installation.md) | Windows, corporate networks (JFrog), drivers, Node.js |
-| [Configuration reference](https://github.com/karthikbd/sp2react/blob/main/docs/03-configuration.md) | every `sp2react.yaml` key and environment variable |
-| [Model provider and Bridger](https://github.com/karthikbd/sp2react/blob/main/docs/04-model-provider.md) | Claude through Copilot Bridger, Anthropic, Azure OpenAI |
-| [Your database](https://github.com/karthikbd/sp2react/blob/main/docs/05-database.md) | SQL Server, MySQL, PostgreSQL; `map-db`; the mapping file; reconcile |
-| [End-to-end walkthrough](https://github.com/karthikbd/sp2react/blob/main/docs/06-walkthrough.md) | a site from start to deployed app |
-| [Command reference](https://github.com/karthikbd/sp2react/blob/main/docs/07-commands.md) | every command and option, every file written |
-| [The generated app](https://github.com/karthikbd/sp2react/blob/main/docs/08-generated-app.md) | layout, settings, roles, API, tests, deployment |
-| [Security](https://github.com/karthikbd/sp2react/blob/main/docs/09-security.md) | what is read, sent and written |
-| [Troubleshooting](https://github.com/karthikbd/sp2react/blob/main/docs/10-troubleshooting.md) | errors and fixes |
-| [Python API](https://github.com/karthikbd/sp2react/blob/main/docs/11-python-api.md) | drive sp2react from your own tool |
-| [Coverage and limitations](https://github.com/karthikbd/sp2react/blob/main/docs/12-limitations.md) | what converts and what does not |
+| [How it works](https://github.com/karthikbd/sp2react/blob/main/docs/getting_started/how-it-works.md) | stages, agents, data sources |
+| [Installation](https://github.com/karthikbd/sp2react/blob/main/docs/getting_started/install.md) | Windows, corporate networks (JFrog), drivers, Node.js |
+| [Configuration reference](https://github.com/karthikbd/sp2react/blob/main/docs/user_guide/configuration.md) | every `sp2react.yaml` key and environment variable |
+| [Model provider and Bridger](https://github.com/karthikbd/sp2react/blob/main/docs/user_guide/model-provider.md) | Claude through Copilot Bridger, Anthropic, Azure OpenAI |
+| [Your database](https://github.com/karthikbd/sp2react/blob/main/docs/user_guide/database.md) | SQL Server, MySQL, PostgreSQL; `map-db`; the mapping file; reconcile |
+| [End-to-end walkthrough](https://github.com/karthikbd/sp2react/blob/main/docs/getting_started/walkthrough.md) | a site from start to deployed app |
+| [Command reference](https://github.com/karthikbd/sp2react/blob/main/docs/reference/cli.md) | every command and option, every file written |
+| [The generated app](https://github.com/karthikbd/sp2react/blob/main/docs/user_guide/generated-app.md) | layout, settings, roles, API, tests, deployment |
+| [Security](https://github.com/karthikbd/sp2react/blob/main/docs/user_guide/security.md) | what is read, sent and written |
+| [Troubleshooting](https://github.com/karthikbd/sp2react/blob/main/docs/user_guide/troubleshooting.md) | errors and fixes |
+| [Python API](https://github.com/karthikbd/sp2react/blob/main/docs/reference/api.md) | drive sp2react from your own tool |
+| [Coverage and limitations](https://github.com/karthikbd/sp2react/blob/main/docs/user_guide/limitations.md) | what converts and what does not |
 
 ## Installation
 

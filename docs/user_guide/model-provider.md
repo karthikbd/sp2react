@@ -1,4 +1,4 @@
-# 4. Model provider and Bridger
+# Model provider and Bridger
 
 sp2react uses one model for all of its agents (spec, page, handler, review, fix, dbmap). The default is **Claude through GitHub Copilot Bridger**. Anthropic's API, OpenAI and Azure OpenAI also work.
 

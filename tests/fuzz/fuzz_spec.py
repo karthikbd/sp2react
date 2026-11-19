@@ -9,7 +9,7 @@ with atheris.instrument_imports():
     from sp2react.spec.model import Spec
 
 
-def TestOneInput(data: bytes) -> None:  # noqa: N802 (atheris naming)
+def TestOneInput(data: bytes) -> None:
     text = atheris.FuzzedDataProvider(data).ConsumeUnicodeNoSurrogates(len(data))
     try:
         doc = json.loads(text)
