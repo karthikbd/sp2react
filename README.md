@@ -8,6 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![ClusterFuzzLite](https://github.com/karthikbd/sp2react/actions/workflows/cflite_batch.yml/badge.svg)](https://github.com/karthikbd/sp2react/actions/workflows/cflite_batch.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/karthikbd/sp2react/badge)](https://securityscorecards.dev/viewer/?uri=github.com/karthikbd/sp2react)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16934/badge)](https://www.bestpractices.dev/projects/16934)
 
 Convert classic SharePoint (2013 / 2016 / 2019 / Subscription Edition) list forms and pages built with **ASPX, jQuery and SPServices** into a **React + FastAPI** app that runs on **your existing database**.
 
@@ -73,9 +74,12 @@ Python 3.10+. Node.js 20+ is needed to build the generated React app.
 
 No runtime dependencies, no telemetry; connections go only to the SharePoint site and the model endpoint in your
 config. Releases are published with PyPI Trusted Publishing and carry provenance attestations, plus
-Sigstore-signed assets and a CycloneDX SBOM on GitHub. CI is hash-locked, runs a weekly `pip-audit` (and `npm audit`
-of the generated app's front end), CodeQL, OpenSSF Scorecard and ClusterFuzzLite fuzzing of the parsers. See
-[SECURITY.md](SECURITY.md).
+Sigstore-signed assets and a CycloneDX SBOM on GitHub, and builds are reproducible. CI is hash-locked, runs a weekly
+`pip-audit` (and `npm audit` of the generated app's front end), CodeQL, `mypy --strict` with Bandit security lint,
+a coverage floor, OpenSSF Scorecard and ClusterFuzzLite fuzzing of the parsers; pull requests need signed-off commits
+and pass dependency review. See [SECURITY.md](SECURITY.md), the
+[security assurance case](https://sp2react.readthedocs.io/en/latest/development/security-assurance.html),
+[GOVERNANCE.md](GOVERNANCE.md) and [ROADMAP.md](ROADMAP.md).
 
 ## Quick Start
 
@@ -192,8 +196,8 @@ Run the inventory on your site first. It shows which pages and scripts were foun
 ## Running Tests
 
 ```bash
-pip install -e ".[dev]"
-python -m pytest tests/ -v
+pip install --require-hashes -r ci/requirements-test.txt && pip install --no-deps -e .
+python -m coverage run -m pytest tests/ -q && python -m coverage report
 ```
 
 The suite runs against `tests/fixtures/legacy-site`, a fictional Contoso procurement site with jQuery 1.12 / SPServices list forms and a REST-driven dashboard. It covers:
@@ -206,9 +210,12 @@ The suite runs against `tests/fixtures/legacy-site`, a fictional Contoso procure
 
 ## CI / CD
 
-- `tests.yml`: runs the test suite on Python 3.10–3.13 on every push and pull request.
-- `python-publish.yml`: on a `v*` tag or a published release, tests, builds and publishes to PyPI through **Trusted Publishing** (OIDC, no stored token).
-- `scorecard.yml`: runs the OpenSSF Scorecard weekly and on every push to `main`.
+- `tests.yml`: the test suite with coverage on Python 3.10–3.13 (ruff, `mypy --strict`), a zero-dependency install, a reproducible-build check and a warnings-as-errors docs build, on every push and pull request.
+- `e2e.yml`: `data_source: database` against MySQL 8.4 and SQL Server 2022.
+- `codeql.yml`, `vulnerability-audit.yml`, `cflite_pr.yml` / `cflite_batch.yml`, `scorecard.yml`; on pull requests `dependency-review.yml` and `dco.yml`.
+- `python-publish.yml`: on a published GitHub release, tests, builds and publishes to PyPI through **Trusted Publishing** (OIDC, no stored token) and signs the assets; `verify-release.yml` re-checks them.
+
+`main` accepts changes only through pull requests whose required checks pass.
 
 ## Security
 
