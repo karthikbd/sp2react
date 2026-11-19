@@ -5,6 +5,7 @@ Workspace layout written under <workspace>/legacy (identical to tests/fixtures/l
   lists/<ListUrlName>/fields.json, items.json
   pages/<site-relative path>.aspx              raw stored source
   pages/<site-relative path>.aspx.webparts.json browser-added web parts (web part manager)
+  pages/<site-relative path>.aspx.wiki.html     wiki page body (WikiField), for wiki pages
   rendered/<site-relative path without .aspx>.html  what the browser receives
   files/<site-relative path>                   custom scripts, css, CEWP html (SiteAssets, Style Library...)
   manifest.json                                what was fetched and what failed
@@ -18,11 +19,12 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from ..analysis.aspx import asset_refs, parse_page, resolve_tokens
-from .client import ItemReadBlocked, SharePointClient, SharePointError, unwrap
+from .client import SharePointClient, SharePointError, unwrap
 
 log = logging.getLogger(__name__)
 
 FORM_TYPES = {8: "New", 6: "Edit", 4: "Display"}
+WIKI_MARKER = re.compile(r"\bWikiField\b", re.I)      # wiki pages embed their WikiField column
 SKIP_PREFIXES = ("/_layouts/", "/_vti_bin/", "/_catalogs/masterpage/", "/scriptresource.axd", "/webresource.axd")
 
 
@@ -65,7 +67,7 @@ class Extractor:
                      "forms": {}, "views": {}}
             try:
                 for f in self.sp.list_forms(l["Id"]):
-                    mode = FORM_TYPES.get(f.get("FormType"))
+                    mode = FORM_TYPES.get(int(f.get("FormType") or 0))
                     if mode and mode not in entry["forms"]:
                         entry["forms"][mode] = f["ServerRelativeUrl"].split("/")[-1]
             except SharePointError as e:
@@ -147,6 +149,13 @@ class Extractor:
             _write(self.root / "pages" / (rel + ".webparts.json"), {"d": {"results": wps}})
         except SharePointError as e:
             self._err(f"web parts of {rel}", e)
+        if WIKI_MARKER.search(source):         # wiki page: its text lives in the WikiField column
+            try:
+                wiki = self.sp.wiki_content(rel)
+                if wiki:
+                    _write(self.root / "pages" / (rel + ".wiki.html"), wiki)
+            except SharePointError as e:
+                self._err(f"wiki content of {rel}", e)
         try:
             if self.sp.item_reads:
                 _write(self.root / "rendered" / (re.sub(r"\.aspx$", "", rel, flags=re.I) + ".html"), self.sp.rendered(rel))

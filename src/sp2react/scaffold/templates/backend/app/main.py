@@ -27,7 +27,7 @@ def create_app() -> FastAPI:
     else:
         app.state.repo = SqliteRepo(app.state.specs)
     app.include_router(router)
-    for name, mod in custom.load().items():
+    for mod in custom.load().values():
         if hasattr(mod, "router"):
             app.include_router(mod.router, prefix="/api/custom")
     origins = [o for o in os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(",") if o]
@@ -37,10 +37,15 @@ def create_app() -> FastAPI:
     if dist.exists():
         app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
 
+        # The built frontend's files, listed once at start-up: a request can only pick one of these, so no
+        # request path (../ tricks, absolute paths) ever reaches the file system. Restart after a new build.
+        root = dist.resolve()
+        files = {f.relative_to(root).as_posix(): f for f in root.rglob("*") if f.is_file()}
+        shell = root / "index.html"
+
         @app.get("/{path:path}", include_in_schema=False)
         def spa(path: str):
-            f = dist / path
-            return FileResponse(f if f.is_file() else dist / "index.html")
+            return FileResponse(files.get(path, shell))
     return app
 
 

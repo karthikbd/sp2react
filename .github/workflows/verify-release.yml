@@ -1,0 +1,77 @@
+name: Verify release signatures
+
+# After every publish, prove from a clean runner that:
+#  1. each release asset (wheel, sdist, SBOM) has a valid Sigstore signature issued to
+#     python-publish.yml for that exact tag, triggered by a release, and
+#  2. PyPI serves byte-identical wheel and sdist files.
+# Run it by hand for any tag with "Run workflow".
+on:
+  workflow_run:
+    workflows: ["Publish sp2react to PyPI"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to verify, e.g. v0.1.3
+        required: true
+
+permissions: read-all
+
+jobs:
+  verify:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'release')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
+      REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check the tag format
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([a-z0-9.]*)?$ ]] || { echo "bad tag: $TAG"; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install sigstore (hash-locked)
+        run: pip install --require-hashes -r ci/requirements-verify.txt
+      - name: Download the release assets
+        run: |
+          gh release download "$TAG" -R "$REPO" -D rel \
+            -p 'sp2react-*' -p 'sp2react.cdx.json*'
+          ls -l rel
+      - name: Verify every signature against the publish workflow and tag
+        run: |
+          shopt -s nullglob
+          n=0
+          for f in rel/*; do
+            [[ "$f" == *.sigstore.json ]] && continue
+            python -m sigstore verify github "$f" --bundle "$f.sigstore.json" \
+              --cert-identity "https://github.com/$REPO/.github/workflows/python-publish.yml@refs/tags/$TAG" \
+              --repository "$REPO" --ref "refs/tags/$TAG" --trigger release
+            n=$((n+1))
+          done
+          [ "$n" -eq 3 ] || { echo "expected wheel, sdist and SBOM; verified $n"; exit 1; }
+      - name: Confirm PyPI serves the same files
+        run: |
+          python - <<'EOF'
+          import hashlib, json, os, pathlib, sys, urllib.request
+          version = os.environ["TAG"][1:]
+          url = f"https://pypi.org/pypi/sp2react/{version}/json"
+          files = json.load(urllib.request.urlopen(url, timeout=60))["urls"]
+          if len(files) != 2:
+              sys.exit(f"expected a wheel and an sdist on PyPI, found {len(files)}")
+          for f in files:
+              local = pathlib.Path("rel") / f["filename"]
+              digest = hashlib.sha256(local.read_bytes()).hexdigest()
+              ok = digest == f["digests"]["sha256"]
+              print(("OK  " if ok else "BAD ") + f["filename"], digest)
+              if not ok:
+                  sys.exit("PyPI file differs from the signed release asset")
+          EOF

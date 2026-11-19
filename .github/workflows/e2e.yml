@@ -1,0 +1,112 @@
+name: End-to-end
+
+# data_source: database against real servers, in containers: the migrated tables are built on MySQL 8.4 and
+# SQL Server 2022 (pyodbc + Microsoft ODBC Driver 18), then the whole pipeline runs against the mock SharePoint
+# site - map-db reflects the real schema, the generated app's own tests run against it, the generated API
+# filters, pages, locks and saves on it, and reconciliation catches a damaged value.
+on:
+  push:
+    branches: ["main", "release/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mysql:
+    name: MySQL 8.4
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: e2e-Passw0rd
+          MYSQL_DATABASE: sea
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -pe2e-Passw0rd"
+          --health-interval 5s --health-timeout 5s --health-retries 30
+    env:
+      SP2REACT_E2E_DB_URL: mysql+pymysql://root:e2e-Passw0rd@127.0.0.1:3306/sea
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      - name: Install test tooling and drivers (hash-locked) and the package (no dependencies)
+        run: |
+          pip install --require-hashes -r ci/requirements-test.txt
+          pip install --require-hashes -r ci/requirements-e2e.txt
+          pip install --no-deps -e .
+      - name: Database mode against MySQL
+        run: python -m pytest tests/test_pipeline.py -k database -v --tb=short
+
+  sqlserver:
+    name: SQL Server 2022 (pyodbc)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    services:
+      sql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: e2e-Passw0rd
+        ports: ["1433:1433"]
+    env:
+      SP2REACT_E2E_DB_URL: mssql+pyodbc://sa:e2e-Passw0rd@127.0.0.1:1433/sea?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      - name: Install Microsoft ODBC Driver 18
+        run: |
+          if ! odbcinst -q -d 2>/dev/null | grep -q "ODBC Driver 18 for SQL Server"; then
+            curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+            curl -fsSL "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list" | sudo tee /etc/apt/sources.list.d/mssql-release.list
+            sudo apt-get update
+            sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev
+          fi
+          odbcinst -q -d
+      - name: Install test tooling and drivers (hash-locked) and the package (no dependencies)
+        run: |
+          pip install --require-hashes -r ci/requirements-test.txt
+          pip install --require-hashes -r ci/requirements-e2e.txt
+          pip install --no-deps -e .
+      - name: Wait for SQL Server and create the database
+        run: |
+          python - <<'PY'
+          import time, pyodbc
+          cs = "DRIVER={ODBC Driver 18 for SQL Server};SERVER=127.0.0.1,1433;UID=sa;PWD=e2e-Passw0rd;TrustServerCertificate=yes"
+          for i in range(90):
+              try:
+                  c = pyodbc.connect(cs, autocommit=True, timeout=5)
+                  break
+              except pyodbc.Error as e:
+                  time.sleep(2)
+          else:
+              raise SystemExit("SQL Server did not start")
+          c.execute("IF DB_ID('sea') IS NULL CREATE DATABASE sea")
+          print("ready")
+          PY
+      - name: Database mode against SQL Server
+        run: python -m pytest tests/test_pipeline.py -k database -v --tb=short

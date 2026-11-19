@@ -3,7 +3,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
-import requests
+from sp2react.transport import Session
 
 from mock_sharepoint import MockSharePoint
 from sp2react.config import Config, LLMConfig, SharePointConfig
@@ -17,7 +17,7 @@ def test_policy_allows_only_configured_hosts():
                  llm=LLMConfig(provider="bridger", base_url="http://bridger.corp.local:4141", model="claude-sonnet-4"))
     pol = policy_for(cfg)
     assert pol.hosts == {"sp.corp.local", "bridger.corp.local"}
-    s = pol.guard(requests.Session())
+    s = pol.guard(Session())
     with pytest.raises(NetworkPolicyError):
         s.get("https://pypi.org/simple/")
     llm = make_llm(cfg.llm, pol)
@@ -38,7 +38,7 @@ def test_redirect_to_another_host_is_blocked():
     srv = ThreadingHTTPServer(("127.0.0.1", 0), Redirect)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     try:
-        s = NetworkPolicy(["127.0.0.1"]).guard(requests.Session())
+        s = NetworkPolicy(["127.0.0.1"]).guard(Session())
         with pytest.raises(NetworkPolicyError):
             s.get(f"http://127.0.0.1:{srv.server_address[1]}/")
     finally:
@@ -72,7 +72,7 @@ def test_no_other_network_code_in_the_package():
             continue
         text = f.read_text()
         if re.search(r"\b(urllib\.request|http\.client|socket\.|httpx|aiohttp|requests\.(get|post|put|request))\b", text) and \
-                rel not in ("sharepoint/client.py", "llm/providers.py", "net.py"):
+                rel not in ("transport.py",):
             offenders.append(rel)
     assert offenders == []
 

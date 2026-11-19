@@ -26,7 +26,8 @@ def _run(cmd: list[str], cwd: Path, timeout: int, env: dict | None = None) -> tu
         r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout, env={**os.environ, **(env or {})})
         return r.returncode, (r.stdout or "") + (r.stderr or "")
     except subprocess.TimeoutExpired as e:
-        return 124, f"timed out after {timeout}s: {' '.join(cmd)}\n{(e.stdout or '')}"
+        out = e.stdout.decode("utf-8", "replace") if isinstance(e.stdout, bytes) else (e.stdout or "")   # bytes even with text=True
+        return 124, f"timed out after {timeout}s: {' '.join(cmd)}\n{out}"
     except FileNotFoundError as e:
         return 127, str(e)
 

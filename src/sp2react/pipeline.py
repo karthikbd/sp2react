@@ -21,7 +21,7 @@ import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from .agents.core import Agent, AgentFailed
 from .agents.tasks import run_fix_agent, run_handler_agent, run_page_agent, run_review_agent, run_spec_agent
@@ -36,6 +36,14 @@ from .spec.coverage import check
 from .spec.model import Spec
 
 log = logging.getLogger(__name__)
+CRITICAL_EXTRACT_ERRORS = ("fields of ", "source of ", "views of ", "forms of ", "web parts of ", "SitePages library")
+
+
+def critical_extract_error(e: dict) -> bool:
+    """Errors that leave a screen without its content. A site without a SitePages library answers 404: not an error."""
+    if e["what"] == "SitePages library" and "HTTP 404" in e["error"]:
+        return False
+    return e["what"].startswith(CRITICAL_EXTRACT_ERRORS)
 STAGES = ["inputs", "extract", "inventory", "spec", "approve_spec", "convert", "review", "test", "fix", "approve"]
 
 
@@ -178,7 +186,15 @@ class Pipeline:
         self.mark(None, "extract", "running")
         man = Extractor(self.sp, self.ws, self.progress).run(pages, self.cfg.sharepoint.sample_items)
         s = man["summary"]
-        self.mark(None, "extract", "done", f"{s['lists']} lists, {s['pages']} pages, {s['files']} custom files, {s['errors']} errors", summary=s)
+        msg = f"{s['lists']} lists, {s['pages']} pages, {s['files']} custom files, {s['errors']} errors"
+        # a list without its fields or a page without its source would become a screen with nothing in it
+        critical = [e for e in man.get("errors", []) if critical_extract_error(e)]
+        if critical:
+            self.mark(None, "extract", "failed", msg + "; could not read: " + "; ".join(f"{e['what']} ({e['error'][:120]})" for e in critical[:5])
+                      + ". Fix access or throttling and run extract again.", summary=s)
+            self.progress(f"[extract] FAILED: could not read {len(critical)} required item(s), first: {critical[0]['what']}")
+            return
+        self.mark(None, "extract", "done", msg, summary=s)
 
     def stage_inventory(self, pages: Optional[list[str]]) -> list[dict]:
         self.require(None, "inventory")
@@ -203,9 +219,8 @@ class Pipeline:
         prev = self.state["screens"].get(sid, {}).get("spec") or {}
         if prev.get("status") == "done" and prev.get("inventory_hash") == inv_hash and (self.ws / "specs" / f"{sid}.json").exists():
             self.progress(f"[spec] {sid}: unchanged since the last run (legacy source identical), keeping the spec")
-            if self.approvals().get(sid, {}).get("spec") or self.cfg.pipeline.auto_approve:
-                if self.status(sid, "approve_spec") != "done":
-                    self.approve(sid, "spec", "auto_approve" if self.cfg.pipeline.auto_approve else "")
+            if (self.approvals().get(sid, {}).get("spec") or self.cfg.pipeline.auto_approve) and self.status(sid, "approve_spec") != "done":
+                self.approve(sid, "spec", "auto_approve" if self.cfg.pipeline.auto_approve else "")
             return
         if prev.get("inventory_hash") and prev.get("inventory_hash") != inv_hash:
             a = self.approvals()
@@ -275,18 +290,25 @@ class Pipeline:
         info = generate(self.out, all_specs, self.legacy, export_dir, self.cfg.pipeline.data_source,
                         Path(self.cfg.database.mapping) if self.cfg.pipeline.data_source == "database" else None)
         self.progress(f"[convert] scaffold written in {time.time() - t0:.1f}s ({info['files']} files)")
+        if info.get("kept"):
+            self.progress(f"[convert] kept {len(info['kept'])} changed file(s) as they are; the new versions are next to them "
+                          f"as *.sp2react-new: {', '.join(info['kept'][:10])}")
         routes = [{"screen": sp.screen.id, "kind": sp.screen.kind, "route": sp.screen.route, "list": sp.screen.list,
                    "legacy_urls": sp.screen.legacy_urls} for sp in all_specs]
 
-        tasks = []
+        tasks: list[tuple[str, str, Callable[[], Any]]] = []
         for sid in ready:
             spec = self.load_spec(sid)
             inv = self.load_inventory(sid)
             if spec.screen.kind == "page":
-                tasks.append((sid, "page", lambda spec=spec, inv=inv: run_page_agent(self.agent("page", "files"), self.legacy, inv, spec, routes, self.out)))
+                def page_task(spec: Spec = spec, inv: dict = inv) -> Any:
+                    return run_page_agent(self.agent("page", "files"), self.legacy, inv, spec, routes, self.out)
+                tasks.append((sid, "page", page_task))
             for r in spec.rules:
                 if r.kind == "custom":
-                    tasks.append((sid, f"handler:{r.params['handler']}", lambda spec=spec, inv=inv, r=r: run_handler_agent(self.agent("handler", "files"), self.legacy, inv, spec, r, self.out)))
+                    def handler_task(spec: Spec = spec, inv: dict = inv, r: Any = r) -> Any:
+                        return run_handler_agent(self.agent("handler", "files"), self.legacy, inv, spec, r, self.out)
+                    tasks.append((sid, f"handler:{r.params['handler']}", handler_task))
         failed: dict[str, str] = {}
         if tasks:
             self.progress(f"[convert] {len(tasks)} agent task(s) in parallel (max {self.cfg.pipeline.max_concurrency})")
@@ -363,12 +385,12 @@ class Pipeline:
 
     def stage_map_db(self, specs: list[Spec]) -> bool:
         """data_source=database: map lists onto the existing tables (schema only) -> db-mapping.json + .md."""
-        from .config import secret
+        from .config import required_secret
         from .dbmap import draft, reflect, report, validate
         from .agents.tasks import run_dbmap_agent
         lists = self.mapping_lists(specs)
         self.mark(None, "map_db", "running", f"{len(lists)} list(s)")
-        db = reflect(secret(self.cfg.database.url_env, "database URL"), self.cfg.database.schema_name)
+        db = reflect(required_secret(self.cfg.database.url_env, "database URL"), self.cfg.database.schema_name)
         (self.ws / "db-schema.json").write_text(json.dumps(db, indent=1), encoding="utf-8")
         mapping_file = Path(self.cfg.database.mapping)
         if mapping_file.exists():                      # keep a mapping you already reviewed; only extend it
@@ -411,7 +433,7 @@ class Pipeline:
         if not (self.export_dir / "export.json").exists():
             self.mark(None, "reconcile", "warning", "no full export to reconcile against (seeded from the sample)")
             return {"ok": True, "lists": {}, "skipped": True}
-        lists = {}
+        lists: dict[str, dict] = {}
         for sp in specs:
             for name, l in sp.lists.items():
                 lists.setdefault(name, {"fields": l.fields})
@@ -517,6 +539,9 @@ class Pipeline:
         self.stage_inputs(offline)
         if stop >= 1:
             self.stage_extract(pages, offline)
+            if self.status(None, "extract") == "failed":
+                write_report(self)
+                return self.state
         sids: list[str] = []
         if stop >= 2:
             sids = [s["id"] for s in self.stage_inventory(pages)]

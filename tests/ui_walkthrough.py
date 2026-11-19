@@ -1,14 +1,15 @@
 """Drive the generated app in a browser and check the legacy behaviours end to end.
 
 Usage: python tests/ui_walkthrough.py http://localhost:8000 <screenshot dir>
-(backend serving the built frontend, seeded with the replica site's data)
+(backend serving the built frontend, seeded with the replica site's data, started with AUTH_MODE=dev so the
+walkthrough can act as each seeded user)
 """
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import sync_playwright
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000"
 SHOTS = Path(sys.argv[2] if len(sys.argv) > 2 else "shots")

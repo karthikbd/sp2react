@@ -12,7 +12,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 TAG_VALUE = r"<(?:\w+:)?{tag}\b[^>]*>(.*?)</(?:\w+:)?{tag}>"
 
@@ -244,6 +244,9 @@ def resolve_tokens(url: str, site_rel: str = "") -> str:
     return url
 
 
+WIKI_WP_BOX = re.compile(r'<div[^>]*class="[^"]*ms-rte-wpbox[^"]*"[^>]*>.*?</div>\s*</div>', re.S | re.I)
+
+
 def load_page(legacy_dir: Path, rel_path: str) -> ParsedPage:
     src = (legacy_dir / "pages" / rel_path).read_text(encoding="utf-8", errors="replace")
     wpf = legacy_dir / "pages" / (rel_path + ".webparts.json")
@@ -251,4 +254,14 @@ def load_page(legacy_dir: Path, rel_path: str) -> ParsedPage:
     if wpf.exists():
         data = json.loads(wpf.read_text(encoding="utf-8"))
         wpj = data.get("d", {}).get("results", data) if isinstance(data, dict) else data
-    return parse_page(rel_path, src, wpj)
+    page = parse_page(rel_path, src, wpj)
+    wiki = legacy_dir / "pages" / (rel_path + ".wiki.html")
+    if wiki.exists():                 # a wiki page's own text (WikiField); its web parts are listed separately
+        body = WIKI_WP_BOX.sub("", wiki.read_text(encoding="utf-8", errors="replace"))
+        srcs, inline, css, stripped = scan_html(body)
+        page.scripts += srcs
+        page.stylesheets += css
+        page.inline_scripts += [{"where": "wiki", "code": c} for c in inline]
+        if stripped:
+            page.html_fragments.insert(0, {"web_part": "Page content", "html": stripped})
+    return page

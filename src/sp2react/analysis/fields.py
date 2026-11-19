@@ -27,6 +27,13 @@ TYPE_MAP = {
 }
 
 
+def rest_name(f: dict) -> str:
+    """The property name list items carry in REST: EntityPropertyName (OData__x0032_nd... for internal names
+    that start with '_' or a digit). SharePoint 2010 has no EntityPropertyName, so the same rule is applied here."""
+    name = f["InternalName"]
+    return f.get("EntityPropertyName") or (("OData_" + name) if re.match(r"[_0-9]", name) else name)
+
+
 def _choices(f: dict) -> list[str]:
     c = f.get("Choices")
     return list(unwrap(c) or []) if c else []
@@ -41,6 +48,8 @@ def map_field(f: dict, list_by_id: dict[str, str]) -> Optional[dict]:
     t = f.get("TypeAsString", "Text")
     spec: dict = {"name": name, "label": f.get("Title", name), "type": TYPE_MAP.get(t, "text"), "sp_type": t,
                   "required": bool(f.get("Required"))}
+    if rest_name(f) != name:
+        spec["rest_name"] = rest_name(f)
     if f.get("Description"):
         spec["description"] = f["Description"]
     if t == "Text" and f.get("MaxLength"):
@@ -72,6 +81,9 @@ def map_field(f: dict, list_by_id: dict[str, str]) -> Optional[dict]:
     if t == "Calculated":
         spec["read_only"] = True
         spec["formula"] = f.get("Formula")
+    if t.startswith("TaxonomyFieldType"):
+        spec["read_only"] = True                 # terms are shown; choosing terms needs the term store (not generated)
+        spec["multi"] = t == "TaxonomyFieldTypeMulti" or bool(f.get("AllowMultipleValues"))
     if f.get("EnforceUniqueValues"):
         spec["unique"] = True
     d = f.get("DefaultValue")
@@ -94,10 +106,15 @@ def _coerce_default(v, typ):
 def map_fields(fields_json: dict, list_by_id: dict[str, str]) -> tuple[list[dict], list[dict]]:
     """-> (spec fields in schema order, column validation formulas)."""
     out, formulas = [], []
+    by_id = {str(f.get("Id", "")).strip("{}").lower(): f for f in unwrap(fields_json)}
     for f in unwrap(fields_json):
         sf = map_field(f, list_by_id)
         if not sf:
             continue
+        if sf["type"] == "taxonomy" and f.get("TextField"):
+            note = by_id.get(str(f["TextField"]).strip("{}").lower())   # hidden note field holding "Label|TermGuid"
+            if note:
+                sf["label_field"] = rest_name(note)
         out.append(sf)
         if f.get("ValidationFormula"):
             formulas.append({"field": sf["name"], "formula": f["ValidationFormula"], "message": f.get("ValidationMessage") or ""})

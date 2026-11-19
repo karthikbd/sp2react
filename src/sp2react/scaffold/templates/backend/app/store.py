@@ -146,7 +146,7 @@ class SqliteRepo:
                 item[name] = [self.user(x) for x in v] if isinstance(v, list) else (self.user(v) if v else None)
             else:
                 item[name] = v
-        for name, f in fields.items():
+        for name in fields:
             item.setdefault(name, None)
         item.update({"Created": created, "Modified": modified, "Author": self.user(author), "Editor": self.user(editor),
                      "_version": f"{version}.0", "_etag": f'"{version}"'})

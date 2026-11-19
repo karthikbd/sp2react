@@ -64,7 +64,7 @@ def base_spec(inv: dict) -> Spec:
             continue
         key = (p["method"], p["path"])
         if key not in endpoints:
-            m = re.match(r"/api/lists/(\w+)", p["path"])
+            m = re.match(r"/api/lists/([^/]+)", p["path"])
             eid = f"E{len(endpoints) + 1}"
             endpoints[key] = Endpoint(id=eid, method=p["method"], path=p["path"], purpose=p.get("purpose", ""),
                                       list=m.group(1) if m else None, body=p.get("body", []) or [])

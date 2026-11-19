@@ -4,7 +4,7 @@ against the same vectors so the browser and the API always agree.
 from __future__ import annotations
 
 import re
-from datetime import date, datetime, timedelta
+from datetime import date
 from typing import Any, Optional
 
 REQUIRED_MESSAGE = "You can't leave this blank."
@@ -164,7 +164,6 @@ def validate(fields: list[dict], rules: list[dict], ctx: dict) -> list[dict]:
     """-> [{field, message, presentation, rule}] in display order, schema checks first per field."""
     errors: list[dict] = []
     values, mode = ctx.get("values") or {}, ctx["mode"]
-    by_name = {f["name"]: f for f in fields}
     states = {f["name"]: field_state(f, rules, ctx) for f in fields}
 
     for f in fields:
@@ -206,10 +205,7 @@ def validate(fields: list[dict], rules: list[dict], ctx: dict) -> list[dict]:
             failed = is_empty(v)
         elif k == "compare":
             other = values.get(p["other"])
-            if is_empty(v) or is_empty(other):
-                failed = False
-            else:
-                failed = not _cmp(v, p["op"], _scalar(other))
+            failed = False if is_empty(v) or is_empty(other) else not _cmp(v, p["op"], _scalar(other))
         elif k == "length":
             failed = not (p.get("allow_empty") and is_empty(v)) and not _cmp(len(str(v or "")), p["op"], p["value"])
         elif k == "range":

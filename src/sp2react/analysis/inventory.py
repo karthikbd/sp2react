@@ -6,6 +6,7 @@ what the spec agent must account for, and what the coverage gate checks the spec
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -77,10 +78,25 @@ class Legacy:
         return None
 
 
+def safe_id(text: str) -> str:
+    """A screen id that is also a folder name: letters, digits, '_', '-' and '.' (never leading)."""
+    return re.sub(r"[^A-Za-z0-9_.\-]+", "_", text).strip("._-") or "screen"
+
+
+def _page_stem(page: str) -> str:
+    return page.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+
+
 def screens(legacy: Legacy, only: Optional[list[str]] = None) -> list[dict]:
-    """Group pages into screens: one per list with forms, one per other page."""
+    """Group pages into screens: one per list with forms, one per other page.
+
+    A page's id is its file name; when two pages share a file name (Home.aspx in SitePages and in Pages)
+    both get their folder in the id, so no screen overwrites another."""
     out, used = [], set()
     pages = legacy.pages()
+    stems: dict[str, int] = {}
+    for page in pages:
+        stems[_page_stem(page).lower()] = stems.get(_page_stem(page).lower(), 0) + 1
     wanted = None
     if only:
         wanted = {legacy.site_rel(p) if p.startswith(("/", "http")) else p for p in only}
@@ -93,15 +109,24 @@ def screens(legacy: Legacy, only: Optional[list[str]] = None) -> list[dict]:
             l = legacy.lists[key]
             members = [f"{l['url']}/{f}" for f in l.get("forms", {}).values() if f"{l['url']}/{f}" in pages] or [page]
             used.update(members)
-            scr = {"id": f"{key}-form", "kind": "list-form", "list": key, "title": l["title"], "pages": members,
+            scr = {"id": safe_id(f"{key}-form"), "kind": "list-form", "list": key, "title": l["title"], "pages": members,
                    "route": f"/lists/{kebab(key)}"}
         else:
             used.add(page)
-            stem = page.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-            scr = {"id": stem, "kind": "page", "list": None, "title": parsed.title or stem, "pages": [page],
-                   "route": f"/pages/{kebab(stem)}"}
+            stem = _page_stem(page)
+            name = page.rsplit(".", 1)[0].replace("/", "-") if stems[stem.lower()] > 1 else stem
+            scr = {"id": safe_id(name), "kind": "page", "list": None, "title": parsed.title or stem, "pages": [page],
+                   "route": f"/pages/{kebab(name)}"}
         if wanted is None or wanted & set(scr["pages"]):
             out.append(scr)
+    # names that differ only in characters an id cannot hold ("Change Requests" / "Change_Requests") stay apart
+    count: dict[str, int] = {}
+    for scr in out:
+        count[scr["id"].lower()] = count.get(scr["id"].lower(), 0) + 1
+    for scr in out:
+        if count[scr["id"].lower()] > 1:
+            origin = scr["list"] or scr["pages"][0]
+            scr["id"] = f"{scr['id']}-{hashlib.sha1(origin.encode('utf-8')).hexdigest()[:6]}"
     return out
 
 
@@ -174,8 +199,8 @@ def build_inventory(legacy: Legacy, screen: dict) -> dict:
                 if txt is None:
                     inv["unresolved"].append({"kind": "missing_file", "detail": f"Content Editor link {rel} was not exported", "page": page})
                     continue
-                srcs, inline, css, stripped = scan_html(txt)
-                parsed.scripts += srcs
+                link_srcs, inline, _css, stripped = scan_html(txt)
+                parsed.scripts += link_srcs
                 parsed.inline_scripts += [{"where": f"contentlink:{rel}", "code": c} for c in inline]
                 if stripped:
                     inv["html_fragments"].append({"page": page, "mode": mode, "web_part": wp.title, "source": rel, "html": stripped})
@@ -242,8 +267,8 @@ def build_inventory(legacy: Legacy, screen: dict) -> dict:
     for c in calls:
         involve(legacy.list_by_title.get((c.get("list") or c.get("listName") or c.get("relationshipList") or "").lower()))
     for b in behaviors:
-        for f in b.fields:
-            involve(f.list)
+        for ref in b.fields:
+            involve(ref.list)
         if b.kind == "list_view":
             involve(b.detail.get("list"))
     for key in list(involved):

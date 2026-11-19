@@ -47,15 +47,21 @@ class SharePointRepo:
     def _fields(self, list_name: str) -> dict[str, dict]:
         return {f["name"]: f for f in self.specs.lists[list_name]["fields"]}
 
+    @staticmethod
+    def _rest(f: dict) -> str:
+        """REST property name: differs from the internal name for columns starting with '_' or a digit."""
+        return f.get("rest_name") or (("OData_" + f["name"]) if f["name"][:1] == "_" or f["name"][:1].isdigit() else f["name"])
+
     def _query(self, list_name: str) -> dict:
         sel, exp = ["*", "Author/Id", "Author/Title", "Author/Name", "Editor/Id", "Editor/Title", "Editor/Name", "AttachmentFiles"], ["Author", "Editor", "AttachmentFiles"]
         for f in self._fields(list_name).values():
+            r = self._rest(f)
             if f["type"] == "lookup":
-                sel += [f"{f['name']}/Id", f"{f['name']}/{f['lookup'].get('field', 'Title')}"]
-                exp.append(f["name"])
+                sel += [f"{r}/Id", f"{r}/{f['lookup'].get('field', 'Title')}"]
+                exp.append(r)
             if f["type"] == "user":
-                sel += [f"{f['name']}/Id", f"{f['name']}/Title", f"{f['name']}/Name"]
-                exp.append(f["name"])
+                sel += [f"{r}/Id", f"{r}/Title", f"{r}/Name"]
+                exp.append(r)
         return {"$select": ",".join(sel), "$expand": ",".join(exp)}
 
     @staticmethod
@@ -67,7 +73,7 @@ class SharePointRepo:
     def _to_item(self, list_name: str, d: dict) -> dict:
         item: dict = {"ID": d["Id"]}
         for name, f in self._fields(list_name).items():
-            v = d.get(name)
+            v = d.get(self._rest(f), d.get(name))
             if f["type"] == "lookup":
                 col = f["lookup"].get("field", "Title")
                 conv = lambda x: {"id": x["Id"], "title": x.get(col)} if x and x.get("Id") else None
@@ -76,6 +82,16 @@ class SharePointRepo:
                 item[name] = [self._user(x) for x in v.get("results", [])] if isinstance(v, dict) and "results" in v else self._user(v)
             elif f["type"] == "date" and v:
                 item[name] = v[:10]
+            elif f["type"] == "url":
+                item[name] = {"url": v.get("Url"), "description": v.get("Description")} if isinstance(v, dict) and v.get("Url") else None
+            elif f["type"] == "taxonomy":
+                terms = v.get("results", []) if isinstance(v, dict) and "results" in v else ([v] if isinstance(v, dict) else [])
+                labels = {}
+                for part in (d.get(f["label_field"]) or "").split(";") if f.get("label_field") else []:
+                    if "|" in part:
+                        labels[part.rsplit("|", 1)[1].strip().lower()] = part.rsplit("|", 1)[0].strip()
+                out = [{"label": labels.get(str(t.get("TermGuid", "")).lower()), "term_id": t.get("TermGuid")} for t in terms if t.get("TermGuid")]
+                item[name] = out if f.get("multi") else (out[0] if out else None)
             else:
                 item[name] = v
         etag = d.get("__metadata", {}).get("etag", '"1"')
@@ -90,13 +106,19 @@ class SharePointRepo:
             f = self._fields(list_name).get(name)
             if not f:
                 continue
+            r = self._rest(f)
             if f["type"] in ("lookup", "user"):
                 if isinstance(v, list):
-                    out[f"{name}Id"] = {"results": [x.get("id") if isinstance(x, dict) else x for x in v]}
+                    out[f"{r}Id"] = {"results": [x.get("id") if isinstance(x, dict) else x for x in v]}
                 else:
-                    out[f"{name}Id"] = v.get("id") if isinstance(v, dict) else v
+                    out[f"{r}Id"] = v.get("id") if isinstance(v, dict) else v
+            elif f["type"] == "url":
+                u = v if isinstance(v, dict) else ({"url": v} if v else None)
+                out[r] = {"__metadata": {"type": "SP.FieldUrlValue"}, "Url": u["url"], "Description": u.get("description") or u["url"]} if u else None
+            elif f["type"] in ("taxonomy", "calculated") or f.get("read_only"):
+                continue                           # not writable through this API
             else:
-                out[name] = v
+                out[r] = v
         return out
 
     # ----------------------------------------------------------------- API
@@ -104,10 +126,14 @@ class SharePointRepo:
         return None
 
     def user_by_login(self, login: str):
-        r = self.s.get(f"{self.site}/_api/web/siteusers", params={"$filter": f"substringof('{login}',LoginName)"})
+        want = login.strip().split("|")[-1].lower()      # "i:0#.w|corp\\alice" and "corp\\alice" are the same user
+        if not want:
+            return None
+        r = self.s.get(f"{self.site}/_api/web/siteusers", params={"$filter": f"substringof('{want.replace(chr(39), chr(39) * 2)}',LoginName)"})
         r.raise_for_status()
-        res = r.json()["d"]["results"]
-        if not res:
+        # substringof matches 'corp\\al' inside 'corp\\alice': only an exact login (claims prefix ignored) counts
+        res = [x for x in r.json()["d"]["results"] if (x.get("LoginName") or "").split("|")[-1].lower() == want]
+        if len(res) != 1:
             return None
         u = res[0]
         g = self.s.get(f"{self.site}/_api/web/getuserbyid({u['Id']})/groups").json()["d"]["results"]

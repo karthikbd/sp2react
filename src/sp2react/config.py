@@ -5,8 +5,8 @@ import os
 from pathlib import Path
 from typing import Literal, Optional, Union
 
-import yaml
-from pydantic import BaseModel, Field, field_validator
+from .model import BaseModel, Field, field_validator
+from .yamlish import YAMLError, safe_load
 
 
 class ConfigError(RuntimeError):
@@ -22,6 +22,8 @@ class SharePointConfig(BaseModel):
     token_env: str = "SP_TOKEN"                # bearer token (SharePoint Online / Entra)
     verify_ssl: Union[bool, str] = True        # True, False, or path to a corporate CA bundle
     timeout: int = 60
+    retries: int = 4                           # re-tries of a GET that was throttled (429/503) or cut off; waits honour Retry-After
+    max_retry_wait: int = 120                  # longest single wait between re-tries (seconds)
     sample_items: int = 200                    # rows exported per list (lookup values, seed data)
     extra_headers: dict[str, str] = Field(default_factory=dict)
 
@@ -97,6 +99,12 @@ class Config(BaseModel):
         return Path(self.pipeline.output).resolve()
 
 
+def required_secret(env_name: Optional[str], what: str) -> str:
+    value = secret(env_name, what, required=True)
+    assert value is not None          # secret() raises when a required value is missing
+    return value
+
+
 def secret(env_name: Optional[str], what: str, required: bool = True) -> Optional[str]:
     if not env_name:
         if required:
@@ -112,10 +120,13 @@ def load_config(path: Union[str, Path]) -> Config:
     p = Path(path)
     if not p.exists():
         raise ConfigError(f"Config file not found: {p}. Run `sp2react init` to create one.")
-    data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    try:
+        data = safe_load(p.read_text(encoding="utf-8")) or {}
+    except YAMLError as e:
+        raise ConfigError(f"Invalid config {p}: {e}") from e
     try:
         cfg = Config.model_validate(data)
-    except Exception as e:  # pydantic ValidationError -> readable message
+    except Exception as e:  # ValidationError -> readable message
         raise ConfigError(f"Invalid config {p}:\n{e}") from e
     # Relative workspace/output paths are relative to the config file, not the cwd
     base = p.resolve().parent

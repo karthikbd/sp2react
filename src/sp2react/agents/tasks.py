@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import ValidationError
+from ..model import ValidationError
 
 from ..analysis.aspx import load_page
 from ..analysis.inventory import Legacy
@@ -156,6 +156,35 @@ def run_spec_agent(agent: Agent, legacy: Legacy, inv: dict, base: Spec) -> tuple
     return holder["spec"], res
 
 
+# ------------------------------------------------------------ file paths
+SAFE_PART = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.\-]*$")
+
+
+def path_problem(rel: str, prefix: str = "") -> Optional[str]:
+    """Why an agent-proposed path may not be written, or None. Plain relative paths under `prefix` only:
+    no '..', no absolute or drive paths, no backslashes, no hidden or odd file names."""
+    if not isinstance(rel, str) or not rel or "\\" in rel or rel.startswith("/") or re.match(r"^[A-Za-z]:", rel):
+        return f"{rel}: must be a relative path with forward slashes"
+    parts = rel.split("/")
+    if any(not SAFE_PART.match(x) for x in parts):
+        return f"{rel}: every part of the path must be a plain file or folder name (no '..', '.', spaces or hidden names)"
+    if prefix and not rel.startswith(prefix):
+        return f"{rel}: files must be under {prefix}"
+    return None
+
+
+def safe_target(out: Path, rel: str, prefix: str = "") -> Path:
+    """The file to write for an agent-proposed path; raises ValueError if it would land outside `out/prefix`."""
+    why = path_problem(rel, prefix)
+    if why:
+        raise ValueError(why)
+    base = (out / prefix).resolve() if prefix else out.resolve()
+    target = (out / rel).resolve()
+    if base not in target.parents:
+        raise ValueError(f"{rel}: resolves outside {base}")
+    return target
+
+
 # -------------------------------------------------------------- page agent
 def ts_problems(out: Path, files: dict[str, str], timeout: int = 120) -> list[str]:
     """Type-check candidate files inside the generated frontend when its node_modules exist."""
@@ -166,7 +195,7 @@ def ts_problems(out: Path, files: dict[str, str], timeout: int = 120) -> list[st
     backups = {}
     try:
         for rel, content in files.items():
-            p = out / rel
+            p = safe_target(out, rel, "frontend/src/")
             backups[p] = p.read_text(encoding="utf-8") if p.exists() else None
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(content, encoding="utf-8")
@@ -190,8 +219,8 @@ def page_file_problems(files: dict[str, str], prefix: str, must_texts: list[str]
     if not any(p == f"{prefix}Page.tsx" for p in files):
         problems.append(f"Missing {prefix}Page.tsx")
     for path, code in files.items():
-        if not path.startswith(prefix) or not path.endswith((".tsx", ".ts")):
-            problems.append(f"{path}: files must be .ts/.tsx under {prefix}")
+        if path_problem(path, prefix) or not path.endswith((".tsx", ".ts")):
+            problems.append(path_problem(path, prefix) or f"{path}: files must be .ts/.tsx under {prefix}")
             continue
         for mod in re.findall(r"""from\s+["']([^"']+)["']""", code):
             if mod not in ALLOWED_PAGE_IMPORTS and not mod.startswith("./"):
@@ -241,7 +270,7 @@ def run_page_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, routes: 
     }
     res = agent.run(sid, sections, validate)
     for rel, content in res.output["files"].items():
-        p = out / rel
+        p = safe_target(out, rel, prefix)
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content, encoding="utf-8")
     return res
@@ -250,6 +279,8 @@ def run_page_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, routes: 
 # ----------------------------------------------------------- handler agent
 def run_handler_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, rule: Any, out: Path) -> AgentResult:
     handler = rule.params["handler"]
+    if not re.match(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$", str(handler)):
+        raise ValueError(f"handler name {handler!r} must be a plain identifier")
     allowed = {f"frontend/src/custom/{handler}.ts", f"backend/app/custom/{handler}.py"}
 
     def validate(parsed: dict) -> list[str]:
@@ -275,8 +306,9 @@ def run_handler_agent(agent: Agent, legacy: Legacy, inv: dict, spec: Spec, rule:
                 "sources": script_sources(legacy, inv)}
     res = agent.run(f"{spec.screen.id}-{handler}", sections, validate)
     for rel, content in res.output["files"].items():
-        (out / rel).parent.mkdir(parents=True, exist_ok=True)
-        (out / rel).write_text(content, encoding="utf-8")
+        p = safe_target(out, rel)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content, encoding="utf-8")
     return res
 
 
@@ -348,7 +380,7 @@ def run_fix_agent(agent: Agent, inv: dict, spec: Spec, failures: str, out: Path,
     sections = {"failures": failures[-12000:], "files": files, "spec": compact_spec(spec)}
     res = agent.run(task_id, sections, validate)
     for rel, content in res.output["files"].items():
-        (out / rel).write_text(content, encoding="utf-8")
+        safe_target(out, rel).write_text(content, encoding="utf-8")
     return res, holder.get("spec")
 
 

@@ -55,6 +55,8 @@ security:
 | `token_env` | `SP_TOKEN` | Environment variable holding a bearer token (bearer) |
 | `verify_ssl` | `true` | `true`, `false`, or the path to your corporate CA bundle (`.pem`). Prefer the CA bundle over `false` |
 | `timeout` | `60` | Seconds per request |
+| `retries` | `4` | Re-tries of a request that SharePoint throttled (429, 503) or that was cut off; waits follow `Retry-After` |
+| `max_retry_wait` | `120` | Longest single wait between re-tries, in seconds |
 | `sample_items` | `200` | Items read per list when item reads are allowed (sqlite/sharepoint modes). Not used in database mode |
 | `extra_headers` | `{}` | Extra HTTP headers sent with every SharePoint request |
 

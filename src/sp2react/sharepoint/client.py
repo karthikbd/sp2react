@@ -5,12 +5,14 @@ Only GET requests are ever issued: the extractor must never change the source si
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+import time
+from email.utils import parsedate_to_datetime
+from typing import Any, Callable, Optional
 from urllib.parse import quote, urlsplit
 
-import requests
+from .. import transport
 
-from ..config import SharePointConfig, secret
+from ..config import SharePointConfig, required_secret
 
 log = logging.getLogger(__name__)
 
@@ -43,14 +45,14 @@ class SharePointClient:
     """`policy` limits which hosts may be contacted; `item_reads=False` forbids reading list items, attachments,
     user profiles and rendered pages (anything that carries business data), leaving only code and schema."""
 
-    def __init__(self, cfg: SharePointConfig, session: Optional[requests.Session] = None, policy=None, item_reads: bool = True):
+    def __init__(self, cfg: SharePointConfig, session: Optional[transport.Session] = None, policy=None, item_reads: bool = True):
         self.cfg = cfg
         self.item_reads = item_reads
         self.site_url = cfg.site_url
         parts = urlsplit(cfg.site_url)
         self.origin = f"{parts.scheme}://{parts.netloc}"
         self.server_relative = parts.path.rstrip("/") or "/"
-        self.session = session or requests.Session()
+        self.session = session or transport.Session()
         self.session.verify = cfg.verify_ssl
         self.session.headers.update({"Accept": "application/json;odata=verbose", "User-Agent": "sp2react/0.1 (read-only)"})
         self.session.headers.update(cfg.extra_headers)
@@ -70,18 +72,14 @@ class SharePointClient:
     def _configure_auth(self) -> None:
         mode = self.cfg.auth
         if mode == "ntlm":
-            try:
-                from requests_ntlm import HttpNtlmAuth  # type: ignore
-            except ImportError as e:  # pragma: no cover - depends on optional extra
-                raise SharePointError("NTLM auth needs the extra: pip install 'sp2react[ntlm]'") from e
-            self.session.auth = HttpNtlmAuth(
-                secret(self.cfg.username_env, "SharePoint user name (DOMAIN\\user)"),
-                secret(self.cfg.password_env, "SharePoint password"),
+            self.session.auth = transport.NtlmAuth(
+                required_secret(self.cfg.username_env, "SharePoint user name (DOMAIN\\user)"),
+                required_secret(self.cfg.password_env, "SharePoint password"),
             )
         elif mode == "cookie":
-            self.session.headers["Cookie"] = secret(self.cfg.cookie_env, "SharePoint session cookie")
+            self.session.headers["Cookie"] = required_secret(self.cfg.cookie_env, "SharePoint session cookie")
         elif mode == "bearer":
-            self.session.headers["Authorization"] = "Bearer " + secret(self.cfg.token_env, "SharePoint bearer token")
+            self.session.headers["Authorization"] = "Bearer " + required_secret(self.cfg.token_env, "SharePoint bearer token")
 
     # --------------------------------------------------------------- helpers
     def absolute(self, url_or_path: str) -> str:
@@ -109,14 +107,47 @@ class SharePointClient:
         if not self.item_reads:
             raise ItemReadBlocked(f"Reading {what} from SharePoint is disabled (data_source=database / security.sharepoint_item_reads=false).")
 
-    def _get(self, url: str, accept: Optional[str] = None, params: Optional[dict] = None) -> requests.Response:
+    RETRY_STATUS = (429, 503)
+    sleep: Callable[[float], None] = staticmethod(time.sleep)
+
+    def _wait(self, attempt: int, r: Optional[transport.Response]) -> float:
+        """Seconds to wait before the next try: SharePoint's Retry-After when it sends one, else 1, 2, 4, 8 ..."""
+        ra = r.headers.get("Retry-After") if r is not None else None
+        wait = float(2 ** attempt)
+        if ra:
+            try:
+                wait = float(ra)
+            except ValueError:
+                try:
+                    wait = parsedate_to_datetime(ra).timestamp() - time.time()
+                except (TypeError, ValueError):
+                    pass
+        return max(0.0, min(wait, float(self.cfg.max_retry_wait)))
+
+    def _get(self, url: str, accept: Optional[str] = None, params: Optional[dict] = None) -> transport.Response:
         headers = {"Accept": accept} if accept else None
-        try:
-            r = self.session.get(self.absolute(url), headers=headers, params=params, timeout=self.cfg.timeout)
-        except requests.RequestException as e:
-            raise SharePointError(f"GET {url} failed: {e}") from e
+        attempt = 0
+        r: Optional[transport.Response] = None
+        while True:
+            try:
+                r = self.session.get(self.absolute(url), headers=headers, params=params, timeout=self.cfg.timeout)
+            except (transport.ConnectionError, transport.Timeout) as e:
+                if attempt >= self.cfg.retries:
+                    raise SharePointError(f"GET {url} failed after {attempt + 1} tries: {e}") from e
+                r, err = None, e
+            except transport.RequestException as e:
+                raise SharePointError(f"GET {url} failed: {e}") from e
+            else:
+                if r.status_code not in self.RETRY_STATUS or attempt >= self.cfg.retries:
+                    break
+            wait = self._wait(attempt, r)
+            log.warning("GET %s: %s; trying again in %.0fs (%d/%d)", url, f"HTTP {r.status_code}" if r is not None else err,
+                        wait, attempt + 1, self.cfg.retries)
+            self.sleep(wait)
+            attempt += 1
+        assert r is not None                   # the loop only ends with a response
         if r.status_code >= 400:
-            raise SharePointError(f"GET {url} -> HTTP {r.status_code}: {r.text[:300]}", r.status_code)
+            raise SharePointError(f"GET {url} -> HTTP {r.status_code}{f' after {attempt + 1} tries' if attempt else ''}: {r.text[:300]}", r.status_code)
         return r
 
     def api(self, path: str, params: Optional[dict] = None) -> Any:
@@ -202,6 +233,13 @@ class SharePointClient:
     def folder_files(self, server_relative_folder: str) -> list[dict]:
         url = self.server_relative_url(server_relative_folder)
         return self.api(f"web/getfolderbyserverrelativeurl('{odata_quote(url)}')/files", {"$select": "Name,ServerRelativeUrl,TimeLastModified"})
+
+    def wiki_content(self, server_relative_url: str) -> Optional[str]:
+        """The body of a wiki page. It is stored in the page's WikiField column, not in the .aspx file, so the
+        page source alone shows an empty page. Authored page content, not list data."""
+        url = self.server_relative_url(server_relative_url)
+        data = self.api(f"web/getfilebyserverrelativeurl('{odata_quote(url)}')/ListItemAllFields", {"$select": "WikiField"})
+        return (data or {}).get("WikiField") if isinstance(data, dict) else None
 
     def rendered(self, server_relative_url: str) -> str:
         """The page as a browser receives it (shows runtime-injected scripts). Can contain list data, so it is

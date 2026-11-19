@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Iterable
 from urllib.parse import urlsplit
 
-import requests
+from .transport import Session
 
 
 class NetworkPolicyError(RuntimeError):
@@ -33,7 +33,7 @@ class NetworkPolicy:
                 f"Blocked request to '{host or url}': sp2react only contacts hosts named in your config "
                 f"({', '.join(sorted(self.hosts)) or 'none'}). Add it to security.allowed_hosts if it is intended.")
 
-    def guard(self, session: requests.Session) -> requests.Session:
+    def guard(self, session: Session) -> Session:
         """Check every prepared request, including each redirect hop, before it leaves the machine."""
         send = session.send
         policy = self

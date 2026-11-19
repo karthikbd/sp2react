@@ -28,3 +28,5 @@ sp2react-work/
 converted-app/
 *.db
 node_modules/
+docs/_build/
+tests/fuzz/generated_odata.py

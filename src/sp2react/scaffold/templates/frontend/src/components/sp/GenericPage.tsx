@@ -19,7 +19,7 @@ export function GenericPage({ spec }: { spec: Spec }) {
           if (!lst) return null;
           const v = parseViewXml(c.props?.view_xml);
           return <ListView key={c.id} list={list} fields={lst.fields} title={c.title} showNew={false}
-                           view={{ fields: v.fields ?? lst.fields.slice(0, 4).map((f) => f.name), orderby: v.orderby, top: v.top }} />;
+                           view={{ fields: v.fields ?? lst.fields.slice(0, 4).map((f) => f.name), orderby: v.orderby, top: v.top, where: v.where }} />;
         }
         return null;
       })}

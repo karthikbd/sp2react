@@ -5,13 +5,14 @@ write what is screen-specific (page components, custom handlers); everything her
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import shutil
 from pathlib import Path
 from typing import Iterable, Optional
 
-from ..analysis.inventory import Legacy, kebab
+from ..analysis.inventory import Legacy
 from ..spec.model import Spec
 
 TEMPLATES = Path(__file__).parent / "templates"
@@ -23,7 +24,60 @@ def ident(name: str) -> str:
     return ("_" + s) if s[0].isdigit() else s
 
 
-def copy_templates(out: Path) -> list[str]:
+MANIFEST = Path(".sp2react") / "templates.json"
+NEW_SUFFIX = ".sp2react-new"
+
+
+def _sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def read_manifest(out: Path) -> dict[str, str]:
+    f = out / MANIFEST
+    try:
+        return json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+    except (ValueError, OSError):
+        return {}
+
+
+def write_manifest(out: Path, rels: Iterable[str], previous: dict[str, str]) -> None:
+    """Hash of every template file as generation left it; a later run overwrites a file only if it still has this hash."""
+    data = dict(previous)
+    for rel in rels:
+        f = out / rel
+        if f.exists():
+            data[rel] = _sha(f.read_bytes())
+    (out / MANIFEST).parent.mkdir(parents=True, exist_ok=True)
+    (out / MANIFEST).write_text(json.dumps(data, indent=1, sort_keys=True), encoding="utf-8")
+
+
+def _normalized(rel: str, data: bytes) -> bytes:
+    """A generated file with its filled-in placeholders put back, to compare it with a template."""
+    if rel == "frontend/index.html":
+        return re.sub(rb"<title>.*?</title>", b"<title>__SITE_TITLE__</title>", data, count=1, flags=re.S)
+    if rel == "backend/app/main.py":
+        return re.sub(rb'os\.environ\.get\("DATA_SOURCE", "[^"]*"\)', b'os.environ.get("DATA_SOURCE", "__DEFAULT_SOURCE__")', data, count=1)
+    return data
+
+
+def _released() -> dict[str, list[str]]:
+    f = TEMPLATES.parent / "released_templates.json"      # hashes of the template files of every published release
+    return json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+
+
+def unchanged_since_generated(rel: str, current: bytes, new: bytes, manifest: dict[str, str], released: dict[str, list[str]]) -> bool:
+    """True when overwriting loses nothing. The hash recorded at the last generation decides; without one (an app
+    from 0.1.0-0.1.2), the file must equal a published template once its filled-in placeholders are put back."""
+    if rel in manifest:
+        return manifest[rel] == _sha(current)
+    norm = _normalized(rel, current)
+    return norm == new or _sha(norm) in released.get(rel, [])
+
+
+def copy_templates(out: Path, kept: Optional[list[str]] = None) -> list[str]:
+    """Copy the fixed app files. A file someone changed since sp2react wrote it is kept as it is, and the new
+    version is written next to it as <file>.sp2react-new (listed in `kept`) for a person to merge."""
+    manifest, released = read_manifest(out), _released()
     written = []
     for src in TEMPLATES.rglob("*"):
         if src.is_dir() or "__pycache__" in src.parts:
@@ -31,7 +85,18 @@ def copy_templates(out: Path) -> list[str]:
         rel = src.relative_to(TEMPLATES).as_posix()
         dst = out / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(src, dst)
+        new = src.read_bytes()
+        side = dst.with_name(dst.name + NEW_SUFFIX)
+        if dst.exists():
+            cur = dst.read_bytes()
+            if not unchanged_since_generated(rel, cur, new, manifest, released):
+                side.write_bytes(new)
+                if kept is not None:
+                    kept.append(rel)
+                continue
+        dst.write_bytes(new)
+        if side.exists():
+            side.unlink()
         written.append(rel)
     return written
 
@@ -162,6 +227,8 @@ def generated_tests(specs: list[Spec], seed_counts: dict[str, int], data_source:
         "",
         "from app.rules import REQUIRED_MESSAGE",
         "",
+        'os.environ.setdefault("AUTH_MODE", "dev")      # these tests act as the seeded users, from this machine',
+        "",
     ]
     if db:
         lines += ['pytestmark = pytest.mark.skipif(not os.environ.get("DB_URL"), reason="set DB_URL (and MAPPING_FILE) to run the API tests against your database")', ""]
@@ -180,7 +247,7 @@ def generated_tests(specs: list[Spec], seed_counts: dict[str, int], data_source:
     ]
     done = set()
     for s in specs:
-        for name, l in s.lists.items():
+        for name in s.lists:
             if name in done:
                 continue
             done.add(name)
@@ -212,7 +279,8 @@ DATA_SOURCE=__SOURCE__
 DB_URL=mssql+pyodbc://user:password@db-host/SEA?driver=ODBC+Driver+18+for+SQL+Server
 # DB_URL=mysql+pymysql://user:password@db-host:3306/sea
 MAPPING_FILE=./mapping.json
-# auth: dev (X-User header, local only) | header (identity header from your gateway)
+# auth: header (identity header from your authenticating gateway; the default)
+#     | dev (X-User header picks a seeded user; accepted only from this machine, never deploy it)
 AUTH_MODE=dev
 IDENTITY_HEADER=X-MS-CLIENT-PRINCIPAL-NAME
 CORS_ORIGINS=http://localhost:5173
@@ -222,7 +290,9 @@ CORS_ORIGINS=http://localhost:5173
 def generate(out: Path, specs: list[Spec], legacy: Legacy, export_dir: Optional[Path] = None,
              data_source: str = "sqlite", mapping_file: Optional[Path] = None) -> dict:
     out.mkdir(parents=True, exist_ok=True)
-    written = copy_templates(out)
+    previous = read_manifest(out)
+    kept: list[str] = []
+    written = copy_templates(out, kept)
     (out / "backend" / "specs").mkdir(parents=True, exist_ok=True)
     (out / "frontend" / "src" / "specs").mkdir(parents=True, exist_ok=True)
     for s in specs:
@@ -253,11 +323,15 @@ def generate(out: Path, specs: list[Spec], legacy: Legacy, export_dir: Optional[
     (src / "App.tsx").write_text(app_tsx(specs, out), encoding="utf-8")
     (src / "custom" / "index.ts").write_text(custom_index(out), encoding="utf-8")
     (src / "styles" / "legacy.css").write_text(legacy_css(legacy, specs), encoding="utf-8")
-    html = (out / "frontend" / "index.html").read_text(encoding="utf-8").replace("__SITE_TITLE__", legacy.site.get("title") or "Site")
+    index_html_before = (out / "frontend" / "index.html").read_text(encoding="utf-8")
+    html = index_html_before.replace("__SITE_TITLE__", legacy.site.get("title") or "Site")
     (out / "frontend" / "index.html").write_text(html, encoding="utf-8")
     (out / "backend" / "tests" / "test_generated.py").write_text(generated_tests(specs, counts, data_source), encoding="utf-8")
+    if "frontend/index.html" not in written:      # kept as someone changed it: leave it alone
+        (out / "frontend" / "index.html").write_text(index_html_before, encoding="utf-8")
     main_py = out / "backend" / "app" / "main.py"
-    main_py.write_text(main_py.read_text(encoding="utf-8").replace("__DEFAULT_SOURCE__", data_source), encoding="utf-8")
+    if "backend/app/main.py" in written:
+        main_py.write_text(main_py.read_text(encoding="utf-8").replace("__DEFAULT_SOURCE__", data_source), encoding="utf-8")
     if data_source == "database":
         if mapping_file and mapping_file.exists():
             shutil.copyfile(mapping_file, out / "backend" / "mapping.json")
@@ -270,7 +344,8 @@ def generate(out: Path, specs: list[Spec], legacy: Legacy, export_dir: Optional[
     if shared.exists():
         (out / "shared").mkdir(exist_ok=True)
         shutil.copyfile(shared, out / "shared" / "rule_vectors.json")
-    return {"files": len(written) + 8 + 2 * len(specs), "seed": counts}
+    write_manifest(out, written, previous)
+    return {"files": len(written) + 8 + 2 * len(specs), "seed": counts, "kept": kept}
 
 
 def refresh_registries(out: Path, specs: list[Spec]) -> None:

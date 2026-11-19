@@ -2,7 +2,11 @@
 
 [![PyPI version](https://badge.fury.io/py/sp2react.svg)](https://pypi.org/project/sp2react/)
 [![Python versions](https://img.shields.io/pypi/pyversions/sp2react.svg)](https://pypi.org/project/sp2react/)
+[![Tests](https://github.com/karthikbd/sp2react/actions/workflows/tests.yml/badge.svg)](https://github.com/karthikbd/sp2react/actions/workflows/tests.yml)
+[![End-to-end](https://github.com/karthikbd/sp2react/actions/workflows/e2e.yml/badge.svg)](https://github.com/karthikbd/sp2react/actions/workflows/e2e.yml)
+[![Docs](https://readthedocs.org/projects/sp2react/badge/?version=latest)](https://sp2react.readthedocs.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![ClusterFuzzLite](https://github.com/karthikbd/sp2react/actions/workflows/cflite_batch.yml/badge.svg)](https://github.com/karthikbd/sp2react/actions/workflows/cflite_batch.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/karthikbd/sp2react/badge)](https://securityscorecards.dev/viewer/?uri=github.com/karthikbd/sp2react)
 
 Convert classic SharePoint (2013 / 2016 / 2019 / Subscription Edition) list forms and pages built with **ASPX, jQuery and SPServices** into a **React + FastAPI** app that runs on **your existing database**.
@@ -54,12 +58,24 @@ Plain code does everything mechanical. AI agents (Claude through your GitHub Cop
 ## Installation
 
 ```bash
-pip install "sp2react[mysql]"     # MySQL / MariaDB tables
-pip install "sp2react[mssql]"     # SQL Server tables (also needs Microsoft ODBC Driver 18)
-pip install "sp2react[ntlm]"      # add for on-premises Windows authentication
+pip install sp2react               # the tool itself: no other packages are downloaded
+pip install "sp2react[mysql]"     # plus SQLAlchemy + PyMySQL, for MySQL / MariaDB tables
+pip install "sp2react[mssql]"     # plus SQLAlchemy + pyodbc, for SQL Server tables (also needs Microsoft ODBC Driver 18)
 ```
 
+**No runtime dependencies.** The HTTP client, Windows (NTLM) sign-in, the YAML reader and the spec validation are
+part of the package and use only the Python standard library, so `pip install sp2react` pulls in nothing else and
+an air-gapped install is one wheel. The database extras are needed only for `data_source: database`.
+
 Python 3.10+. Node.js 20+ is needed to build the generated React app.
+
+## Security and supply chain
+
+No runtime dependencies, no telemetry; connections go only to the SharePoint site and the model endpoint in your
+config. Releases are published with PyPI Trusted Publishing and carry provenance attestations, plus
+Sigstore-signed assets and a CycloneDX SBOM on GitHub. CI is hash-locked, runs a weekly `pip-audit` (and `npm audit`
+of the generated app's front end), CodeQL, OpenSSF Scorecard and ClusterFuzzLite fuzzing of the parsers. See
+[SECURITY.md](SECURITY.md).
 
 ## Quick Start
 
@@ -142,7 +158,7 @@ cd converted-app/frontend && npm install && npm run dev
 - Behaviour comes from the spec at runtime. `runtime/rules.ts` (browser) and `app/rules.py` (API) interpret the same rules, and shared vectors keep them in agreement, so a direct API call cannot bypass a rule.
 - The form uses SharePoint's layout, labels and control titles, the legacy site CSS is carried over, and old URLs (`/Lists/X/EditForm.aspx?ID=3&Source=...`) redirect to the new routes.
 - SharePoint groups become roles. Membership comes from your users/groups tables or `data/roles.json`.
-- Authentication: `AUTH_MODE=dev` for local work; `header` behind your gateway, or Entra ID in `app/auth.py`.
+- Authentication: `AUTH_MODE=header` (default) behind your gateway, or Entra ID in `app/auth.py`; `AUTH_MODE=dev` for local work only.
 
 ## Use it from your own tool
 
@@ -166,8 +182,8 @@ p.state            # also written to sp2react-work/state.json
 
 | Converts | Needs your input, or is not converted yet |
 |---|---|
-| List forms (New/Edit/Display) and their jQuery/SPServices behaviour | Workflows, event receivers, compiled solutions: their code is not reachable over REST. They are flagged; export the definitions or source to convert them |
-| Web part pages (SitePages) with Script Editor / Content Editor JavaScript | InfoPath and Power Apps forms: reported, not converted |
+| List forms (New/Edit/Display) and their jQuery/SPServices behaviour | Workflows, event receivers, compiled solutions: their code is not reachable over REST, and sp2react does not detect them yet. Check Site Contents; export the definitions or source to convert them |
+| Web part pages (SitePages) with Script Editor / Content Editor JavaScript | InfoPath and Power Apps forms: not detected, not converted |
 | Basic list views (columns, sort, row limit) | Views with filters and grouping, document libraries, custom master-page branding, rich grids (sort/search/select/export), modal dialogs: planned |
 | SharePoint groups as roles, old URL redirects | Calculated columns are shown but not recomputed; managed metadata, item-level permissions, alert emails |
 

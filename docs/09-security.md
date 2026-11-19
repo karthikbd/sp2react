@@ -1,6 +1,6 @@
 # 9. Security and network behaviour
 
-This page answers the questions a security or architecture review usually asks. The policy itself is in [SECURITY.md](../SECURITY.md).
+This page answers the questions a security or architecture review usually asks. The policy itself is in [SECURITY.md](https://github.com/karthikbd/sp2react/blob/main/SECURITY.md).
 
 ## Where sp2react connects
 
@@ -62,7 +62,12 @@ All credentials come from environment variables named in the config: SharePoint 
 
 ## The generated app
 
-- Ships with `AUTH_MODE=dev` for local work. Production must use `AUTH_MODE=header` behind an authenticating gateway, or Entra ID token validation in `app/auth.py`.
+- Fails closed: without `AUTH_MODE`, the API expects an identity header from an authenticating gateway (`AUTH_MODE=header`) and answers 401 without it. `AUTH_MODE=dev` (set in `.env.example` for local work) only accepts requests from the same machine. For production use `header` behind your gateway, or Entra ID token validation in `app/auth.py`.
+- Every API route, including `/api/screens` and `/api/specs`, needs a signed-in user. Deleting an item and adding or removing attachments follow the same lock and role rules as editing it.
+- Serves only files inside the built front end (`FRONTEND_DIST`); other paths get the app shell.
+- Legacy Content Editor / Script Editor markup is rebuilt from an allow-list of tags and attributes (`runtime/sanitize.ts`), so scripts, event handlers, `svg` and `javascript:` links cannot reach the page.
+- Files written by agents must be plain relative paths inside the screen's own folder (or the handler's two files); anything else is refused before it is written.
+- Regenerating never overwrites a template file someone changed (such as `app/auth.py`): the new version is written next to it as `<file>.sp2react-new`.
 - Enforces every rule on the server (`app/rules.py`), so a direct API call cannot bypass validation, read-only fields, locks or role checks.
 - Uses parameterised SQL through SQLAlchemy; `$filter` input is parsed into expressions, never concatenated into SQL.
 - Restricts CORS to `CORS_ORIGINS`.
@@ -70,10 +75,14 @@ All credentials come from environment variables named in the config: SharePoint 
 ## Supply chain
 
 - Published to PyPI from GitHub Actions with **Trusted Publishing** (OIDC, no stored tokens), from the public repository `karthikbd/sp2react`.
-- Every GitHub Action is pinned to a commit SHA.
+- Every GitHub Action is pinned to a commit SHA, and every CI tool set is installed from hash-locked requirement files (`ci/requirements-*.txt`, `pip install --require-hashes`).
+- Each release carries PyPI provenance attestations; its wheel, sdist and CycloneDX SBOM are signed with Sigstore and attached to the GitHub release, and `verify-release.yml` checks the signatures and that PyPI serves the same files.
+- `pip-audit` (every CI tool set and the generated app's back end) and `npm audit` (the generated app's front end) run on every push and weekly.
+- ClusterFuzzLite fuzzes the parsers that read untrusted input: the config YAML, agent JSON (spec validation), ASPX pages and legacy JavaScript, NTLM challenges and the generated API's `$filter` parser.
+- End-to-end CI runs `data_source: database` against real MySQL 8.4 and SQL Server 2022 containers.
 - OpenSSF Scorecard runs weekly and on every push to `main`.
 - CodeQL code scanning (Python and TypeScript) on every push to `main`, and weekly.
 - Dependabot watches GitHub Actions, the Python dependencies and the generated app's npm and pip templates.
 - The generated app's front-end template reports 0 known vulnerabilities (`npm audit`).
-- Runtime dependencies: `pydantic`, `PyYAML`, `requests`; optional `SQLAlchemy`, `pyodbc` or `PyMySQL`, `requests-ntlm`.
+- No runtime dependencies: HTTP, NTLM (NTLMv2, with channel binding on HTTPS), YAML and validation are implemented on the standard library. Optional: `SQLAlchemy` with `pyodbc` or `PyMySQL` for `data_source: database`.
 - Licence: MIT.

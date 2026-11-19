@@ -156,8 +156,6 @@ def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optio
     for ln in s.code_lines:
         offsets.append(offsets[-1] + len(ln) + 1)
 
-    helper_funcs = {f.name for f in s.functions}
-
     for i, line_code in enumerate(s.code_lines, start=1):
         if not line_code.strip():
             continue
@@ -184,10 +182,9 @@ def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optio
                 # a helper called with a field literal is the behaviour; the helper's own body is "info"
                 add("readonly", MUST if flds else INFO, i, off, fields=flds)
 
-        if SETVAL.search(line_code) and flds and not re.search(r"\.val\(\s*\)", line_code):
-            if re.search(r"\$\(", line_code):
-                add("set_value", MUST, i, off, fields=flds, condition=if_condition(s, off + 1),
-                    detail={"value": s.restore(line_code.split(".val(", 1)[1].rsplit(")", 1)[0]).strip()})
+        if SETVAL.search(line_code) and flds and not re.search(r"\.val\(\s*\)", line_code) and re.search(r"\$\(", line_code):
+            add("set_value", MUST, i, off, fields=flds, condition=if_condition(s, off + 1),
+                detail={"value": s.restore(line_code.split(".val(", 1)[1].rsplit(")", 1)[0]).strip()})
 
         mm = MESSAGE_CALL.search(line_code)
         if mm:
@@ -206,8 +203,8 @@ def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optio
             if "ms-formvalidation" in lit.value or "ms-error" in lit.value:
                 pos = off + line_code.find(f"__S{lit.index}__")
                 cands = [(en - st, c) for (st, en, c) in concat_expressions(s) if st <= pos < en and not re.match(r"[\w$.]*\$\(", c)]
-                expr = min(cands)[1] if cands else None
-                txt = re.sub(r"<[^>]+>", "", template(s, expr)) if expr else re.sub(r"<[^>]+>", "", lit.value)
+                msg_expr = min(cands)[1] if cands else None
+                txt = re.sub(r"<[^>]+>", "", template(s, msg_expr)) if msg_expr else re.sub(r"<[^>]+>", "", lit.value)
                 add("message", MUST, i, off, fields=flds, message=txt.strip(), condition=if_condition(s, off + 1),
                     detail={"presentation": "inline"})
                 break
@@ -236,7 +233,7 @@ def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optio
     # ---------------------------------------------------------------- calls
     calls: list[dict] = []
     seen_urls = set()
-    for st, en, expr in concat_expressions(s):
+    for st, _en, expr in concat_expressions(s):
         url = template(s, expr)
         if "/_api/" not in url and "_vti_bin" not in url:
             continue
@@ -245,11 +242,12 @@ def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optio
         if parsed.get("resource") in ("list",) and not parsed.get("item") and parsed.get("op") is None and not parsed.get("query"):
             continue   # base URL definition such as `listUrl = site + "/_api/web/lists/getbytitle('X')"`
         fn = (s.enclosing(st)[-1].name if s.enclosing(st) else None)
-        key = (url, fn)
-        if key in seen_urls:
+        seen_key = (url, fn)
+        if seen_key in seen_urls:
             continue
-        seen_urls.add(key)
-        method, body = "GET", {}
+        seen_urls.add(seen_key)
+        method = "GET"
+        body: dict = {}
         ajax = enclosing_call(s, st, r"(?:\$|jQuery)\.ajax")
         if ajax:
             props = {k: s.restore(v) for k, v in object_props(s, ajax[2]).items()}
@@ -277,7 +275,7 @@ def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optio
         from .jsscan import match_brace
         close_p = match_brace(s.code, open_p)
         args = s.code[open_p + 1:close_p]
-        props = {k: (s.lit(v).value if s.lit(v) else s.restore(v)) for k, v in object_props(s, args).items()} if args.strip().startswith("{") else {}
+        props = {k: (lv.value if (lv := s.lit(v)) else s.restore(v)) for k, v in object_props(s, args).items()} if args.strip().startswith("{") else {}
         sub = m.group(1) or "call"
         op = props.get("operation") or sub
         line = s.line_of(m.start())
@@ -291,8 +289,8 @@ def analyze_script(name: str, source: str, index: FieldIndex, prefer_list: Optio
         for key in ("CAMLQuery", "CAMLViewFields"):
             if key in props:
                 for fr in re.findall(r"FieldRef\s+Name=['\"](\w+)['\"]", props[key]):
-                    lst = index.list_titles.get((props.get("listName") or "").lower())
-                    flds += index.resolve(fr, lst, internal_ok=True)
+                    caml_list = index.list_titles.get((props.get("listName") or "").lower())
+                    flds += index.resolve(fr, caml_list, internal_ok=True)
         b = add(kind, MUST, line, m.start(), fields=flds, detail={"spservices": sub, "operation": op, **{k: v for k, v in props.items() if k not in ("completefunc",)}})
         calls.append({"behavior": b.id, "type": "spservices", "operation": op, "function": sub, "line": line,
                       **{k: v for k, v in props.items() if k in ("listName", "CAMLQuery", "CAMLViewFields", "CAMLRowLimit", "webURL",
