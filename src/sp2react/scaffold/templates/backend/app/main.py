@@ -37,14 +37,15 @@ def create_app() -> FastAPI:
     if dist.exists():
         app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
 
+        # The built frontend's files, listed once at start-up: a request can only pick one of these, so no
+        # request path (../ tricks, absolute paths) ever reaches the file system. Restart after a new build.
         root = dist.resolve()
+        files = {f.relative_to(root).as_posix(): f for f in root.rglob("*") if f.is_file()}
+        shell = root / "index.html"
 
         @app.get("/{path:path}", include_in_schema=False)
         def spa(path: str):
-            # Only files inside the built frontend are served; anything else (including ../ tricks) gets the app shell.
-            f = (root / path).resolve()
-            inside = f != root and root in f.parents
-            return FileResponse(f if inside and f.is_file() else root / "index.html")
+            return FileResponse(files.get(path, shell))
     return app
 
 
