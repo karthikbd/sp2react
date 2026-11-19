@@ -11,10 +11,14 @@ with atheris.instrument_imports():
     import sp2react
     from sp2react import ntlm
 
-_spec = importlib.util.spec_from_file_location(
-    "generated_odata", pathlib.Path(sp2react.__file__).parent / "scaffold" / "templates" / "backend" / "app" / "odata.py")
-odata = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(odata)
+try:            # ClusterFuzzLite: build.sh copies the generated app's odata.py next to this file, so it is bundled
+    with atheris.instrument_imports():
+        import generated_odata as odata
+except ImportError:   # run from a checkout: load it from the package's templates
+    _spec = importlib.util.spec_from_file_location(
+        "generated_odata", pathlib.Path(sp2react.__file__).parent / "scaffold" / "templates" / "backend" / "app" / "odata.py")
+    odata = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(odata)
 ITEMS = [{"ID": 1, "Title": "Kestrel", "Status": "Approved", "Country": {"id": 8, "title": "Nigeria"}, "Amount": 5.0}]
 
 
