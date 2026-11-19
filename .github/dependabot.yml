@@ -48,9 +48,14 @@ updates:
     labels:
       - "dependencies"
 
-  # The container image the generated app's tests run in (pipeline.sandbox: container)
+  # The container image the generated app's tests run in (pipeline.sandbox: container).
+  # Digest updates (security patches of the same Python) only: its Python version must be
+  # one sp2react supports and tests, and new Pythons often lack wheels the app needs.
   - package-ecosystem: "docker"
     directory: "/src/sp2react/container"
+    ignore:
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     schedule:
       interval: "weekly"
     labels:
