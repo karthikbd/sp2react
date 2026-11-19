@@ -295,3 +295,98 @@ def test_the_pipeline_runs_generated_tests_in_a_container(tmp_path, monkeypatch)
         p.run()
     report = (tmp_path / "ws" / "tests" / "iteration-0.md").read_text()
     assert "sandbox: container" in report and p.status("Dashboard", "test") == "done", report[-3000:]
+
+
+# ------------------------------------------------------------------------------------------- guard, in-process
+# The escape tests above run the guard in a child process; these call its rules directly, without installing
+# the hook, so every rule is also exercised where coverage can see it.
+def make_guard(tmp_path: Path, monkeypatch, hosts: list[str] | None = None):
+    import tempfile
+
+    from sp2react.sandbox_guard import Guard
+    (tmp_path / "app" / "tmp").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path / "app" / "tmp"))   # tests live in the system temp folder
+    return Guard([str(tmp_path / "app")], hosts or [])
+
+
+def test_guard_rules_directly(tmp_path, monkeypatch):
+    import os
+
+    g = make_guard(tmp_path, monkeypatch, ["db.example.test"])
+    app, outside = tmp_path / "app", tmp_path / "outside"
+    outside.mkdir()
+    g("open", (str(app / "x.txt"), "w", 0))
+    g("open", (str(outside / "x.txt"), "r", 0))                       # reading is allowed
+    g("open", (os.devnull, "w", 0))
+    g("open", (3, "w", 0))                                            # an already open descriptor
+    g("open", (os.fsencode(app / "b.txt"), None, os.O_WRONLY | os.O_CREAT))
+    g("os.remove", (str(app / "x.txt"), -100))
+    g("os.rename", (str(app / "a"), str(app / "b"), -100, -100))
+    g("sqlite3.connect", (":memory:",))
+    g("sqlite3.connect", (f"file:{app / 'db.sqlite'}?mode=rwc",))
+    g("socket.getaddrinfo", ("db.example.test", 3306, 0, 0, 0))
+    g("socket.getaddrinfo", ("localhost", 80, 0, 0, 0))
+    g("socket.connect", (None, ("127.0.0.1", 5432)))
+    g("socket.connect", (None, ("::1", 5432, 0, 0)))
+    g("import", ("json", None, [], [], []))
+    for event, args in [
+        ("open", (str(outside / "x.txt"), "a", 0)),
+        ("open", (str(outside), None, os.O_RDONLY)),                  # a directory fd outside the folder
+        ("os.remove", (str(outside / "x.txt"), -100)),
+        ("os.rename", (str(app / "a"), str(outside / "b"), -100, -100)),
+        ("shutil.rmtree", (str(outside), None)),
+        ("sqlite3.connect", (str(outside / "x.db"),)),
+        ("subprocess.Popen", ("echo", ["echo"], None, None)),
+        ("os.system", (b"echo",)),
+        ("ctypes.dlopen", ("libc.so.6",)),
+        ("gc.get_objects", ()),
+        ("socket.getaddrinfo", ("example.com", 443, 0, 0, 0)),
+        ("socket.connect", (None, ("192.0.2.1", 443))),
+        ("socket.connect", (None, "/var/run/docker.sock")),
+        ("open", (12.5, "w", 0)),                                     # not a path
+    ]:
+        with pytest.raises(PermissionError, match="sp2react sandbox"):
+            g(event, args)
+    import sys
+    if "_winapi" not in sys.modules:                                  # POSIX: never loaded, so the import is refused
+        with pytest.raises(ImportError, match="sp2react sandbox"):
+            g("import", ("_winapi", None, [], [], []))
+
+
+def test_guard_resolves_descriptor_relative_paths(tmp_path, monkeypatch):
+    import os
+
+    g = make_guard(tmp_path, monkeypatch)
+    (tmp_path / "outside").mkdir()
+    inside_fd = os.open(tmp_path / "app", os.O_RDONLY)
+    outside_fd = os.open(tmp_path / "outside", os.O_RDONLY)
+    try:
+        g("os.mkdir", ("sub", 0o777, inside_fd))
+        with pytest.raises(PermissionError):
+            g("os.mkdir", ("sub", 0o777, outside_fd))
+        with pytest.raises(PermissionError):
+            g("os.remove", ("x", 999_999))                            # a descriptor that points nowhere
+    finally:
+        os.close(inside_fd)
+        os.close(outside_fd)
+
+
+def test_guard_main_runs_the_three_forms(tmp_path, monkeypatch):
+    from sp2react import sandbox_guard
+
+    script = tmp_path / "s.py"
+    script.write_text("import sys; print('script', sys.argv[1:])")
+    calls = []
+    monkeypatch.setattr(sandbox_guard, "install", lambda w, h: calls.append((w, h)))
+    monkeypatch.setattr(sandbox_guard.runpy, "run_module", lambda m, **k: calls.append(("module", m)))
+    monkeypatch.setattr(sandbox_guard.runpy, "run_path", lambda p, **k: calls.append(("path", p)))
+    monkeypatch.setenv("SP2REACT_GUARD_WRITE", str(tmp_path))
+    monkeypatch.setenv("SP2REACT_GUARD_HOSTS", "db")
+    monkeypatch.setattr(sandbox_guard.sys, "path", ["x", *sandbox_guard.sys.path])
+    monkeypatch.setattr(sandbox_guard.sys, "argv", list(sandbox_guard.sys.argv))
+    sandbox_guard.main(["guard", "-m", "pytest", "-q"])
+    sandbox_guard.main(["guard", "-c", "RESULT = 1", "a"])
+    sandbox_guard.main(["guard", str(script), "b"])
+    assert ("module", "pytest") in calls and ("path", str(script)) in calls and calls[0] == ([str(tmp_path)], ["db"])
+    with pytest.raises(SystemExit):
+        sandbox_guard.main(["guard"])
