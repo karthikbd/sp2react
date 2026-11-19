@@ -130,9 +130,9 @@ class Guard:
         elif event in ("socket.connect", "socket.connect_ex", "socket.sendto", "socket.sendmsg"):
             if len(args) > 1:
                 self.check_address(args[1], event)
-        elif event == "import" and args and args[0] in ("_ctypes", "ctypes", "_posixsubprocess", "_winapi"):
-            if args[0] not in sys.modules:      # ImportError, so code that copes with a missing module still works
-                raise ImportError(f"{PREFIX}: importing {args[0]} is not allowed for generated code", name=args[0])
+        elif event == "import" and args and args[0] in ("_ctypes", "ctypes", "_posixsubprocess", "_winapi") \
+                and args[0] not in sys.modules:  # ImportError, so code that copes with a missing module still works
+            raise ImportError(f"{PREFIX}: importing {args[0]} is not allowed for generated code", name=args[0])
 
 
 def install(write_roots: list[str], hosts: list[str]) -> Guard:
